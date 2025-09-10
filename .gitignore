@@ -1,0 +1,45 @@
+# Global
+.DS_Store
+.env
+.env.*
+.vscode/
+.idea/
+*.log
+
+# Node / Next.js (chatbot-fe)
+chatbot-fe/node_modules/
+chatbot-fe/.next/
+chatbot-fe/out/
+chatbot-fe/.turbo/
+chatbot-fe/.vercel/
+chatbot-fe/.eslintcache
+chatbot-fe/npm-debug.log*
+chatbot-fe/yarn-debug.log*
+chatbot-fe/yarn-error.log*
+chatbot-fe/pnpm-debug.log*
+chatbot-fe/.env.local
+chatbot-fe/.env.development.local
+chatbot-fe/.env.test.local
+chatbot-fe/.env.production.local
+
+# Python / FastAPI (chatbot-be)
+chatbot-be/__pycache__/
+chatbot-be/**/*.py[cod]
+chatbot-be/.pytest_cache/
+chatbot-be/.mypy_cache/
+chatbot-be/.ruff_cache/
+chatbot-be/.coverage
+chatbot-be/htmlcov/
+chatbot-be/.cache/
+chatbot-be/build/
+chatbot-be/dist/
+chatbot-be/.venv/
+chatbot-be/venv/
+chatbot-be/.python-version
+chatbot-be/.env
+
+# App data (RAG/Chroma) - large/generated
+chatbot-be/chroma-data/
+chatbot-be/my_chroma_data/
+
+

@@ -1,0 +1,20 @@
+[project]
+name = "chatbot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langgraph>=0.2.0",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-community>=0.3.0",
+    "langchain-google-community>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "chromadb>=0.4.0",
+    "pydantic>=2.0.0",
+    "fastapi>=0.116.1",
+    "asyncmy>=0.2.10",
+    "langgraph-checkpoint-mysql>=2.0.17",
+    "python-multipart>=0.0.20",
+]

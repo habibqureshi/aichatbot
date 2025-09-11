@@ -2,6 +2,18 @@
 
 A production-ready, full‑stack AI chatbot built with a Next.js frontend and a FastAPI backend. The assistant is orchestrated using LangGraph with OpenAI as the LLM provider, and it supports Retrieval‑Augmented Generation (RAG) for training on custom company data using ChromaDB.
 
+# Before Traning
+
+https://github.com/user-attachments/assets/6db2e715-b6b9-40c0-880c-e86b90a6aece
+
+# After Traning
+
+https://github.com/user-attachments/assets/21b749a4-a1ac-429f-b3e4-3b05f26a28d3
+
+
+
+
+
 ---
 
 ## Table of Contents

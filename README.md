@@ -1,6 +1,6 @@
 # AI Chatbot Platform (LangGraph + OpenAI + RAG/ChromaDB)
 
-A production-ready, full‑stack AI chatbot built with a Next.js frontend and a FastAPI backend. The assistant is orchestrated using LangGraph with OpenAI as the LLM provider, and it supports Retrieval‑Augmented Generation (RAG) for training on custom company data using ChromaDB.
+A full-stack AI chatbot platform with a Next.js frontend and FastAPI backend. While not production-ready out of the box, it provides all the essential infrastructure—LangGraph orchestration, OpenAI LLM integration, and Retrieval-Augmented Generation (RAG) with ChromaDB—so you can quickly adapt and extend it for your own use cases.
 
 # Before Traning
 
@@ -82,6 +82,7 @@ Data flow overview:
 - Node.js 18+ and pnpm/npm/yarn
 - Python 3.11+
 - OpenAI API key
+- ChromaDB
 
 ### Environment Variables
 
@@ -103,8 +104,14 @@ Terminal 1 – Backend (FastAPI):
 ```bash
 cd chatbot-be
 python -m venv .venv && source .venv/bin/activate
-pip install -U pip
-pip install -e .
+# Install all Python dependencies from requirements.txt or pyproject.toml:
+uv pip sync
+
+# (Optional) Add new dependencies to backend:
+uv pip add <package-name>
+
+# (Optional) Install the backend in editable (development) mode:
+uv pip install -e .
 uvicorn main:app --reload --host 0.0.0.0 --port 8001
 ```
 
@@ -132,6 +139,25 @@ Backend upload endpoint (default):
 Notes:
 - Chunking/splitting, embedding, and storage are configurable in `chatbot-be/rag/indexing`.
 - Large/temporary vector store data is ignored by Git (`my_chroma_data`, `chroma-data`).
+
+---
+
+### ChromaDB Local (Docker)
+
+Run a local ChromaDB server with Docker and persist data to `./chatbot-be/chroma-data`:
+
+```bash
+cd chatbot-be
+docker run \
+  -v ./chroma-data:/data \
+  -p 8000:8000 \
+  chromadb/chroma
+```
+
+Notes:
+- Ensure the `chroma-data` folder exists (Docker will create it if not).
+- Adjust the host port if `8000` is already in use.
+- If pointing the backend to the server mode, configure the appropriate Chroma client URL in your backend settings.
 
 ---
 

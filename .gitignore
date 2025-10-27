@@ -45,3 +45,5 @@ chatbot-be/my_chroma_data/
 
 .venv/
 .env
+
+__pycache__/

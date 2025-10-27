@@ -17,4 +17,6 @@ dependencies = [
     "asyncmy>=0.2.10",
     "langgraph-checkpoint-mysql>=2.0.17",
     "python-multipart>=0.0.20",
+    "fastmcp>=2.13.0.1",
+    "langchain-mcp-adapters>=0.1.11",
 ]

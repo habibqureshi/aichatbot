@@ -10,10 +10,6 @@ https://github.com/user-attachments/assets/6db2e715-b6b9-40c0-880c-e86b90a6aece
 
 https://github.com/user-attachments/assets/21b749a4-a1ac-429f-b3e4-3b05f26a28d3
 
-
-
-
-
 ---
 
 ## Table of Contents
@@ -59,6 +55,7 @@ https://github.com/user-attachments/assets/21b749a4-a1ac-429f-b3e4-3b05f26a28d3
   - ChromaDB vector store data on disk (configurable)
 
 Data flow overview:
+
 1. The user sends a prompt from the web UI.
 2. The backend’s LangGraph pipeline streams the AI response via SSE.
 3. For RAG, uploaded documents are chunked and indexed into ChromaDB.
@@ -79,6 +76,7 @@ Data flow overview:
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 18+ and pnpm/npm/yarn
 - Python 3.11+
 - OpenAI API key
@@ -87,20 +85,62 @@ Data flow overview:
 ### Environment Variables
 
 Create frontend env file `chatbot-fe/.env.local`:
+
 ```bash
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8001
 ```
 
 Create backend env file `chatbot-be/.env`:
+
 ```bash
 OPENAI_API_KEY=sk-...
 # Optional: customize Chroma paths
 CHROMA_PERSIST_DIR=./my_chroma_data
+MCP_URL=http://localhost:8002/mcp
 ```
+
+Create MCP server env file `chatbot-mcp/.env`:
+
+```bash
+OPENAI_API_KEY=sk-...
+```
+
+### Starting the MCP Server
+
+The Model Context Protocol (MCP) server provides additional AI capabilities. To start the MCP server:
+
+1. Navigate to the MCP server directory:
+
+```bash
+cd chatbot-mcp
+```
+
+2. Install dependencies (first time only):
+
+```bash
+uv sync
+```
+
+3. Start the MCP server:
+
+```bash
+PORT=8002 python main.py
+```
+
+The MCP server will start on port 8002. Make sure it's running before starting the main backend server.
 
 ### Install & Run
 
-Terminal 1 – Backend (FastAPI):
+Terminal 1 – MCP Server:
+
+```bash
+cd chatbot-mcp
+uv sync
+PORT=8002 python main.py
+```
+
+Terminal 2 – Backend (FastAPI):
+
 ```bash
 cd chatbot-be
 python -m venv .venv && source .venv/bin/activate
@@ -115,7 +155,8 @@ uv pip install -e .
 uvicorn main:app --reload --host 0.0.0.0 --port 8001
 ```
 
-Terminal 2 – Frontend (Next.js):
+Terminal 3 – Frontend (Next.js):
+
 ```bash
 cd chatbot-fe
 npm install
@@ -134,9 +175,11 @@ Open the app at `http://localhost:3000`.
 - Chat in `/dashboard/chat` to see the model ground answers on your data.
 
 Backend upload endpoint (default):
+
 - POST `/api/v1/rag/upload-file` (multipart/form-data with `file`)
 
 Notes:
+
 - Chunking/splitting, embedding, and storage are configurable in `chatbot-be/rag/indexing`.
 - Large/temporary vector store data is ignored by Git (`my_chroma_data`, `chroma-data`).
 
@@ -155,6 +198,7 @@ docker run \
 ```
 
 Notes:
+
 - Ensure the `chroma-data` folder exists (Docker will create it if not).
 - Adjust the host port if `8000` is already in use.
 - If pointing the backend to the server mode, configure the appropriate Chroma client URL in your backend settings.
@@ -175,6 +219,7 @@ See routers in `chatbot-be/router/` for details.
 ## Project Scripts
 
 Frontend:
+
 ```bash
 npm run dev       # start Next.js dev server
 npm run build     # build for production
@@ -183,6 +228,7 @@ npm run lint      # lint frontend
 ```
 
 Backend:
+
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8001
 # Optionally add ruff/mypy/pytest if configured
@@ -197,6 +243,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8001
 - Keep an eye on CORS if running on different hosts/ports.
 
 Recommended quality tooling (optional):
+
 - Frontend: ESLint + Prettier (already configured)
 - Backend: Ruff (lint), Mypy (types), Pytest (tests)
 
@@ -218,6 +265,7 @@ Recommended quality tooling (optional):
 - Configure environment variables via your platform’s secret store.
 
 Docker (example sketch):
+
 ```bash
 # Build images
 # docker build -t aichatbot-fe ./chatbot-fe
@@ -230,6 +278,7 @@ Docker (example sketch):
 ## Contributing
 
 Contributions are welcome! Please:
+
 - Open an issue for bugs and feature requests.
 - Create small, focused PRs with clear descriptions.
 - Follow existing code style and add tests where relevant.

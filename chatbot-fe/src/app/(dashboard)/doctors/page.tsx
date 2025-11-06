@@ -1,22 +1,40 @@
 "use client";
 
 import { useState } from "react";
+import MultiSelect from "@/components/common/MultiSelect";
+import TimeRangePicker from "@/components/common/TimeRangePicker";
+
+interface TimeSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+}
 
 interface DoctorData {
   name: string;
   experience: string;
-  timeSlots: string;
-  availableDays: string;
+  timeSlots: TimeSlot[];
+  availableDays: string[];
   department: string;
   expertise: string;
 }
+
+const DAYS_OF_WEEK = [
+  { id: "monday", label: "Monday", value: "monday" },
+  { id: "tuesday", label: "Tuesday", value: "tuesday" },
+  { id: "wednesday", label: "Wednesday", value: "wednesday" },
+  { id: "thursday", label: "Thursday", value: "thursday" },
+  { id: "friday", label: "Friday", value: "friday" },
+  { id: "saturday", label: "Saturday", value: "saturday" },
+  { id: "sunday", label: "Sunday", value: "sunday" },
+];
 
 export default function DoctorsPage() {
   const [formData, setFormData] = useState<DoctorData>({
     name: "",
     experience: "",
-    timeSlots: "",
-    availableDays: "",
+    timeSlots: [],
+    availableDays: [],
     department: "",
     expertise: "",
   });
@@ -28,6 +46,14 @@ export default function DoctorsPage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDaysChange = (selectedDays: string[]) => {
+    setFormData((prev) => ({ ...prev, availableDays: selectedDays }));
+  };
+
+  const handleTimeSlotsChange = (timeSlots: TimeSlot[]) => {
+    setFormData((prev) => ({ ...prev, timeSlots }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,8 +70,8 @@ export default function DoctorsPage() {
       setFormData({
         name: "",
         experience: "",
-        timeSlots: "",
-        availableDays: "",
+        timeSlots: [],
+        availableDays: [],
         department: "",
         expertise: "",
       });
@@ -98,35 +124,21 @@ export default function DoctorsPage() {
               />
             </div>
 
-            <div>
-              <label htmlFor="timeSlots" className="block text-sm font-medium text-gray-700">
-                Time Slots
-              </label>
-              <input
-                type="text"
-                id="timeSlots"
-                name="timeSlots"
-                value={formData.timeSlots}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., 9:00 AM - 5:00 PM"
+            <div className="md:col-span-2">
+              <TimeRangePicker
+                timeSlots={formData.timeSlots}
+                onChange={handleTimeSlotsChange}
+                label="Time Slots"
               />
             </div>
 
             <div>
-              <label htmlFor="availableDays" className="block text-sm font-medium text-gray-700">
-                Available Days
-              </label>
-              <input
-                type="text"
-                id="availableDays"
-                name="availableDays"
-                value={formData.availableDays}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., Monday, Wednesday, Friday"
+              <MultiSelect
+                label="Available Days"
+                options={DAYS_OF_WEEK}
+                selectedValues={formData.availableDays}
+                onChange={handleDaysChange}
+                placeholder="Select available days"
               />
             </div>
 

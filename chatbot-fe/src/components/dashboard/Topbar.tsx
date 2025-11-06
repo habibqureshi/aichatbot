@@ -15,15 +15,15 @@ export default function Topbar() {
     fetchSession();
   }, []);
   return (
-    <header className="bg-white shadow-sm">
+    <header className="hidden lg:block bg-white shadow-sm">
       <div className="h-16 flex items-center justify-between px-4">
         <div className="flex items-center">
           <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button className="p-2 rounded-full hover:bg-gray-100">
             <svg
-              className="h-6 w-6 text-gray-500"
+              className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -45,15 +45,12 @@ export default function Topbar() {
                 alt="User avatar"
                 className="h-8 w-8 rounded-full"
               />
-              <span className="text-sm font-medium text-gray-700">
+              <span className="hidden sm:block text-sm font-medium text-gray-700">
                 {session?.user?.username || session?.user?.email}
               </span>
             </button>
-            <div className="absolute right-0  w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block hover:block">
-              <Link
-                href="/settings"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
+            <div className="absolute right-0  w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block hover:block z-50">
+              <Link href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                 Settings
               </Link>
               <Link

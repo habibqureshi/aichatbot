@@ -121,16 +121,16 @@ export function DataTable<TData, TValue>({
   const [firstWord, ...rest] = (title ?? "").split(" ");
   const restTitle = rest.join(" ");
   return (
-    <div className="border rounded-lg">
+    <div className="border rounded-lg bg-white">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2">
-        <div className="flex items-center space-x-2 px-2 py-4">
-          <h2 className="text-[22px] font-bold tracking-tight">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 gap-2">
+        <div className="flex items-center space-x-2 px-2 py-3 sm:py-4">
+          <h2 className="text-lg sm:text-[22px] font-bold tracking-tight">
             <span className="text-black">{firstWord} </span>
             <span className="text-primary">{restTitle}</span>
           </h2>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto px-2 sm:px-0">
           {/* Loading Spinner */}
           {loading && (
             <div className="flex items-center">
@@ -187,62 +187,64 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="bg-[#ffffff] overflow-hidden h-[calc(50vh)] flex flex-col">
-        <Table className="h-full">
-          <TableHeader className="bg-gray-100 rounded-none">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-gray-100">
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead
-                      key={header.id}
-                      className="min-w-[150px] font-medium text-sm sm:text-base text-black py-1 sm:py-1 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-3 sm:last:pr-6 border-0"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody className="overflow-y-auto">
-            {initialLoading ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="p-4">
-                  <TableSkeleton columns={columns.length} rows={5} />
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-gray-100 border-b"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="font-medium text-xs sm:text-[14px] text-muted-foreground py-4 sm:py-6 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0"
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+      <div className="bg-[#ffffff] overflow-x-auto h-[calc(50vh)] flex flex-col">
+        <div className="min-w-full inline-block align-middle">
+          <Table className="h-full min-w-full">
+            <TableHeader className="bg-gray-100 rounded-none">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="bg-gray-100">
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className="whitespace-nowrap min-w-[120px] sm:min-w-[150px] font-medium text-xs sm:text-sm text-black py-2 sm:py-3 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-3 sm:last:pr-6 border-0"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-[calc(48px*5)] text-center font-medium text-[14px] text-muted-foreground border-0"
-                >
-                  <div className="flex items-center justify-center h-full">No results found.</div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody className="overflow-y-auto">
+              {initialLoading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="p-4">
+                    <TableSkeleton columns={columns.length} rows={5} />
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="hover:bg-gray-100 border-b"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className="whitespace-nowrap font-medium text-xs sm:text-sm text-muted-foreground py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0"
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-[calc(48px*5)] text-center font-medium text-[14px] text-muted-foreground border-0"
+                  >
+                    <div className="flex items-center justify-center h-full">No results found.</div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
       {/* Pagination */}
       {enablePagination && (

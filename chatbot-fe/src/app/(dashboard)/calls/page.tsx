@@ -148,26 +148,28 @@ const columns: ColumnDef<CallData>[] = [
 export default function CallsPage() {
   // const [tableBodyData, setTableBodyData] = useState([]);
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Call History</h1>
-        <p className="text-gray-600 mt-1">View and manage all call records</p>
+    <div className="p-2 sm:p-4 lg:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Call History</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">View and manage all call records</p>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={dummyCallData}
-        title="Call Records"
-        searchKey="userName"
-        searchPlaceholder="Search calls by user name..."
-        enableSorting={true}
-        enableFiltering={true}
-        enableColumnVisibility={true}
-        enablePagination={true}
-        pageSize={5}
-        showSearch={true}
-        showSorting={false}
-      />
+      <div className="overflow-x-auto">
+        <DataTable
+          columns={columns}
+          data={dummyCallData}
+          title="Call Records"
+          searchKey="userName"
+          searchPlaceholder="Search calls by user name..."
+          enableSorting={true}
+          enableFiltering={true}
+          enableColumnVisibility={true}
+          enablePagination={true}
+          pageSize={5}
+          showSearch={true}
+          showSorting={false}
+        />
+      </div>
     </div>
   );
 }

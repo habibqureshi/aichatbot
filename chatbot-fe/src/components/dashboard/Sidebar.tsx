@@ -3,6 +3,11 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
 const navigation = [
   // {
   //   name: "Chat",
@@ -36,86 +41,126 @@ const navigation = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
-  return (
-    <div className="h-screen w-64 bg-white border-r border-gray-200 text-gray-900 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-center p-4 border-b border-gray-200">
-        <h1 className="text-lg font-semibold text-gray-900">Ask AI</h1>
-      </div>
+  const handleLinkClick = () => {
+    // Close sidebar on mobile when clicking a link
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
+  };
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-6">
-        <div className="space-y-2">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors
+  return (
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+       <div
+  className="fixed inset-0 bg-black/20 z-40 lg:hidden"
+  onClick={onClose}
+/>
+
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 text-gray-900 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h1 className="text-lg font-semibold text-gray-900">Ask AI</h1>
+
+          {/* Close button for mobile */}
+          <button
+            onClick={onClose}
+            className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-4 py-6">
+          <div className="space-y-2">
+            {navigation.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={handleLinkClick}
+                  className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors
                                     ${
                                       isActive
                                         ? "bg-gray-100 text-blue-700 font-semibold"
                                         : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                                     }`}
-                aria-current={isActive ? "page" : undefined}
-              >
-                <svg
-                  className={`mr-3 h-5 w-5 transition-colors ${
-                    isActive ? "text-blue-700" : "text-gray-500 group-hover:text-gray-700"
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  aria-current={isActive ? "page" : undefined}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                </svg>
-                {item.name}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+                  <svg
+                    className={`mr-3 h-5 w-5 transition-colors ${
+                      isActive ? "text-blue-700" : "text-gray-500 group-hover:text-gray-700"
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                  </svg>
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
 
-      {/* Bottom Section */}
-      <div className="border-t border-gray-200 p-4">
-        <Link
-          href="/settings"
-          className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors
+        {/* Bottom Section */}
+        <div className="border-t border-gray-200 p-4">
+          <Link
+            href="/settings"
+            onClick={handleLinkClick}
+            className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors
                         ${
                           pathname === "/settings"
                             ? "bg-gray-100 text-blue-700 font-semibold"
                             : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                         }`}
-          aria-current={pathname === "/settings" ? "page" : undefined}
-        >
-          <svg
-            className={`mr-3 h-5 w-5 transition-colors ${
-              pathname === "/settings" ? "text-blue-700" : "text-gray-500 group-hover:text-gray-700"
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+            aria-current={pathname === "/settings" ? "page" : undefined}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-          Settings
-        </Link>
+            <svg
+              className={`mr-3 h-5 w-5 transition-colors ${
+                pathname === "/settings" ? "text-blue-700" : "text-gray-500 group-hover:text-gray-700"
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            Settings
+          </Link>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

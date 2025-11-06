@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 interface TimeSlot {
   id: string;
@@ -10,6 +11,7 @@ interface TimeRangePickerProps {
   timeSlots: TimeSlot[];
   onChange: (timeSlots: TimeSlot[]) => void;
   label?: string;
+  onDurationChange?: (duration: number) => void;
 }
 
 const DURATION_OPTIONS = [
@@ -35,6 +37,7 @@ export default function TimeRangePicker({
   timeSlots,
   onChange,
   label = "Time Slots",
+  onDurationChange,
 }: TimeRangePickerProps) {
   const [newStartTime, setNewStartTime] = useState("");
   const [newEndTime, setNewEndTime] = useState("");
@@ -79,13 +82,13 @@ export default function TimeRangePicker({
   const addOrUpdateSlot = () => {
     if (!newStartTime || !newEndTime) return;
     if (newEndTime <= newStartTime) {
-      alert("End time must be after start time");
+      toast.error("End time must be after start time");
       return;
     }
 
     // Check for conflicts with existing slots
     if (isTimeConflicting(newStartTime, newEndTime, editingSlotId || undefined)) {
-      alert("This time slot conflicts with an existing slot");
+      toast.error("This time slot conflicts with an existing slot");
       return;
     }
 
@@ -126,6 +129,8 @@ export default function TimeRangePicker({
     // Clear current selections when duration changes
     setNewStartTime("");
     setNewEndTime("");
+    // Notify parent component of duration change
+    onDurationChange?.(duration);
   };
 
   const removeTimeSlot = (id: string) => {
@@ -297,7 +302,7 @@ export default function TimeRangePicker({
               type="button"
               onClick={addOrUpdateSlot}
               disabled={!newStartTime || !newEndTime}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 mt-4 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {editingSlotId ? "Update Slot" : "Add Slot"}
             </button>

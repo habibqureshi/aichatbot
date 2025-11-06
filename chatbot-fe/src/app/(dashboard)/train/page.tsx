@@ -29,16 +29,16 @@ export default function TrainPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Train Knowledge Base</h1>
-        <p className="text-gray-600 mt-1">
+    <div className="p-2 sm:p-4 lg:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Train Knowledge Base</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">
           Upload documents to train the AI system with healthcare knowledge
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={onSubmit} className="space-y-6">
+      <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
+        <form onSubmit={onSubmit} className="space-y-4 sm:space-y-6">
           <div>
             <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-2">
               Select Document

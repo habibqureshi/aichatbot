@@ -102,15 +102,17 @@ export default function DoctorsPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Upload Doctor Data</h1>
-        <p className="text-gray-600 mt-1">Add new doctor information to the system</p>
+    <div className="p-2 sm:p-4 lg:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Upload Doctor Data</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">
+          Add new doctor information to the system
+        </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                 Doctor Name

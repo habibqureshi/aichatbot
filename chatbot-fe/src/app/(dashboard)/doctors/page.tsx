@@ -12,11 +12,12 @@ interface TimeSlot {
 
 interface DoctorData {
   name: string;
-  experience: string;
+  experience: number;
   timeSlots: TimeSlot[];
   availableDays: string[];
   department: string;
   expertise: string;
+  duration: number;
 }
 
 const DAYS_OF_WEEK = [
@@ -32,11 +33,12 @@ const DAYS_OF_WEEK = [
 export default function DoctorsPage() {
   const [formData, setFormData] = useState<DoctorData>({
     name: "",
-    experience: "",
+    experience: 0,
     timeSlots: [],
     availableDays: [],
     department: "",
     expertise: "",
+    duration: 30, // Default to 30 minutes
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -44,8 +46,20 @@ export default function DoctorsPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    if (type === "number") {
+      // For number inputs, convert empty string to 0, otherwise to number
+      let numValue = value === "" ? 0 : Number(value);
+
+      // Limit experience to reasonable maximum (60 years)
+      if (name === "experience" && numValue > 60) {
+        numValue = 60;
+      }
+
+      setFormData((prev) => ({ ...prev, [name]: numValue }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleDaysChange = (selectedDays: string[]) => {
@@ -54,6 +68,10 @@ export default function DoctorsPage() {
 
   const handleTimeSlotsChange = (timeSlots: TimeSlot[]) => {
     setFormData((prev) => ({ ...prev, timeSlots }));
+  };
+
+  const handleDurationChange = (duration: number) => {
+    setFormData((prev) => ({ ...prev, duration }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,11 +87,12 @@ export default function DoctorsPage() {
       setMessage("Doctor added successfully!");
       setFormData({
         name: "",
-        experience: "",
+        experience: 0,
         timeSlots: [],
         availableDays: [],
         department: "",
         expertise: "",
+        duration: 30,
       });
     } catch {
       setMessage("Failed to add doctor. Please try again.");
@@ -110,24 +129,28 @@ export default function DoctorsPage() {
 
             <div>
               <label htmlFor="experience" className="block text-sm font-medium text-gray-700">
-                Experience
+                Experience (Years)
               </label>
               <input
-                type="text"
+                type="number"
                 id="experience"
                 name="experience"
-                value={formData.experience}
+                value={formData.experience || ""}
                 onChange={handleChange}
                 required
+                min="0"
+                max="60"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., 5 years"
+                placeholder="Years of experience (0-60)"
               />
+              <p className="mt-1 text-xs text-gray-500">Enter years of medical practice experience</p>
             </div>
 
             <div className="md:col-span-2">
               <TimeRangePicker
                 timeSlots={formData.timeSlots}
                 onChange={handleTimeSlotsChange}
+                onDurationChange={handleDurationChange}
                 label="Time Slots"
               />
             </div>

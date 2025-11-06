@@ -187,7 +187,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="bg-[#ffffff] overflow-hidden h-[calc(48px*9)] flex flex-col">
+      <div className="bg-[#ffffff] overflow-hidden h-[calc(50vh)] flex flex-col">
         <Table className="h-full">
           <TableHeader className="bg-gray-100 rounded-none">
             {table.getHeaderGroups().map((headerGroup) => (

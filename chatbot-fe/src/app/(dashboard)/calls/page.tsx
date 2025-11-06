@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/common/DataTable";
+// import { useState } from "react";
 
 interface CallData {
   id: string;
@@ -145,6 +146,7 @@ const columns: ColumnDef<CallData>[] = [
 ];
 
 export default function CallsPage() {
+  // const [tableBodyData, setTableBodyData] = useState([]);
   return (
     <div className="p-6">
       <div className="mb-6">

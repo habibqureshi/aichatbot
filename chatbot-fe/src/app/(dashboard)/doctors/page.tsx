@@ -17,7 +17,6 @@ interface DoctorData {
   experience: number;
   timeSlots: TimeSlot[];
   department: string;
-  expertise: string;
   duration: number;
 }
 
@@ -37,7 +36,6 @@ export default function DoctorsPage() {
     experience: 0,
     timeSlots: [],
     department: "",
-    expertise: "",
     duration: 30, // Default to 30 minutes
   });
   const [selectedDayForSlot, setSelectedDayForSlot] = useState<string>("");
@@ -120,7 +118,6 @@ export default function DoctorsPage() {
       //   experience: 0,
       //   timeSlots: [],
       //   department: "",
-      //   expertise: "",
       //   duration: 30,
       // });
       setSelectedDayForSlot("");
@@ -137,11 +134,11 @@ export default function DoctorsPage() {
         <h1 className="text-2xl font-bold">Add Doctor Profile</h1>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
-          {/* Step 1: Doctor Information */}
-          <div className="space-y-4">
-            <div className="border-b border-gray-200 pb-2">
+      <div className="bg-transparent  p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Doctor Information Card */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="border-b border-gray-200 pb-2 mb-4">
               <h3 className="text-lg font-medium text-gray-900">Doctor Information</h3>
               <p className="text-sm text-gray-600">Enter the doctor&apos;s basic details</p>
             </div>
@@ -184,9 +181,9 @@ export default function DoctorsPage() {
             </div>
           </div>
 
-          {/* Step 2: Duration Selection */}
-          <div className="space-y-4">
-            <div className="border-b border-gray-200 pb-2">
+          {/* Duration Card */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="border-b border-gray-200 pb-2 mb-4">
               <h3 className="text-lg font-medium text-gray-900">Appointment Duration</h3>
               <p className="text-sm text-gray-600">Select the duration for each appointment</p>
             </div>
@@ -202,7 +199,7 @@ export default function DoctorsPage() {
                     disabled={formData.timeSlots.length > 0}
                     className={`px-4 py-3 text-sm font-medium rounded-md border transition-colors ${
                       formData.duration === duration
-                        ? "bg-blue-600 text-white border-blue-600"
+                        ? "bg-blue-500 text-white border-blue-500"
                         : formData.timeSlots.length > 0
                         ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
                         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
@@ -230,15 +227,15 @@ export default function DoctorsPage() {
             </div>
           </div>
 
-          {/* Step 3: Time Slots */}
-          <div className="space-y-4">
-            <div className="border-b border-gray-200 pb-2">
+          {/* Time Slots Card */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="border-b border-gray-200 pb-2 mb-4">
               <h3 className="text-lg font-medium text-gray-900">Time Slots</h3>
               <p className="text-sm text-gray-600">Set the available time slots for appointments</p>
             </div>
 
             <div className="space-y-4">
-              <div className="max-w-md">
+              <div className="max-w-lg">
                 <SingleSelect
                   label="Select Day for Slot Creation"
                   options={DAYS_OF_WEEK}
@@ -311,9 +308,9 @@ export default function DoctorsPage() {
             )}
           </div>
 
-          {/* Additional Information */}
-          <div className="space-y-4">
-            <div className="border-b border-gray-200 pb-2">
+          {/* Additional Information Card */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="border-b border-gray-200 pb-2 mb-4">
               <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
               <p className="text-sm text-gray-600">Department and specialization details</p>
             </div>
@@ -331,7 +328,7 @@ export default function DoctorsPage() {
                   required
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">Select Department</option>
+                  <option value="">Select Expertise</option>
                   <option value="Cardiology">Cardiology</option>
                   <option value="Neurology">Neurology</option>
                   <option value="Orthopedics">Orthopedics</option>
@@ -340,31 +337,14 @@ export default function DoctorsPage() {
                   <option value="General Medicine">General Medicine</option>
                 </select>
               </div>
-
-              <div>
-                <label htmlFor="expertise" className="block text-sm font-medium text-gray-700">
-                  Expertise (Specialization)
-                </label>
-                <input
-                  type="text"
-                  id="expertise"
-                  name="expertise"
-                  value={formData.expertise}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Heart Surgery, Brain Disorders"
-                />
-              </div>
             </div>
           </div>
 
           <div className="flex justify-end pt-6 border-t border-gray-200">
-            
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-base font-medium rounded-lg hover:from-blue-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {isSubmitting ? (
                 <>
@@ -387,7 +367,7 @@ export default function DoctorsPage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Adding Doctor...
+                  Saving Changes...
                 </>
               ) : (
                 <>
@@ -396,10 +376,10 @@ export default function DoctorsPage() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  Add Doctor
+                  Save Changes
                 </>
               )}
             </button>

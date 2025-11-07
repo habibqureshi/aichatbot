@@ -3,8 +3,10 @@ import { toast } from "react-toastify";
 
 interface TimeSlot {
   id: string;
+  day: string;
   startTime: string; // in HH:MM 24h
   endTime: string; // in HH:MM 24h
+  date?: string;
 }
 
 interface TimeRangePickerProps {
@@ -12,6 +14,8 @@ interface TimeRangePickerProps {
   onChange: (timeSlots: TimeSlot[]) => void;
   label?: string;
   onDurationChange?: (duration: number) => void;
+  hideDuration?: boolean;
+  selectedDay?: string;
 }
 
 const DURATION_OPTIONS = [
@@ -38,6 +42,8 @@ export default function TimeRangePicker({
   onChange,
   label = "Time Slots",
   onDurationChange,
+  hideDuration = false,
+  selectedDay = "",
 }: TimeRangePickerProps) {
   const [newStartTime, setNewStartTime] = useState("");
   const [newEndTime, setNewEndTime] = useState("");
@@ -101,6 +107,7 @@ export default function TimeRangePicker({
     } else {
       const newSlot: TimeSlot = {
         id: Date.now().toString(),
+        day: selectedDay,
         startTime: newStartTime,
         endTime: newEndTime,
       };
@@ -155,45 +162,53 @@ export default function TimeRangePicker({
 
       <div className="mb-4 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
         {/* Duration Selector */}
-        <div className="mb-4">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Appointment Duration</label>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsDurationOpen((v) => !v)}
-              className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
-            >
-              <span className="text-gray-900">
-                {DURATION_OPTIONS.find((d) => d.value === selectedDuration)?.label || "Select duration"}
-              </span>
-              <svg
-                className={`h-4 w-4 text-gray-400 transform transition-transform ${
-                  isDurationOpen ? "rotate-180" : ""
-                }`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+        {!hideDuration && (
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Appointment Duration</label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDurationOpen((v) => !v)}
+                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+                <span className="text-gray-900">
+                  {DURATION_OPTIONS.find((d) => d.value === selectedDuration)?.label ||
+                    "Select duration"}
+                </span>
+                <svg
+                  className={`h-4 w-4 text-gray-400 transform transition-transform ${
+                    isDurationOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
 
-            {isDurationOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5">
-                {DURATION_OPTIONS.map((duration) => (
-                  <button
-                    key={duration.value}
-                    type="button"
-                    onClick={() => handleDurationSelect(duration.value)}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                  >
-                    {duration.label}
-                  </button>
-                ))}
-              </div>
-            )}
+              {isDurationOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5">
+                  {DURATION_OPTIONS.map((duration) => (
+                    <button
+                      key={duration.value}
+                      type="button"
+                      onClick={() => handleDurationSelect(duration.value)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                    >
+                      {duration.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           {/* Start */}

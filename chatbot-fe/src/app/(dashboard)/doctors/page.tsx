@@ -1,20 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import MultiSelect from "@/components/common/MultiSelect";
+import SingleSelect from "@/components/common/SingleSelect";
 import TimeRangePicker from "@/components/common/TimeRangePicker";
 
 interface TimeSlot {
   id: string;
+  day: string;
   startTime: string;
   endTime: string;
+  date?: string; // Optional date field
 }
 
 interface DoctorData {
   name: string;
   experience: number;
   timeSlots: TimeSlot[];
-  availableDays: string[];
   department: string;
   expertise: string;
   duration: number;
@@ -35,11 +36,11 @@ export default function DoctorsPage() {
     name: "",
     experience: 0,
     timeSlots: [],
-    availableDays: [],
     department: "",
     expertise: "",
     duration: 30, // Default to 30 minutes
   });
+  const [selectedDayForSlot, setSelectedDayForSlot] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -62,15 +63,32 @@ export default function DoctorsPage() {
     }
   };
 
-  const handleDaysChange = (selectedDays: string[]) => {
-    setFormData((prev) => ({ ...prev, availableDays: selectedDays }));
-  };
-
   const handleTimeSlotsChange = (timeSlots: TimeSlot[]) => {
     setFormData((prev) => ({ ...prev, timeSlots }));
   };
 
+  const formatTimeDisplay = (time: string) => {
+    if (!time) return "";
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  const removeTimeSlot = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      timeSlots: prev.timeSlots.filter((slot) => slot.id !== id),
+    }));
+  };
+
   const handleDurationChange = (duration: number) => {
+    // Prevent changing duration if slots already exist
+    if (formData.timeSlots.length > 0) {
+      alert("Cannot change duration when time slots exist. Please clear all slots first.");
+      return;
+    }
     setFormData((prev) => ({ ...prev, duration }));
   };
 
@@ -79,21 +97,33 @@ export default function DoctorsPage() {
     setIsSubmitting(true);
     setMessage(null);
 
+    // Prepare data for backend
+    const doctorData = {
+      ...formData,
+      timeSlots: formData.timeSlots.map((slot) => ({
+        day: slot.day,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        duration: formData.duration,
+      })),
+    };
+
     // Simulate API call
     try {
-      console.log("form data", formData);
+      console.log("Doctor data with slots:", doctorData);
       // Here you would make an API call to save the doctor data
+      // Example: await api.post('/doctors', doctorData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setMessage("Doctor added successfully!");
       setFormData({
         name: "",
         experience: 0,
         timeSlots: [],
-        availableDays: [],
         department: "",
         expertise: "",
         duration: 30,
       });
+      setSelectedDayForSlot("");
     } catch {
       setMessage("Failed to add doctor. Please try again.");
     } finally {
@@ -111,98 +141,224 @@ export default function DoctorsPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Doctor Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter doctor's full name"
-              />
+        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+          {/* Step 1: Doctor Information */}
+          <div className="space-y-4">
+            <div className="border-b border-gray-200 pb-2">
+              <h3 className="text-lg font-medium text-gray-900">Doctor Information</h3>
+              <p className="text-sm text-gray-600">Enter the doctor&apos;s basic details</p>
             </div>
 
-            <div>
-              <label htmlFor="experience" className="block text-sm font-medium text-gray-700">
-                Experience (Years)
-              </label>
-              <input
-                type="number"
-                id="experience"
-                name="experience"
-                value={formData.experience || ""}
-                onChange={handleChange}
-                required
-                min="0"
-                max="60"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Years of experience (0-60)"
-              />
-              <p className="mt-1 text-xs text-gray-500">Enter years of medical practice experience</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Doctor Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter doctor's full name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="experience" className="block text-sm font-medium text-gray-700">
+                  Experience (Years)
+                </label>
+                <input
+                  type="number"
+                  id="experience"
+                  name="experience"
+                  value={formData.experience || ""}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  max="60"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Years of experience (0-60)"
+                />
+                <p className="mt-1 text-xs text-gray-500">Enter years of medical practice experience</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 2: Duration Selection */}
+          <div className="space-y-4">
+            <div className="border-b border-gray-200 pb-2">
+              <h3 className="text-lg font-medium text-gray-900">Appointment Duration</h3>
+              <p className="text-sm text-gray-600">Select the duration for each appointment</p>
             </div>
 
-            <div className="md:col-span-2">
-              <TimeRangePicker
-                timeSlots={formData.timeSlots}
-                onChange={handleTimeSlotsChange}
-                onDurationChange={handleDurationChange}
-                label="Time Slots"
-              />
+            <div className="max-w-md">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Duration</label>
+              <div className="grid grid-cols-3 gap-3">
+                {[15, 30, 60].map((duration) => (
+                  <button
+                    key={duration}
+                    type="button"
+                    onClick={() => handleDurationChange(duration)}
+                    disabled={formData.timeSlots.length > 0}
+                    className={`px-4 py-3 text-sm font-medium rounded-md border transition-colors ${
+                      formData.duration === duration
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : formData.timeSlots.length > 0
+                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {duration} minutes
+                  </button>
+                ))}
+              </div>
+              {formData.timeSlots.length > 0 && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    Duration cannot be changed while slots exist.{" "}
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, timeSlots: [] }))}
+                      className="text-yellow-900 underline hover:text-yellow-700 font-medium"
+                    >
+                      Clear all slots
+                    </button>{" "}
+                    to change duration.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Step 3: Time Slots */}
+          <div className="space-y-4">
+            <div className="border-b border-gray-200 pb-2">
+              <h3 className="text-lg font-medium text-gray-900">Time Slots</h3>
+              <p className="text-sm text-gray-600">Set the available time slots for appointments</p>
             </div>
 
-            <div>
-              <MultiSelect
-                label="Available Days"
-                options={DAYS_OF_WEEK}
-                selectedValues={formData.availableDays}
-                onChange={handleDaysChange}
-                placeholder="Select available days"
-              />
+            <div className="space-y-4">
+              <div className="max-w-md">
+                <SingleSelect
+                  label="Select Day for Slot Creation"
+                  options={DAYS_OF_WEEK}
+                  selectedValue={selectedDayForSlot}
+                  onChange={setSelectedDayForSlot}
+                  placeholder="Choose a day to create slots"
+                />
+              </div>
+
+              {selectedDayForSlot && (
+                <TimeRangePicker
+                  timeSlots={formData.timeSlots}
+                  onChange={handleTimeSlotsChange}
+                  onDurationChange={handleDurationChange}
+                  label=""
+                  hideDuration={true}
+                  selectedDay={selectedDayForSlot}
+                />
+              )}
             </div>
 
-            <div>
-              <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-                Department
-              </label>
-              <select
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Select Department</option>
-                <option value="Cardiology">Cardiology</option>
-                <option value="Neurology">Neurology</option>
-                <option value="Orthopedics">Orthopedics</option>
-                <option value="Pediatrics">Pediatrics</option>
-                <option value="Dermatology">Dermatology</option>
-                <option value="General Medicine">General Medicine</option>
-              </select>
+            {/* Display created slots in cards */}
+            {formData.timeSlots.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-md font-medium text-gray-900 mb-4">Created Time Slots</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {formData.timeSlots.map((slot) => {
+                    const dayLabel = DAYS_OF_WEEK.find((d) => d.value === slot.day)?.label || slot.day;
+                    return (
+                      <div
+                        key={slot.id}
+                        className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h5 className="font-medium text-gray-900">{dayLabel}</h5>
+                            <p className="text-sm text-gray-600">
+                              {formatTimeDisplay(slot.startTime)} - {formatTimeDisplay(slot.endTime)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeTimeSlot(slot.id)}
+                            className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full"
+                            aria-label={`Remove slot for ${dayLabel}`}
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Duration: {formData.duration} minutes
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Additional Information */}
+          <div className="space-y-4">
+            <div className="border-b border-gray-200 pb-2">
+              <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
+              <p className="text-sm text-gray-600">Department and specialization details</p>
             </div>
 
-            <div>
-              <label htmlFor="expertise" className="block text-sm font-medium text-gray-700">
-                Expertise (Specialization)
-              </label>
-              <input
-                type="text"
-                id="expertise"
-                name="expertise"
-                value={formData.expertise}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., Heart Surgery, Brain Disorders"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div>
+                <label htmlFor="department" className="block text-sm font-medium text-gray-700">
+                  Department
+                </label>
+                <select
+                  id="department"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select Department</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="Neurology">Neurology</option>
+                  <option value="Orthopedics">Orthopedics</option>
+                  <option value="Pediatrics">Pediatrics</option>
+                  <option value="Dermatology">Dermatology</option>
+                  <option value="General Medicine">General Medicine</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="expertise" className="block text-sm font-medium text-gray-700">
+                  Expertise (Specialization)
+                </label>
+                <input
+                  type="text"
+                  id="expertise"
+                  name="expertise"
+                  value={formData.expertise}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Heart Surgery, Brain Disorders"
+                />
+              </div>
             </div>
           </div>
 

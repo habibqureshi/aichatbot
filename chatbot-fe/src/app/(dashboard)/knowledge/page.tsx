@@ -1,20 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getKnowledgeList, updateActiveKnowledge } from "@/app/actions/knowledge";
+import { getKnowledgeList, updateActiveKnowledge, createKnowledge } from "@/app/actions/knowledge";
 import { Knowledge } from "@/app/types/knowledge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 
-export default function KnowledgePage() {
-  const dummyKnowledgeList: Knowledge[] = [
-    {
-      id: "general-healthcare",
-      name: "General Healthcare Knowledge",
-      description:
-        "Basic healthcare procedures, appointment scheduling, and general medical information",
-      content: `Healthcare Knowledge Base:
+const dummyKnowledgeList: Knowledge[] = [
+  {
+    id: "general-healthcare",
+    name: "General Healthcare Knowledge",
+    description: "Basic healthcare procedures, appointment scheduling, and general medical information",
+    content: `Healthcare Knowledge Base:
 
 APPOINTMENT SCHEDULING:
 - Schedule appointments for patients
@@ -37,15 +35,15 @@ COMMUNICATION:
 - Maintain professional and empathetic tone
 - Confirm all information
 - Provide clear next steps`,
-      isActive: true,
-      createdAt: "2024-01-15T10:00:00Z",
-      updatedAt: "2024-01-15T10:00:00Z",
-    },
-    {
-      id: "cardiology-specialist",
-      name: "Cardiology Specialist Knowledge",
-      description: "Specialized knowledge for heart-related conditions and cardiology appointments",
-      content: `Cardiology Specialist Knowledge:
+    isActive: true,
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z",
+  },
+  {
+    id: "cardiology-specialist",
+    name: "Cardiology Specialist Knowledge",
+    description: "Specialized knowledge for heart-related conditions and cardiology appointments",
+    content: `Cardiology Specialist Knowledge:
 
 HEART CONDITIONS:
 - Coronary artery disease
@@ -70,15 +68,15 @@ EMERGENCY SYMPTOMS:
 - Shortness of breath
 - Irregular heartbeat
 - Dizziness/fainting`,
-      isActive: false,
-      createdAt: "2024-01-20T14:30:00Z",
-      updatedAt: "2024-01-25T09:15:00Z",
-    },
-    {
-      id: "pediatric-care",
-      name: "Pediatric Care Knowledge",
-      description: "Child healthcare, vaccinations, and pediatric appointment management",
-      content: `Pediatric Care Knowledge:
+    isActive: false,
+    createdAt: "2024-01-20T14:30:00Z",
+    updatedAt: "2024-01-25T09:15:00Z",
+  },
+  {
+    id: "pediatric-care",
+    name: "Pediatric Care Knowledge",
+    description: "Child healthcare, vaccinations, and pediatric appointment management",
+    content: `Pediatric Care Knowledge:
 
 CHILD HEALTHCARE:
 - Well-child visits
@@ -103,15 +101,15 @@ SPECIALIZED CARE:
 - Adolescent health
 - Chronic conditions
 - Developmental disorders`,
-      isActive: false,
-      createdAt: "2024-02-01T11:45:00Z",
-      updatedAt: "2024-02-10T16:20:00Z",
-    },
-    {
-      id: "emergency-response",
-      name: "Emergency Response Knowledge",
-      description: "Emergency medical situations and urgent care coordination",
-      content: `Emergency Response Knowledge:
+    isActive: false,
+    createdAt: "2024-02-01T11:45:00Z",
+    updatedAt: "2024-02-10T16:20:00Z",
+  },
+  {
+    id: "emergency-response",
+    name: "Emergency Response Knowledge",
+    description: "Emergency medical situations and urgent care coordination",
+    content: `Emergency Response Knowledge:
 
 URGENT SYMPTOMS:
 - Severe chest pain
@@ -136,12 +134,12 @@ COORDINATION:
 - Prepare medical records
 - Arrange transportation
 - Follow up with patient/family`,
-      isActive: false,
-      createdAt: "2024-02-15T08:00:00Z",
-      updatedAt: "2024-02-20T13:30:00Z",
-    },
-  ];
-
+    isActive: false,
+    createdAt: "2024-02-15T08:00:00Z",
+    updatedAt: "2024-02-20T13:30:00Z",
+  },
+];
+export default function KnowledgePage() {
   const [knowledgeList, setKnowledgeList] = useState<Knowledge[]>(dummyKnowledgeList);
   const [activeKnowledgeId, setActiveKnowledgeId] = useState<string>(
     dummyKnowledgeList.find((k) => k.isActive)?.id || ""
@@ -151,6 +149,10 @@ COORDINATION:
   );
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newKnowledgeName, setNewKnowledgeName] = useState("");
+  const [newKnowledgeFile, setNewKnowledgeFile] = useState<File | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const fetchKnowledge = useCallback(async () => {
     try {
@@ -161,16 +163,15 @@ COORDINATION:
       setSelectedKnowledgeId(response.activeKnowledgeId);
     } catch (error) {
       console.error("Error fetching knowledge:", error);
-      // Keep dummy data if API fails
       toast.error("Failed to load knowledge base from server, using local data");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchKnowledge();
-  }, [fetchKnowledge]);
+  // useEffect(() => {
+  //   fetchKnowledge();
+  // }, [fetchKnowledge]);
 
   const handleUpdateActiveKnowledge = async () => {
     if (selectedKnowledgeId === activeKnowledgeId) {
@@ -188,6 +189,81 @@ COORDINATION:
       toast.error("Failed to update active knowledge");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleCreateKnowledge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKnowledgeName.trim()) {
+      toast.error("Please enter a knowledge name");
+      return;
+    }
+    if (!newKnowledgeFile) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+
+    try {
+      setIsCreating(true);
+
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("name", newKnowledgeName.trim());
+      formData.append("file", newKnowledgeFile);
+
+      // Try API call first
+      try {
+        const newKnowledge = await createKnowledge(formData);
+
+        // Update the knowledge list
+        setKnowledgeList((prev) => {
+          // Set all existing knowledge to inactive
+          const updatedList = prev.map((k) => ({ ...k, isActive: false }));
+          // Add new knowledge as active
+          return [...updatedList, newKnowledge];
+        });
+
+        setActiveKnowledgeId(newKnowledge.id);
+        setSelectedKnowledgeId(newKnowledge.id);
+
+        toast.success("New knowledge created and set as active!");
+      } catch (apiError) {
+        // Fallback to local simulation if API fails
+        console.warn("API call failed, using local simulation:", apiError);
+
+        const newKnowledge: Knowledge = {
+          id: `knowledge-${Date.now()}`,
+          name: newKnowledgeName.trim(),
+          description: `Knowledge base created from file: ${newKnowledgeFile.name}`,
+          content: `File uploaded: ${newKnowledgeFile.name}\nSize: ${newKnowledgeFile.size} bytes\nType: ${newKnowledgeFile.type}`,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Update the knowledge list
+        setKnowledgeList((prev) => {
+          // Set all existing knowledge to inactive
+          const updatedList = prev.map((k) => ({ ...k, isActive: false }));
+          // Add new knowledge as active
+          return [...updatedList, newKnowledge];
+        });
+
+        setActiveKnowledgeId(newKnowledge.id);
+        setSelectedKnowledgeId(newKnowledge.id);
+
+        toast.success("New knowledge created locally and set as active!");
+      }
+
+      // Reset form
+      setNewKnowledgeName("");
+      setNewKnowledgeFile(null);
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error("Error creating knowledge:", error);
+      toast.error("Failed to create new knowledge");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -216,10 +292,20 @@ COORDINATION:
   return (
     <div className="p-2 sm:p-4 lg:p-6">
       <div className="mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Current Knowledge</h1>
-        <p className="text-sm sm:text-base text-gray-600 mt-1">
-          View and manage the system&apos;s current knowledge base for AI agent instructions
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Current Knowledge</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
+              View and manage the system&apos;s current knowledge base for AI agent instructions
+            </p>
+          </div>
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            Create New Knowledge
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -351,6 +437,103 @@ COORDINATION:
           </div>
         </div>
       </div>
+
+      {/* Create Knowledge Modal */}
+      {isCreateModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setIsCreateModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Create New Knowledge</h3>
+                <button
+                  onClick={() => setIsCreateModalOpen(false)}
+                  style={{ cursor: "pointer" }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateKnowledge} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="knowledge-name"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Knowledge Name
+                  </label>
+                  <input
+                    type="text"
+                    id="knowledge-name"
+                    value={newKnowledgeName}
+                    onChange={(e) => setNewKnowledgeName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter knowledge base name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="knowledge-file"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Upload File
+                  </label>
+                  <input
+                    type="file"
+                    id="knowledge-file"
+                    accept=".csv,.txt,.pdf,.doc,.docx,.json,.xml"
+                    onChange={(e) => setNewKnowledgeFile(e.target.files?.[0] || null)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Supported formats: CSV, TXT, PDF, DOC, DOCX, JSON, XML
+                  </p>
+                  {newKnowledgeFile && (
+                    <p className="text-sm text-green-600 mt-1">
+                      Selected: {newKnowledgeFile.name} ({(newKnowledgeFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    disabled={isCreating}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isCreating || !newKnowledgeName.trim() || !newKnowledgeFile}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    style={{ cursor: "pointer" }}
+                  >
+                    {isCreating ? "Creating..." : "Create Knowledge"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

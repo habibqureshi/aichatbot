@@ -30,7 +30,7 @@ export default function ChatInterface({  }: ChatInterfaceProps) {
       startTransition(() => {
         setMessages(prev => {
           return prev.map(msg => {
-            let temp = msg.id === messageIdRef.current && msg.role === "assistant"
+            const temp = msg.id === messageIdRef.current && msg.role === "assistant"
               ? { ...msg, content: bufferRef.current }
               : msg
             return temp
@@ -73,7 +73,7 @@ export default function ChatInterface({  }: ChatInterfaceProps) {
       }, 100);
       const eventSource = new EventSource(url);
       let conversationId;
-      let messageId = uuidv4();
+      const messageId = uuidv4();
       messageIdRef.current = messageId
       eventSource.onmessage = (event) => {
         try {

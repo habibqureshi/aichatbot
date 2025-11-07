@@ -130,7 +130,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="border rounded-lg bg-white">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 gap-1 mb-4 sm:mb-4">
         <div className="flex items-center space-x-2 px-2 py-3 sm:py-4">
           <h2 className="text-lg sm:text-[22px] font-bold tracking-tight">
             <span className="text-black">{firstWord} </span>
@@ -278,8 +278,8 @@ export function DataTable<TData, TValue>({
       </div>
       {/* Pagination */}
       {enablePagination && (
-        <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 space-x-0 sm:space-x-2 py-2 px-4 sm:px-6 border-t">
-          <div className="flex items-center space-x-2">
+        <div className="flex flex-row sm:flex-row items-center justify-between space-y-2 sm:space-y-0 space-x-0 sm:space-x-2 py-2 px-4 sm:px-6 border-t">
+          <div className="flex items-center space-x-1 sm:space-x-2 mt-3 sm:mt-0">
             <p className="text-sm font-medium text-muted-foreground">Rows per page</p>
             <Select
               value={`${currentPageSize}`}
@@ -306,8 +306,8 @@ export function DataTable<TData, TValue>({
             </Select>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 lg:space-x-8">
-            <div className="flex w-full sm:w-[100px] items-center justify-center text-sm font-medium text-muted-foreground">
+          <div className="flex flex-row sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 lg:space-x-8">
+            <div className="flex w-full sm:w-[100px] items-center justify-center text-sm font-medium text-muted-foreground mt-3">
               Page {currentPageIndex + 1} of {totalPages || table.getPageCount()}
             </div>
             <div className="flex items-center space-x-1">

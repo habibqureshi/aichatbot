@@ -189,7 +189,7 @@ export function DataTable<TData, TValue>({
       {/* Table */}
       <div className="bg-[#ffffff] overflow-x-auto h-[calc(50vh)] flex flex-col">
         <div className="min-w-full inline-block align-middle">
-          <Table className="h-full min-w-full">
+          <Table className="h-full min-w-full table-fixed">
             <TableHeader className="bg-gray-100 rounded-none">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="bg-gray-100">
@@ -197,7 +197,7 @@ export function DataTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className="whitespace-nowrap min-w-[120px] sm:min-w-[150px] font-medium text-xs sm:text-sm text-black py-2 sm:py-3 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-3 sm:last:pr-6 border-0"
+                        className="font-medium text-xs sm:text-sm text-black py-2 sm:py-3 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-3 sm:last:pr-6 border-0 min-w-[100px] max-w-[200px]"
                       >
                         {header.isPlaceholder
                           ? null
@@ -225,7 +225,7 @@ export function DataTable<TData, TValue>({
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}
-                        className="whitespace-nowrap font-medium text-xs sm:text-sm text-muted-foreground py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0"
+                        className="font-medium text-xs sm:text-sm text-muted-foreground py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0 min-w-[100px] max-w-[200px]"
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>

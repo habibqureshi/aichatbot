@@ -1,8 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/common/DataTable";
-// import { useState } from "react";
+import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 
 interface CallData {
   id: string;
@@ -104,10 +102,11 @@ const StatusBadge = ({ status }: { status: CallData["status"] }) => {
   );
 };
 
-const columns: ColumnDef<CallData>[] = [
+const columns: ExtendedColumnDef<CallData>[] = [
   {
     accessorKey: "userName",
     header: "User Information",
+    width: "180px",
     cell: ({ row }) => (
       <div>
         <div className="font-medium text-gray-900">{row.original.userName}</div>
@@ -118,30 +117,25 @@ const columns: ColumnDef<CallData>[] = [
   {
     accessorKey: "callDuration",
     header: "Call Duration",
-    cell: ({ row }) => (
-      <div className="font-medium">
-        {row.original.callDuration === "00:00" ? "-" : row.original.callDuration}
-      </div>
-    ),
+    width: "110px",
   },
   {
     accessorKey: "status",
     header: "Status",
+    width: "90px",
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
   {
     accessorKey: "summary",
     header: "Summary",
-    cell: ({ row }) => (
-      <div className="max-w-xs truncate text-sm text-gray-600">{row.original.summary}</div>
-    ),
+    width: "250px",
+    // No custom cell - will use default text rendering with font-medium and text wrapping!
   },
   {
     accessorKey: "callDate",
     header: "Date",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-500">{new Date(row.original.callDate).toLocaleDateString()}</div>
-    ),
+    width: "100px",
+    cell: ({ row }) => <div>{new Date(row.original.callDate).toLocaleDateString()}</div>,
   },
 ];
 
@@ -154,22 +148,20 @@ export default function CallsPage() {
         <p className="text-sm sm:text-base text-gray-600 mt-1">View and manage all call records</p>
       </div>
 
-      <div className="overflow-x-auto">
-        <DataTable
-          columns={columns}
-          data={dummyCallData}
-          title="Call Records"
-          searchKey="userName"
-          searchPlaceholder="Search calls by user name..."
-          enableSorting={true}
-          enableFiltering={true}
-          enableColumnVisibility={true}
-          enablePagination={true}
-          pageSize={5}
-          showSearch={true}
-          showSorting={false}
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={dummyCallData}
+        title="Call Records"
+        searchKey="userName"
+        searchPlaceholder="Search calls by user name..."
+        enableSorting={true}
+        enableFiltering={true}
+        enableColumnVisibility={true}
+        enablePagination={true}
+        pageSize={5}
+        showSearch={true}
+        showSorting={false}
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { API } from "@/app/http/axio";
 import { ENDPOINTS } from "@/app/http/endpoints";
-import { KnowledgeResponse } from "@/app/types/knowledge";
+import { KnowledgeResponse, Knowledge } from "@/app/types/knowledge";
 
 export async function getKnowledgeList(): Promise<KnowledgeResponse> {
   try {
@@ -11,6 +11,20 @@ export async function getKnowledgeList(): Promise<KnowledgeResponse> {
   } catch (error) {
     console.error("Error fetching knowledge list:", error);
     throw new Error("Failed to fetch knowledge list");
+  }
+}
+
+export async function createKnowledge(formData: FormData): Promise<Knowledge> {
+  try {
+    const response = await API.post(ENDPOINTS.KNOWLEDGE.CREATE, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating knowledge:", error);
+    throw new Error("Failed to create knowledge");
   }
 }
 

@@ -37,6 +37,7 @@ export const ENDPOINTS = {
   },
   KNOWLEDGE: {
     LIST: "/api/v1/knowledge",
+    CREATE: "/api/v1/knowledge",
     UPDATE_ACTIVE: "/api/v1/knowledge/active",
   },
 };

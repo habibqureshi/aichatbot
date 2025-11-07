@@ -23,8 +23,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LoadingSpinner } from "./loading-spinner";
 import { TableSkeleton } from "./table-skeleton";
 
+// Extended ColumnDef with width properties
+export type ExtendedColumnDef<TData, TValue = unknown> = ColumnDef<TData, TValue> & {
+  minWidth?: string;
+  maxWidth?: string;
+  width?: string;
+};
+
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+  columns: ExtendedColumnDef<TData, TValue>[];
   data: TData[];
   title?: string;
   searchKey?: string;
@@ -187,17 +194,22 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="bg-[#ffffff] overflow-x-auto h-[calc(50vh)] flex flex-col">
+      <div className="bg-[#ffffff] overflow-x-auto flex flex-col">
         <div className="min-w-full inline-block align-middle">
-          <Table className="h-full min-w-full table-fixed">
+          <Table className="min-w-full table-fixed" style={{ minWidth: "950px" }}>
             <TableHeader className="bg-gray-100 rounded-none">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="bg-gray-100">
                   {headerGroup.headers.map((header) => {
+                    const columnDef = header.column.columnDef as ExtendedColumnDef<TData, TValue>;
+                    const widthStyle = columnDef.width ? { width: columnDef.width } : {};
+                    const minWidthStyle = columnDef.minWidth ? { minWidth: columnDef.minWidth } : {};
+                    const maxWidthStyle = columnDef.maxWidth ? { maxWidth: columnDef.maxWidth } : {};
                     return (
                       <TableHead
                         key={header.id}
-                        className="font-medium text-xs sm:text-sm text-black py-2 sm:py-3 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-3 sm:last:pr-6 border-0 min-w-[100px] max-w-[200px]"
+                        className="font-medium text-xs sm:text-sm text-black py-2 sm:py-3 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-3 sm:last:pr-6 border-0"
+                        style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
                       >
                         {header.isPlaceholder
                           ? null
@@ -208,7 +220,7 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               ))}
             </TableHeader>
-            <TableBody className="overflow-y-auto">
+            <TableBody className="max-h-[calc(50vh)] overflow-y-auto">
               {initialLoading ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="p-4">
@@ -222,14 +234,32 @@ export function DataTable<TData, TValue>({
                     data-state={row.getIsSelected() && "selected"}
                     className="hover:bg-gray-100 border-b"
                   >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className="font-medium text-xs sm:text-sm text-muted-foreground py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0 min-w-[100px] max-w-[200px]"
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
+                    {row.getVisibleCells().map((cell) => {
+                      const columnDef = cell.column.columnDef as ExtendedColumnDef<TData, TValue>;
+                      const widthStyle = columnDef.width ? { width: columnDef.width } : {};
+                      const minWidthStyle = columnDef.minWidth ? { minWidth: columnDef.minWidth } : {};
+                      const maxWidthStyle = columnDef.maxWidth ? { maxWidth: columnDef.maxWidth } : {};
+
+                      // Check if this is a simple text cell (has accessorKey and no custom cell renderer)
+                      const isSimpleTextCell = "accessorKey" in columnDef && !columnDef.cell;
+
+                      return (
+                        <TableCell
+                          key={cell.id}
+                          className={`text-xs sm:text-sm text-muted-foreground py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0 ${
+                            isSimpleTextCell ? "font-medium break-words whitespace-pre-wrap" : ""
+                          }`}
+                          style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
+                        >
+                          {isSimpleTextCell
+                            ? flexRender(
+                                cell.column.columnDef.cell || (({ getValue }) => getValue()),
+                                cell.getContext()
+                              )
+                            : flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))
               ) : (

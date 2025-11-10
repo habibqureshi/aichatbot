@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { DataTable, ExtendedColumnDef, ActionsMenu } from "@/components/common/DataTable";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getDoctorsList, Doctor } from "@/app/actions/doctors";
+import { getDoctorsList, Doctor, deleteDoctor } from "@/app/actions/doctors";
 import { toast } from "react-toastify";
 
 export default function DoctorsPage() {
@@ -16,6 +17,11 @@ export default function DoctorsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalDoctors, setTotalDoctors] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [doctorToDelete, setDoctorToDelete] = useState<Doctor | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Debounced search value
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -69,6 +75,20 @@ export default function DoctorsPage() {
                 </svg>
               ),
               onClick: () => router.push(`/doctors/manage?id=${row.original.id}`),
+            },
+            {
+              label: "Delete",
+              icon: (
+                <svg className="w-4 h-4" fill="none" stroke="red" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              ),
+              onClick: () => handleDeleteClick(row.original),
             },
           ]}
         />
@@ -124,6 +144,34 @@ export default function DoctorsPage() {
     setSearchQuery(value);
   };
 
+  const handleDeleteClick = (doctor: Doctor) => {
+    setDoctorToDelete(doctor);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!doctorToDelete) return;
+
+    setDeleting(true);
+    try {
+      await deleteDoctor(doctorToDelete.id);
+      toast.success("Doctor deleted successfully");
+      fetchDoctors(currentPage, pageSize, debouncedSearchQuery);
+      setDeleteDialogOpen(false);
+      setDoctorToDelete(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete doctor");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setDoctorToDelete(null);
+  };
+
   return (
     <div className="p-2 sm:p-4 lg:p-6">
       <div className="flex justify-between items-center mb-4 sm:mb-6">
@@ -165,6 +213,18 @@ export default function DoctorsPage() {
         totalPages={totalPages}
         onExternalPageChange={handlePageChange}
         onExternalPageSizeChange={handlePageSizeChange}
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Doctor"
+        description={`Are you sure you want to delete "${doctorToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        loading={deleting}
       />
     </div>
   );

@@ -86,6 +86,15 @@ export async function updateDoctor(
   }
 }
 
+export async function deleteDoctor(doctorId: number): Promise<void> {
+  try {
+    await API.delete(`/api/v1/doctors/${doctorId}`);
+  } catch (error) {
+    console.error("Error deleting doctor:", error);
+    throw new Error("Failed to delete doctor");
+  }
+}
+
 export async function getDoctorsList(
   page: number = 1,
   limit: number = 10,

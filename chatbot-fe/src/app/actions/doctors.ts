@@ -1,6 +1,7 @@
 "use server";
 
-import { API } from "@/app/http/axio";import { ENDPOINTS } from "@/app/http/endpoints";
+import { API } from "@/app/http/axio";
+import { ENDPOINTS } from "@/app/http/endpoints";
 
 export interface Doctor {
   id: number;
@@ -44,6 +45,44 @@ export async function createDoctor(
   } catch (error) {
     console.error("Error creating doctor:", error);
     throw new Error("Failed to create doctor");
+  }
+}
+
+export async function getDoctorById(doctorId: number, user_timezone: string = "UTC"): Promise<Doctor> {
+  try {
+    const response = await API.get(`/api/v1/doctors/${doctorId}?user_timezone=${user_timezone}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching doctor:", error);
+    throw new Error("Failed to fetch doctor");
+  }
+}
+
+export async function updateDoctor(
+  doctorId: number,
+  doctorData: {
+    name: string;
+    specialty_id: number;
+    phone_number: string;
+    availabilities: Array<{
+      start_time: string;
+      end_time: string;
+      day_of_week: string;
+    }>;
+    duration: number;
+  },
+  user_timezone: string = "UTC"
+): Promise<Doctor> {
+  try {
+    const response = await API.put(
+      `/api/v1/doctors/${doctorId}?user_timezone=${user_timezone}`,
+      doctorData
+    );
+    console.log("Update doctor response:", response?.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating doctor:", error);
+    throw new Error("Failed to update doctor");
   }
 }
 

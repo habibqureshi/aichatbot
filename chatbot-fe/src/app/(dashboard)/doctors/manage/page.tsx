@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import SingleSelect from "@/components/common/SingleSelect";
 import TimeRangePicker from "@/components/common/TimeRangePicker";
 import { getSpecialitiesList, Speciality } from "@/app/actions/specialities";
-import { createDoctor } from "@/app/actions/doctors";
+import { createDoctor, updateDoctor, getDoctorById } from "@/app/actions/doctors";
 import { toast } from "react-toastify";
 
 interface TimeSlot {
@@ -40,6 +41,10 @@ const DAYS_OF_WEEK = [
 ];
 
 export default function AddDoctorPage() {
+  const searchParams = useSearchParams();
+  const doctorId = searchParams.get("id");
+  const isEditMode = !!doctorId;
+
   const [formData, setFormData] = useState<DoctorData>({
     name: "",
     specialty_id: 0,
@@ -53,22 +58,40 @@ export default function AddDoctorPage() {
   const [selectedDayForSlot, setSelectedDayForSlot] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch specialities on component mount
+  // Fetch specialities and doctor data on component mount
   useEffect(() => {
-    const fetchSpecialities = async () => {
+    const fetchData = async () => {
       try {
-        const response = await getSpecialitiesList(1, 100, "UTC");
-        setSpecialities(response.data);
+        setLoading(true);
+
+        // Fetch specialities
+        const specialitiesResponse = await getSpecialitiesList(1, 100, "UTC");
+        setSpecialities(specialitiesResponse.data);
+
+        // If editing, fetch doctor data
+        if (isEditMode && doctorId) {
+          const doctorResponse = await getDoctorById(parseInt(doctorId), "UTC");
+
+          // Populate form with doctor data
+          setFormData({
+            name: doctorResponse.name,
+            specialty_id: doctorResponse.specialty.id,
+            phone_number: doctorResponse.phone_number,
+            availabilities: [], // We'll need to fetch these separately if available
+            duration: 30, // Default, might need to fetch from API
+            timeSlots: [], // Will be populated from availabilities
+          });
+        }
       } catch (error) {
-        console.error("Error fetching specialities:", error);
-        toast.error("Failed to load specialities");
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSpecialities();
-  }, []);
+    fetchData();
+  }, [isEditMode, doctorId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -130,24 +153,31 @@ export default function AddDoctorPage() {
       };
       console.log("doctors data", doctorData);
 
-      // Call the create doctor API
-      await createDoctor(doctorData, "UTC");
+      if (isEditMode && doctorId) {
+        // Update existing doctor
+        await updateDoctor(parseInt(doctorId), doctorData, "UTC");
+        toast.success("Doctor updated successfully!");
+      } else {
+        // Create new doctor
+        await createDoctor(doctorData, "UTC");
+        toast.success("Doctor created successfully!");
+      }
 
-      toast.success("Doctor created successfully!");
-
-      // Reset form
-      setFormData({
-        name: "",
-        specialty_id: 0,
-        phone_number: "",
-        availabilities: [],
-        duration: 30,
-        timeSlots: [],
-      });
-      setSelectedDayForSlot("");
+      // Reset form only for create mode
+      if (!isEditMode) {
+        setFormData({
+          name: "",
+          specialty_id: 0,
+          phone_number: "",
+          availabilities: [],
+          duration: 30,
+          timeSlots: [],
+        });
+        setSelectedDayForSlot("");
+      }
     } catch (error) {
-      console.error("Error creating doctor:", error);
-      toast.error("Failed to create doctor");
+      console.error("Error saving doctor:", error);
+      toast.error(`Failed to ${isEditMode ? "update" : "create"} doctor`);
     } finally {
       setIsSubmitting(false);
     }
@@ -166,7 +196,9 @@ export default function AddDoctorPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Add Doctor Profile</h1>
+        <h1 className="text-2xl font-bold">
+          {isEditMode ? "Edit Doctor Profile" : "Add Doctor Profile"}
+        </h1>
       </div>
 
       <div className="bg-transparent p-6">
@@ -396,7 +428,7 @@ export default function AddDoctorPage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Saving Changes...
+                  {isEditMode ? "Updating Doctor..." : "Creating Doctor..."}
                 </>
               ) : (
                 <>
@@ -408,7 +440,7 @@ export default function AddDoctorPage() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  Save Changes
+                  {isEditMode ? "Update Doctor" : "Save Changes"}
                 </>
               )}
             </button>

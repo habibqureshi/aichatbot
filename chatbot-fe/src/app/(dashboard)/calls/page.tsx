@@ -170,6 +170,7 @@ export default function CallsPage() {
       </div>
 
       <DataTable
+        title="Conversations List"
         columns={columns}
         data={conversations}
         searchKey="patient.name"

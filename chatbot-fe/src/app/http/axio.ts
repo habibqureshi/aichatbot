@@ -22,7 +22,7 @@ API.interceptors.request.use(
         }
 
         if (config.baseURL && config.url) {
-            console.log('Request:', {
+            console.log('Request backend:', {
                 url: config.baseURL + config.url,
                 method: config.method,
                 data: config.data,

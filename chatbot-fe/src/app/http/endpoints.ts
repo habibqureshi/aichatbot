@@ -1,7 +1,7 @@
 import { SortCriteria } from "@/app/types/settings";
 
 export const ENDPOINTS = {
-  BASE_URL: "http://127.0.0.1:8001",
+  BASE_URL: "http://192.168.1.16:8001",
   AUTH: {
     LOGIN: "/api/v1/auth/login",
     REGISTER: "/auth/register",
@@ -21,6 +21,24 @@ export const ENDPOINTS = {
   PRODUCTS: "/products",
   CATEGORIES: "/categories",
   BRANDS: "/brands",
+  DOCTORS: {
+    LIST: (
+      page: number = 1,
+      limit: number = 10,
+      user_timezone: string = "UTC",
+      specialty_id?: number
+    ) => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        user_timezone,
+      });
+      if (specialty_id !== undefined) {
+        params.append("specialty_id", specialty_id.toString());
+      }
+      return `/api/v1/doctors/?${params.toString()}`;
+    },
+  },
   SETTINGS: {
     LIST: (
       page: number = 1,

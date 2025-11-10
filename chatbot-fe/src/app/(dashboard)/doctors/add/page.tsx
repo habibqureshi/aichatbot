@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SingleSelect from "@/components/common/SingleSelect";
 import TimeRangePicker from "@/components/common/TimeRangePicker";
+import { getSpecialitiesList, Speciality } from "@/app/actions/specialities";
+import { createDoctor } from "@/app/actions/doctors";
+import { toast } from "react-toastify";
 
 interface TimeSlot {
   id: string;
@@ -14,10 +17,16 @@ interface TimeSlot {
 
 interface DoctorData {
   name: string;
-  experience: number;
-  timeSlots: TimeSlot[];
-  department: string;
+  specialty_id: number;
+  phone_number: string;
+  availabilities: Array<{
+    start_time: string;
+    end_time: string;
+    day_of_week: string;
+  }>;
   duration: number;
+  // Keep timeSlots for UI management
+  timeSlots: TimeSlot[];
 }
 
 const DAYS_OF_WEEK = [
@@ -33,29 +42,40 @@ const DAYS_OF_WEEK = [
 export default function AddDoctorPage() {
   const [formData, setFormData] = useState<DoctorData>({
     name: "",
-    experience: 0,
+    specialty_id: 0,
+    phone_number: "",
+    availabilities: [],
+    duration: 30,
     timeSlots: [],
-    department: "",
-    duration: 30, // Default to 30 minutes
   });
+  const [specialities, setSpecialities] = useState<Speciality[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedDayForSlot, setSelectedDayForSlot] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+
+  // Fetch specialities on component mount
+  useEffect(() => {
+    const fetchSpecialities = async () => {
+      try {
+        const response = await getSpecialitiesList(1, 100, "UTC");
+        setSpecialities(response.data);
+      } catch (error) {
+        console.error("Error fetching specialities:", error);
+        toast.error("Failed to load specialities");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSpecialities();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
     if (type === "number") {
-      // For number inputs, convert empty string to 0, otherwise to number
-      let numValue = value === "" ? 0 : Number(value);
-
-      // Limit experience to reasonable maximum (60 years)
-      if (name === "experience" && numValue > 60) {
-        numValue = 60;
-      }
-
-      setFormData((prev) => ({ ...prev, [name]: numValue }));
+      setFormData((prev) => ({ ...prev, [name]: Number(value) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -82,9 +102,8 @@ export default function AddDoctorPage() {
   };
 
   const handleDurationChange = (duration: number) => {
-    // Prevent changing duration if slots already exist
     if (formData.timeSlots.length > 0) {
-      alert("Cannot change duration when time slots exist. Please clear all slots first.");
+      toast.error("Cannot change duration when time slots exist. Please clear all slots first.");
       return;
     }
     setFormData((prev) => ({ ...prev, duration }));
@@ -93,40 +112,56 @@ export default function AddDoctorPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setMessage(null);
 
-    // Prepare data for backend
-    const doctorData = {
-      ...formData,
-      timeSlots: formData.timeSlots.map((slot) => ({
-        day: slot.day,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        duration: formData.duration,
-      })),
-    };
-
-    // Simulate API call
     try {
-      console.log("Doctor data with slots:", doctorData);
-      // Here you would make an API call to save the doctor data
-      // Example: await api.post('/doctors', doctorData);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setMessage("Doctor added successfully!");
-      // setFormData({
-      //   name: "",
-      //   experience: 0,
-      //   timeSlots: [],
-      //   department: "",
-      //   duration: 30,
-      // });
+      // Convert timeSlots to availabilities format for API
+      const availabilities = formData.timeSlots.map((slot) => ({
+        start_time: `2025-11-10T${slot.startTime}:00Z`,
+        end_time: `2025-11-10T${slot.endTime}:00Z`,
+        day_of_week: slot.day,
+      }));
+
+      const doctorData = {
+        name: formData.name,
+        specialty_id: formData.specialty_id,
+        phone_number: formData.phone_number,
+        availabilities,
+        duration: formData.duration,
+      };
+      console.log("doctors data", doctorData);
+
+      // Call the create doctor API
+      await createDoctor(doctorData, "UTC");
+
+      toast.success("Doctor created successfully!");
+
+      // Reset form
+      setFormData({
+        name: "",
+        specialty_id: 0,
+        phone_number: "",
+        availabilities: [],
+        duration: 30,
+        timeSlots: [],
+      });
       setSelectedDayForSlot("");
-    } catch {
-      setMessage("Failed to add doctor. Please try again.");
+    } catch (error) {
+      console.error("Error creating doctor:", error);
+      toast.error("Failed to create doctor");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -134,7 +169,7 @@ export default function AddDoctorPage() {
         <h1 className="text-2xl font-bold">Add Doctor Profile</h1>
       </div>
 
-      <div className="bg-transparent  p-6">
+      <div className="bg-transparent p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Doctor Information Card */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -161,23 +196,49 @@ export default function AddDoctorPage() {
               </div>
 
               <div>
-                <label htmlFor="experience" className="block text-sm font-medium text-gray-700">
-                  Experience (Years)
+                <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700">
+                  Phone Number
                 </label>
                 <input
-                  type="number"
-                  id="experience"
-                  name="experience"
-                  value={formData.experience || ""}
+                  type="tel"
+                  id="phone_number"
+                  name="phone_number"
+                  value={formData.phone_number}
                   onChange={handleChange}
                   required
-                  min="0"
-                  max="60"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Years of experience (0-60)"
+                  placeholder="Enter phone number"
                 />
-                <p className="mt-1 text-xs text-gray-500">Enter years of medical practice experience</p>
               </div>
+            </div>
+          </div>
+
+          {/* Specialty Selection */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="border-b border-gray-200 pb-2 mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Specialty</h3>
+              <p className="text-sm text-gray-600">Select the doctor&apos;s specialty</p>
+            </div>
+
+            <div className="max-w-md">
+              <label htmlFor="specialty_id" className="block text-sm font-medium text-gray-700">
+                Specialty
+              </label>
+              <select
+                id="specialty_id"
+                name="specialty_id"
+                value={formData.specialty_id}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value={0}>Select Specialty</option>
+                {specialities.map((specialty) => (
+                  <option key={specialty.id} value={specialty.id}>
+                    {specialty.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -308,38 +369,6 @@ export default function AddDoctorPage() {
             )}
           </div>
 
-          {/* Additional Information Card */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="border-b border-gray-200 pb-2 mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
-              <p className="text-sm text-gray-600">Department and specialization details</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-                  Department
-                </label>
-                <select
-                  id="department"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Select Expertise</option>
-                  <option value="Cardiology">Cardiology</option>
-                  <option value="Neurology">Neurology</option>
-                  <option value="Orthopedics">Orthopedics</option>
-                  <option value="Pediatrics">Pediatrics</option>
-                  <option value="Dermatology">Dermatology</option>
-                  <option value="General Medicine">General Medicine</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
           <div className="flex justify-end pt-6 border-t border-gray-200">
             <button
               type="submit"
@@ -385,41 +414,6 @@ export default function AddDoctorPage() {
             </button>
           </div>
         </form>
-
-        {message && (
-          <div
-            className={`mt-6 p-4 rounded-lg border ${
-              message.includes("successfully")
-                ? "bg-green-50 border-green-200 text-green-800"
-                : "bg-red-50 border-red-200 text-red-800"
-            }`}
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                {message.includes("successfully") ? (
-                  <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium">{message}</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

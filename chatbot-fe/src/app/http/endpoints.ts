@@ -95,6 +95,16 @@ export const ENDPOINTS = {
       return `/api/v1/conversation/?${params.toString()}`;
     },
   },
+  SPECIALITIES: {
+    LIST: (page: number = 1, limit: number = 10, user_timezone: string = "UTC") => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        user_timezone,
+      });
+      return `/api/v1/specialities/?${params.toString()}`;
+    },
+  },
   SETTINGS: {
     LIST: (
       page: number = 1,

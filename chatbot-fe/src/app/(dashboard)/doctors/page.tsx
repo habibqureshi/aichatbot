@@ -53,7 +53,7 @@ export default function DoctorsPage() {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
       setCurrentPage(1);
-    }, 500); 
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);

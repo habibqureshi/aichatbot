@@ -12,6 +12,12 @@ export interface Doctor {
   };
   phone_number: string;
   created_at: string;
+  duration: number;
+  availabilities: Array<{
+    start_time: string;
+    end_time: string;
+    day_of_week: string;
+  }>;
 }
 
 export interface DoctorsResponse {

@@ -26,7 +26,8 @@ export const ENDPOINTS = {
       page: number = 1,
       limit: number = 10,
       user_timezone: string = "UTC",
-      specialty_id?: number
+      specialty_id?: number,
+      name?: string
     ) => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -35,6 +36,9 @@ export const ENDPOINTS = {
       });
       if (specialty_id !== undefined) {
         params.append("specialty_id", specialty_id.toString());
+      }
+      if (name && name.trim()) {
+        params.append("name", name.trim());
       }
       return `/api/v1/doctors/?${params.toString()}`;
     },

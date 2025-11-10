@@ -70,7 +70,7 @@ export function DataTable<TData, TValue>({
   pageSize = 10,
   pageSizeOptions = [5, 10, 20, 30, 40, 50],
   showSearch = true,
-  showSorting = true,
+  showSorting = false,
   loading = false,
   initialLoading = false,
   externalSearchValue,
@@ -146,7 +146,7 @@ export function DataTable<TData, TValue>({
           )}
 
           {/* Search Input */}
-          {showSearch && enableFiltering && searchKey && (
+          {showSearch && searchKey && (enableFiltering || onExternalSearchChange) && (
             <div className="relative w-full sm:max-w-sm">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input

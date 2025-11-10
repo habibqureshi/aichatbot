@@ -194,10 +194,10 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="bg-[#ffffff] overflow-x-auto flex flex-col">
-        <div className="min-w-full inline-block align-middle">
+      <div className="bg-[#ffffff] border-t">
+        <div className="overflow-auto" style={{ minHeight: "400px" }}>
           <Table className="min-w-full table-fixed" style={{ minWidth: "950px" }}>
-            <TableHeader className="bg-gray-100 rounded-none">
+            <TableHeader className="sticky top-0 bg-gray-100 rounded-none z-10">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="bg-gray-100">
                   {headerGroup.headers.map((header) => {
@@ -220,7 +220,7 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               ))}
             </TableHeader>
-            <TableBody className="max-h-[calc(50vh)] overflow-y-auto">
+            <TableBody>
               {initialLoading ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="p-4">
@@ -243,6 +243,9 @@ export function DataTable<TData, TValue>({
                       // Check if this is a simple text cell (has accessorKey and no custom cell renderer)
                       const isSimpleTextCell = "accessorKey" in columnDef && !columnDef.cell;
 
+                      // Check if this is an actions column
+                      const isActionsColumn = cell.column.id === "actions";
+
                       return (
                         <TableCell
                           key={cell.id}
@@ -250,6 +253,12 @@ export function DataTable<TData, TValue>({
                             isSimpleTextCell ? "font-medium break-words whitespace-pre-wrap" : ""
                           }`}
                           style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
+                          onClick={(e) => {
+                            // Prevent row selection when clicking on actions column
+                            if (isActionsColumn) {
+                              e.stopPropagation();
+                            }
+                          }}
                         >
                           {isSimpleTextCell
                             ? flexRender(
@@ -266,9 +275,9 @@ export function DataTable<TData, TValue>({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-[calc(48px*5)] text-center font-medium text-[14px] text-muted-foreground border-0"
+                    className="py-12 text-center font-medium text-[14px] text-muted-foreground border-0"
                   >
-                    <div className="flex items-center justify-center h-full">No results found.</div>
+                    <div className="flex items-center justify-center">No results found.</div>
                   </TableCell>
                 </TableRow>
               )}

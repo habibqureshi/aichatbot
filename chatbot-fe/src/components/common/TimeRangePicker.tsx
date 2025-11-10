@@ -65,13 +65,15 @@ export default function TimeRangePicker({
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
-  // Check if a time conflicts with existing slots
+  // Check if a time conflicts with existing slots on the same day
   const isTimeConflicting = (startTime: string, endTime: string, excludeId?: string): boolean => {
     const start = timeToMinutes(startTime);
     const end = timeToMinutes(endTime);
 
     return timeSlots.some((slot) => {
       if (excludeId && slot.id === excludeId) return false;
+      // Only check conflicts for slots on the same day
+      if (slot.day !== selectedDay) return false;
       const slotStart = timeToMinutes(slot.startTime);
       const slotEnd = timeToMinutes(slot.endTime);
       // Check for overlap: not (end <= slotStart || start >= slotEnd)

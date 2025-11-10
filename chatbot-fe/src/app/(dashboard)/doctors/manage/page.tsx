@@ -72,14 +72,28 @@ export default function AddDoctorPage() {
         if (isEditMode && doctorId) {
           const doctorResponse = await getDoctorById(parseInt(doctorId), "UTC");
 
+          // Convert availabilities to timeSlots format
+          const timeSlots: TimeSlot[] = doctorResponse.availabilities.map((availability, index) => {
+            // Extract time from datetime strings (e.g., "09:00:00.000Z" -> "09:00")
+            const startTime = availability.start_time.substring(0, 5);
+            const endTime = availability.end_time.substring(0, 5);
+
+            return {
+              id: `slot-${index}`,
+              day: availability.day_of_week,
+              startTime,
+              endTime,
+            };
+          });
+
           // Populate form with doctor data
           setFormData({
             name: doctorResponse.name,
             specialty_id: doctorResponse.specialty.id,
             phone_number: doctorResponse.phone_number,
-            availabilities: [], // We'll need to fetch these separately if available
-            duration: 30, // Default, might need to fetch from API
-            timeSlots: [], // Will be populated from availabilities
+            availabilities: doctorResponse.availabilities,
+            duration: doctorResponse.duration,
+            timeSlots,
           });
         }
       } catch (error) {
@@ -139,8 +153,8 @@ export default function AddDoctorPage() {
     try {
       // Convert timeSlots to availabilities format for API
       const availabilities = formData.timeSlots.map((slot) => ({
-        start_time: `2025-11-10T${slot.startTime}:00Z`,
-        end_time: `2025-11-10T${slot.endTime}:00Z`,
+        start_time: `${slot.startTime}:00.000Z`,
+        end_time: `${slot.endTime}:00.000Z`,
         day_of_week: slot.day,
       }));
 

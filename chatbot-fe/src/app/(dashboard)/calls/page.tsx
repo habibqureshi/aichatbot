@@ -1,94 +1,12 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
+import { getConversationsList, Conversation } from "@/app/actions/conversations";
+import { toast } from "react-toastify";
 
-interface CallData {
-  id: string;
-  userName: string;
-  userEmail: string;
-  callDuration: string;
-  status: "completed" | "in-progress" | "failed" | "missed";
-  summary: string;
-  callDate: string;
-}
-
-const dummyCallData: CallData[] = [
-  {
-    id: "1",
-    userName: "John Doe",
-    userEmail: "john.doe@example.com",
-    callDuration: "15:32",
-    status: "completed",
-    summary: "Discussed product features and pricing options. Customer interested in premium plan.",
-    callDate: "2025-11-06",
-  },
-  {
-    id: "2",
-    userName: "Jane Smith",
-    userEmail: "jane.smith@example.com",
-    callDuration: "08:45",
-    status: "completed",
-    summary: "Technical support call regarding login issues. Resolved by resetting password.",
-    callDate: "2025-11-06",
-  },
-  {
-    id: "3",
-    userName: "Mike Johnson",
-    userEmail: "mike.johnson@example.com",
-    callDuration: "22:18",
-    status: "in-progress",
-    summary: "Ongoing discussion about enterprise contract terms and conditions.",
-    callDate: "2025-11-06",
-  },
-  {
-    id: "4",
-    userName: "Sarah Wilson",
-    userEmail: "sarah.wilson@example.com",
-    callDuration: "00:00",
-    status: "missed",
-    summary: "Missed call - customer called during off hours.",
-    callDate: "2025-11-05",
-  },
-  {
-    id: "5",
-    userName: "David Brown",
-    userEmail: "david.brown@example.com",
-    callDuration: "12:55",
-    status: "completed",
-    summary: "Billing inquiry resolved. Customer had questions about recent charges.",
-    callDate: "2025-11-05",
-  },
-  {
-    id: "6",
-    userName: "Lisa Davis",
-    userEmail: "lisa.davis@example.com",
-    callDuration: "05:23",
-    status: "failed",
-    summary: "Call failed due to poor connection. Will follow up tomorrow.",
-    callDate: "2025-11-05",
-  },
-  {
-    id: "7",
-    userName: "Robert Miller",
-    userEmail: "robert.miller@example.com",
-    callDuration: "18:42",
-    status: "completed",
-    summary: "Product demo completed successfully. Customer ready to proceed with purchase.",
-    callDate: "2025-11-04",
-  },
-  {
-    id: "8",
-    userName: "Emily Garcia",
-    userEmail: "emily.garcia@example.com",
-    callDuration: "09:17",
-    status: "completed",
-    summary: "Follow-up call regarding previous support ticket. Issue fully resolved.",
-    callDate: "2025-11-04",
-  },
-];
-
-const StatusBadge = ({ status }: { status: CallData["status"] }) => {
-  const statusStyles = {
+const StatusBadge = ({ status }: { status: string }) => {
+  const statusStyles: Record<string, string> = {
     completed: "bg-green-100 text-green-800",
     "in-progress": "bg-blue-100 text-blue-800",
     failed: "bg-red-100 text-red-800",
@@ -96,71 +14,176 @@ const StatusBadge = ({ status }: { status: CallData["status"] }) => {
   };
 
   return (
-    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusStyles[status]}`}>
+    <span
+      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+        statusStyles[status] || "bg-gray-100 text-gray-800"
+      }`}
+    >
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
 };
 
-const columns: ExtendedColumnDef<CallData>[] = [
+const calculateDuration = (startedAt: string, endedAt: string | null): string => {
+  if (!endedAt) return "00:00";
+
+  const start = new Date(startedAt);
+  const end = new Date(endedAt);
+  const diffMs = end.getTime() - start.getTime();
+
+  if (diffMs <= 0) return "00:00";
+
+  const minutes = Math.floor(diffMs / 60000);
+  const seconds = Math.floor((diffMs % 60000) / 1000);
+
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+};
+
+const columns: ExtendedColumnDef<Conversation>[] = [
   {
-    accessorKey: "userName",
-    header: "User Information",
-    width: "180px",
+    accessorKey: "patient.name",
+    header: "Patient Information",
+    width: "200px",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium text-gray-900">{row.original.userName}</div>
-        <div className="text-sm text-gray-500">{row.original.userEmail}</div>
+        <div className="font-medium text-gray-900">{row.original.patient.name}</div>
+        <div className="text-sm text-gray-500">{row.original.patient.phone_number}</div>
       </div>
     ),
   },
   {
-    accessorKey: "callDuration",
+    accessorKey: "started_at",
     header: "Call Duration",
-    width: "110px",
+    width: "120px",
+    cell: ({ row }) => (
+      <div className="text-sm text-gray-600">
+        {calculateDuration(row.original.started_at, row.original.ended_at)}
+      </div>
+    ),
   },
   {
     accessorKey: "status",
     header: "Status",
-    width: "90px",
+    width: "120px",
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
   {
-    accessorKey: "summary",
-    header: "Summary",
-    width: "250px",
-    // No custom cell - will use default text rendering with font-medium and text wrapping!
+    accessorKey: "call_sid",
+    header: "Call SID",
+    width: "180px",
+    cell: ({ row }) => (
+      <div className="text-sm text-gray-600 font-mono">{row.original.call_sid || "N/A"}</div>
+    ),
   },
   {
-    accessorKey: "callDate",
-    header: "Date",
-    width: "100px",
-    cell: ({ row }) => <div>{new Date(row.original.callDate).toLocaleDateString()}</div>,
+    id: "started_at_display",
+    header: "Started At",
+    width: "160px",
+    cell: ({ row }) => (
+      <div className="text-sm text-gray-600">{new Date(row.original.started_at).toLocaleString()}</div>
+    ),
+  },
+  {
+    id: "ended_at_display",
+    header: "Ended At",
+    width: "160px",
+    cell: ({ row }) => (
+      <div className="text-sm text-gray-600">
+        {row.original.ended_at ? new Date(row.original.ended_at).toLocaleString() : "Ongoing"}
+      </div>
+    ),
   },
 ];
 
 export default function CallsPage() {
-  // const [tableBodyData, setTableBodyData] = useState([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalConversations, setTotalConversations] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Debounced search value
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const fetchConversations = useCallback(
+    async (page: number = 1, limit: number = 10, name: string = "") => {
+      try {
+        setLoading(true);
+        const response = await getConversationsList(page, limit, "UTC", undefined, name);
+        console.log("API Response:", response);
+        console.log("Conversations data:", response.data);
+        setConversations(response.data);
+        setTotalPages(response.metadata.total_pages);
+        setTotalConversations(response.metadata.total);
+        setCurrentPage(response.metadata.page);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+        toast.error("Failed to load conversations from server");
+        setConversations([]);
+        setTotalPages(0);
+        setTotalConversations(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    fetchConversations(currentPage, pageSize, debouncedSearchQuery);
+  }, [fetchConversations, currentPage, pageSize, debouncedSearchQuery]);
+
+  const handlePageChange = (pageIndex: number) => {
+    setCurrentPage(pageIndex + 1); // DataTable uses 0-based indexing, API uses 1-based
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when page size changes
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+  };
+
   return (
     <div className="p-2 sm:p-4 lg:p-6">
-      <div className="mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Call History</h1>
-        <p className="text-sm sm:text-base text-gray-600 mt-1">View and manage all call records</p>
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Call History</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
+            Manage conversation records and call history ({totalConversations} total)
+          </p>
+        </div>
       </div>
 
       <DataTable
         columns={columns}
-        data={dummyCallData}
-        title="Call Records"
-        searchKey="userName"
-        searchPlaceholder="Search calls by user name..."
-        enableSorting={true}
-        enableFiltering={true}
-        enableColumnVisibility={true}
-        enablePagination={true}
-        pageSize={5}
+        data={conversations}
+        searchKey="patient.name"
+        searchPlaceholder="Search conversations by patient name..."
         showSearch={true}
-        showSorting={false}
+        loading={loading}
+        initialLoading={loading && conversations.length === 0}
+        externalSearchValue={searchQuery}
+        onExternalSearchChange={handleSearchChange}
+        enablePagination={true}
+        externalPageIndex={currentPage - 1}
+        totalPages={totalPages}
+        onExternalPageChange={handlePageChange}
+        onExternalPageSizeChange={handlePageSizeChange}
       />
     </div>
   );

@@ -43,11 +43,27 @@ export default function DoctorsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalDoctors, setTotalDoctors] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchDoctors = useCallback(async (page: number = 1, limit: number = 10) => {
+  // Debounced search value
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1);
+    }, 500); 
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const fetchDoctors = useCallback(async (page: number = 1, limit: number = 10, name: string = "") => {
     try {
       setLoading(true);
-      const response = await getDoctorsList(page, limit, "UTC");
+      const response = await getDoctorsList(page, limit, "UTC", undefined, name);
+      // console.log("API Response:", response);
+      // console.log("Doctors data:", response.data);
       setDoctors(response.data);
       setTotalPages(response.metadata.total_pages);
       setTotalDoctors(response.metadata.total);
@@ -55,7 +71,6 @@ export default function DoctorsPage() {
     } catch (error) {
       console.error("Error fetching doctors:", error);
       toast.error("Failed to load doctors from server");
-      // Keep empty array on error
       setDoctors([]);
       setTotalPages(0);
       setTotalDoctors(0);
@@ -65,8 +80,8 @@ export default function DoctorsPage() {
   }, []);
 
   useEffect(() => {
-    fetchDoctors(currentPage, pageSize);
-  }, [fetchDoctors, currentPage, pageSize]);
+    fetchDoctors(currentPage, pageSize, debouncedSearchQuery);
+  }, [fetchDoctors, currentPage, pageSize, debouncedSearchQuery]);
 
   const handlePageChange = (pageIndex: number) => {
     setCurrentPage(pageIndex + 1); // DataTable uses 0-based indexing, API uses 1-based
@@ -75,6 +90,10 @@ export default function DoctorsPage() {
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize);
     setCurrentPage(1); // Reset to first page when page size changes
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
   };
 
   return (
@@ -105,19 +124,16 @@ export default function DoctorsPage() {
       <DataTable
         columns={columns}
         data={doctors}
-        title="Doctor Records"
+        title="Doctors List"
         searchKey="name"
         searchPlaceholder="Search doctors by name..."
-        enableSorting={true}
-        enableFiltering={true}
-        enableColumnVisibility={true}
-        enablePagination={true}
-        pageSize={pageSize}
-        pageSizeOptions={[5, 10, 20, 50]}
         showSearch={true}
-        showSorting={false}
         loading={loading}
-        externalPageIndex={currentPage - 1} // Convert to 0-based for DataTable
+        initialLoading={loading && doctors.length === 0}
+        externalSearchValue={searchQuery}
+        onExternalSearchChange={handleSearchChange}
+        enablePagination={true}
+        externalPageIndex={currentPage - 1}
         totalPages={totalPages}
         onExternalPageChange={handlePageChange}
         onExternalPageSizeChange={handlePageSizeChange}

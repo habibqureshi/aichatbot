@@ -28,11 +28,14 @@ export async function getDoctorsList(
   page: number = 1,
   limit: number = 10,
   user_timezone: string = "UTC",
-  specialty_id?: number
+  specialty_id?: number,
+  name?: string
 ): Promise<DoctorsResponse> {
   try {
-    const response = await API.get(ENDPOINTS.DOCTORS.LIST(page, limit, user_timezone, specialty_id));
-    console.log("api responsex", response);
+    const response = await API.get(
+      ENDPOINTS.DOCTORS.LIST(page, limit, user_timezone, specialty_id, name)
+    );
+    console.log("api responsex", response?.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching doctors list:", error);

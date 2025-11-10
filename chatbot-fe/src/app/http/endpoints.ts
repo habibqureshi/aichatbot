@@ -17,7 +17,7 @@ export const ENDPOINTS = {
     UPLOAD_FILE: "/api/v1/rag/upload-file",
   },
   USERS: "/users",
-  ORDERS: "/orders",
+  BOOKINGS: "/bookings",
   PRODUCTS: "/products",
   CATEGORIES: "/categories",
   BRANDS: "/brands",
@@ -41,6 +41,36 @@ export const ENDPOINTS = {
         params.append("name", name.trim());
       }
       return `/api/v1/doctors/?${params.toString()}`;
+    },
+  },
+  APPOINTMENTS: {
+    LIST: (
+      page: number = 1,
+      limit: number = 10,
+      user_timezone: string = "UTC",
+      doctor_id?: number,
+      patient_id?: number,
+      status?: string,
+      name?: string
+    ) => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        user_timezone,
+      });
+      if (doctor_id !== undefined) {
+        params.append("doctor_id", doctor_id.toString());
+      }
+      if (patient_id !== undefined) {
+        params.append("patient_id", patient_id.toString());
+      }
+      if (status && status.trim()) {
+        params.append("status", status.trim());
+      }
+      if (name && name.trim()) {
+        params.append("name", name.trim());
+      }
+      return `/api/v1/appointments/?${params.toString()}`;
     },
   },
   SETTINGS: {

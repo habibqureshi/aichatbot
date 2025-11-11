@@ -51,20 +51,24 @@ export default function SpecialitiesPage() {
       accessorKey: "name",
       header: "Name",
       width: "200px",
-      cell: ({ row }) => <div className="font-medium text-gray-900">{row.original.name}</div>,
+      cell: ({ row }) => <div className="font-medium text-gray-900">{row.original.name || "N/A"}</div>,
     },
     {
       accessorKey: "description",
       header: "Description",
       width: "300px",
-      cell: ({ row }) => <div className="text-sm text-gray-600">{row.original.description}</div>,
+      cell: ({ row }) => (
+        <div className="text-sm text-gray-600">{row.original.description || "N/A"}</div>
+      ),
     },
     {
       accessorKey: "created_at",
       header: "Created At",
       width: "160px",
       cell: ({ row }) => (
-        <div className="text-sm text-gray-600">{new Date(row.original.created_at).toLocaleString()}</div>
+        <div className="text-sm text-gray-600">
+          {row.original.created_at ? new Date(row.original.created_at).toLocaleString() : "N/A"}
+        </div>
       ),
     },
     {

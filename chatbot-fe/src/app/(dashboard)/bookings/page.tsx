@@ -31,8 +31,8 @@ const columns: ExtendedColumnDef<Appointment>[] = [
     width: "200px",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium text-gray-900">{row.original.patient.name}</div>
-        <div className="text-sm text-gray-500">{row.original.patient.phone_number}</div>
+        <div className="font-medium text-gray-900">{row.original.patient?.name || "N/A"}</div>
+        <div className="text-sm text-gray-500">{row.original.patient?.phone_number || "N/A"}</div>
       </div>
     ),
   },
@@ -42,8 +42,8 @@ const columns: ExtendedColumnDef<Appointment>[] = [
     width: "200px",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium text-gray-900">{row.original.doctor.name}</div>
-        <div className="text-sm text-gray-500">{row.original.doctor.specialty.name}</div>
+        <div className="font-medium text-gray-900">{row.original.doctor?.name || "N/A"}</div>
+        <div className="text-sm text-gray-500">{row.original.doctor?.specialty?.name || "N/A"}</div>
       </div>
     ),
   },
@@ -53,7 +53,9 @@ const columns: ExtendedColumnDef<Appointment>[] = [
     width: "180px",
     cell: ({ row }) => (
       <div className="text-sm text-gray-600">
-        {new Date(row.original.appointment_date).toLocaleString()}
+        {row.original.appointment_date
+          ? new Date(row.original.appointment_date).toLocaleString()
+          : "N/A"}
       </div>
     ),
   },
@@ -61,7 +63,7 @@ const columns: ExtendedColumnDef<Appointment>[] = [
     accessorKey: "status",
     header: "Status",
     width: "120px",
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
   },
   {
     accessorKey: "notes",
@@ -77,7 +79,7 @@ const columns: ExtendedColumnDef<Appointment>[] = [
     width: "150px",
     cell: ({ row }) => (
       <div className="text-sm text-gray-500">
-        {new Date(row.original.created_at).toLocaleDateString()}
+        {row.original.created_at ? new Date(row.original.created_at).toLocaleDateString() : "N/A"}
       </div>
     ),
   },

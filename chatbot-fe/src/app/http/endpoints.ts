@@ -104,6 +104,12 @@ export const ENDPOINTS = {
       });
       return `/api/v1/specialities/?${params.toString()}`;
     },
+    GET: (specialityId: number, user_timezone: string = "UTC") =>
+      `/api/v1/specialities/${specialityId}?user_timezone=${user_timezone}`,
+    CREATE: (user_timezone: string = "UTC") => `/api/v1/specialities/?user_timezone=${user_timezone}`,
+    UPDATE: (specialityId: number, user_timezone: string = "UTC") =>
+      `/api/v1/specialities/${specialityId}?user_timezone=${user_timezone}`,
+    DELETE: (specialityId: number) => `/api/v1/specialities/${specialityId}`,
   },
   SETTINGS: {
     LIST: (

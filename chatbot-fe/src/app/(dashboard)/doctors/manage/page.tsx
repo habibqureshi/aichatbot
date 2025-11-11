@@ -7,6 +7,7 @@ import TimeRangePicker from "@/components/common/TimeRangePicker";
 import { getSpecialitiesList, Speciality } from "@/app/actions/specialities";
 import { createDoctor, updateDoctor, getDoctorById } from "@/app/actions/doctors";
 import { toast } from "react-toastify";
+import { AddDoctorSkeleton, SpecialtySkeleton } from "@/components/ui/skeleton-loader";
 
 interface TimeSlot {
   id: string;
@@ -55,7 +56,8 @@ function AddDoctorPageContent() {
     timeSlots: [],
   });
   const [specialities, setSpecialities] = useState<Speciality[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isEditMode); // Only show loading for edit mode
+  const [loadingSpecialities, setLoadingSpecialities] = useState(true); // Separate loading for specialities
   const [selectedDayForSlot, setSelectedDayForSlot] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -72,14 +74,15 @@ function AddDoctorPageContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-
-        // Fetch specialities
+        // Fetch specialities (always needed)
+        setLoadingSpecialities(true);
         const specialitiesResponse = await getSpecialitiesList(1, 100, user_timezone);
         setSpecialities(specialitiesResponse.data);
+        setLoadingSpecialities(false);
 
         // If editing, fetch doctor data
         if (isEditMode && doctorId) {
+          setLoading(true);
           const doctorResponse = await getDoctorById(parseInt(doctorId), user_timezone);
 
           // Convert availabilities to timeSlots format
@@ -105,11 +108,12 @@ function AddDoctorPageContent() {
             duration: doctorResponse.duration,
             timeSlots,
           });
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load data");
-      } finally {
+        setLoadingSpecialities(false);
         setLoading(false);
       }
     };
@@ -208,13 +212,7 @@ function AddDoctorPageContent() {
   };
 
   if (loading) {
-    return (
-      <div className="p-6">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
-      </div>
-    );
+    return <AddDoctorSkeleton />;
   }
 
   return (
@@ -277,24 +275,30 @@ function AddDoctorPageContent() {
             </div>
 
             <div className="max-w-md">
-              <label htmlFor="specialty_id" className="block text-sm font-medium text-gray-700">
-                Specialty
-              </label>
-              <select
-                id="specialty_id"
-                name="specialty_id"
-                value={formData.specialty_id}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value={0}>Select Specialty</option>
-                {specialities.map((specialty) => (
-                  <option key={specialty.id} value={specialty.id}>
-                    {specialty.name}
-                  </option>
-                ))}
-              </select>
+              {loadingSpecialities ? (
+                <SpecialtySkeleton />
+              ) : (
+                <>
+                  <label htmlFor="specialty_id" className="block text-sm font-medium text-gray-700">
+                    Specialty
+                  </label>
+                  <select
+                    id="specialty_id"
+                    name="specialty_id"
+                    value={formData.specialty_id}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value={0}>Select Specialty</option>
+                    {specialities.map((specialty) => (
+                      <option key={specialty.id} value={specialty.id}>
+                        {specialty.name}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
             </div>
           </div>
 

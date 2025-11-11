@@ -46,7 +46,7 @@ function AddDoctorPageContent() {
   const doctorId = searchParams.get("id");
   const isEditMode = !!doctorId;
   const router = useRouter();
-  const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   const [formData, setFormData] = useState<DoctorData>({
     name: "",
     specialty_id: 0,
@@ -72,6 +72,9 @@ function AddDoctorPageContent() {
 
   // Fetch specialities and doctor data on component mount
   useEffect(() => {
+    // Move user_timezone inside useEffect so it's not recalculated on every render
+    const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
     const fetchData = async () => {
       try {
         // Fetch specialities (always needed)
@@ -119,7 +122,8 @@ function AddDoctorPageContent() {
     };
 
     fetchData();
-  }, [isEditMode, doctorId, user_timezone]);
+    // Remove user_timezone from dependencies - it should only run when doctorId changes
+  }, [isEditMode, doctorId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -165,6 +169,8 @@ function AddDoctorPageContent() {
     setIsSubmitting(true);
 
     try {
+      const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
       const availabilities = formData.timeSlots.map((slot) => ({
         start_time: `${slot.startTime}:00.000Z`,
         end_time: `${slot.endTime}:00.000Z`,
@@ -223,7 +229,7 @@ function AddDoctorPageContent() {
         </h1>
       </div>
 
-      <div className="bg-transparent p-6">
+      <div className="bg-transparent py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Doctor Information Card */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">

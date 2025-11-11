@@ -15,8 +15,8 @@ export default function Topbar() {
     fetchSession();
   }, []);
   return (
-    <header className="hidden lg:block bg-white shadow-sm">
-      <div className="h-16 flex items-center justify-between px-4">
+    <header className="sticky top-0 hidden lg:block bg-white shadow-sm">
+      <div className="h-16 flex items-center justify-between px-10">
         <div className="flex items-center">
           <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
         </div>

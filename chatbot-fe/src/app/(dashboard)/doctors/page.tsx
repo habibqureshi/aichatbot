@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 
 export default function DoctorsPage() {
   const router = useRouter();
+  const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -106,26 +107,29 @@ export default function DoctorsPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const fetchDoctors = useCallback(async (page: number = 1, limit: number = 10, name: string = "") => {
-    try {
-      setLoading(true);
-      const response = await getDoctorsList(page, limit, "UTC", undefined, name);
-      // console.log("API Response:", response);
-      // console.log("Doctors data:", response.data);
-      setDoctors(response.data);
-      setTotalPages(response.metadata.total_pages);
-      setTotalDoctors(response.metadata.total);
-      setCurrentPage(response.metadata.page);
-    } catch (error) {
-      console.error("Error fetching doctors:", error);
-      toast.error("Failed to load doctors from server");
-      setDoctors([]);
-      setTotalPages(0);
-      setTotalDoctors(0);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchDoctors = useCallback(
+    async (page: number = 1, limit: number = 10, name: string = "") => {
+      try {
+        setLoading(true);
+        const response = await getDoctorsList(page, limit, user_timezone, undefined, name);
+        // console.log("API Response:", response);
+        // console.log("Doctors data:", response.data);
+        setDoctors(response.data);
+        setTotalPages(response.metadata.total_pages);
+        setTotalDoctors(response.metadata.total);
+        setCurrentPage(response.metadata.page);
+      } catch (error) {
+        console.error("Error fetching doctors:", error);
+        toast.error("Failed to load doctors from server");
+        setDoctors([]);
+        setTotalPages(0);
+        setTotalDoctors(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user_timezone]
+  );
 
   useEffect(() => {
     fetchDoctors(currentPage, pageSize, debouncedSearchQuery);

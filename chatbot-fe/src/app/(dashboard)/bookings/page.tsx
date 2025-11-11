@@ -85,6 +85,7 @@ const columns: ExtendedColumnDef<Appointment>[] = [
 
 export default function BookingsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -112,7 +113,7 @@ export default function BookingsPage() {
         const response = await getAppointmentsList(
           page,
           limit,
-          "UTC",
+          user_timezone,
           undefined,
           undefined,
           undefined,
@@ -134,7 +135,7 @@ export default function BookingsPage() {
         setLoading(false);
       }
     },
-    []
+    [user_timezone]
   );
 
   useEffect(() => {

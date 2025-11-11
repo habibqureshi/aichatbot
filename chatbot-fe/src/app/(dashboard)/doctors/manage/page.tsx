@@ -45,6 +45,7 @@ export default function AddDoctorPage() {
   const doctorId = searchParams.get("id");
   const isEditMode = !!doctorId;
   const router = useRouter();
+  const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [formData, setFormData] = useState<DoctorData>({
     name: "",
     specialty_id: 0,
@@ -74,12 +75,12 @@ export default function AddDoctorPage() {
         setLoading(true);
 
         // Fetch specialities
-        const specialitiesResponse = await getSpecialitiesList(1, 100, "UTC");
+        const specialitiesResponse = await getSpecialitiesList(1, 100, user_timezone);
         setSpecialities(specialitiesResponse.data);
 
         // If editing, fetch doctor data
         if (isEditMode && doctorId) {
-          const doctorResponse = await getDoctorById(parseInt(doctorId), "UTC");
+          const doctorResponse = await getDoctorById(parseInt(doctorId), user_timezone);
 
           // Convert availabilities to timeSlots format
           const timeSlots: TimeSlot[] = doctorResponse.availabilities.map((availability, index) => {
@@ -114,7 +115,7 @@ export default function AddDoctorPage() {
     };
 
     fetchData();
-  }, [isEditMode, doctorId]);
+  }, [isEditMode, doctorId, user_timezone]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -173,15 +174,15 @@ export default function AddDoctorPage() {
         availabilities,
         duration: formData.duration,
       };
-      // console.log("doctors data", doctorData);
+      console.log("doctors data", doctorData);
 
       if (isEditMode && doctorId) {
         // Update existing doctor
-        await updateDoctor(parseInt(doctorId), doctorData, "UTC");
+        await updateDoctor(parseInt(doctorId), doctorData, user_timezone);
         toast.success("Doctor updated successfully!");
       } else {
         // Create new doctor
-        await createDoctor(doctorData, "UTC");
+        await createDoctor(doctorData, user_timezone);
         router.push("/doctors");
         toast.success("Doctor created successfully!");
       }

@@ -97,6 +97,7 @@ const columns: ExtendedColumnDef<Conversation>[] = [
 
 export default function CallsPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -121,7 +122,7 @@ export default function CallsPage() {
     async (page: number = 1, limit: number = 10, name: string = "") => {
       try {
         setLoading(true);
-        const response = await getConversationsList(page, limit, "UTC", undefined, name);
+        const response = await getConversationsList(page, limit, user_timezone, undefined, name);
         console.log("API Response:", response);
         console.log("Conversations data:", response.data);
         setConversations(response.data);
@@ -138,7 +139,7 @@ export default function CallsPage() {
         setLoading(false);
       }
     },
-    []
+    [user_timezone]
   );
 
   useEffect(() => {

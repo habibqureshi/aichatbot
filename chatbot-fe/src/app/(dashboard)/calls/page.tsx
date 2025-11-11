@@ -46,8 +46,8 @@ const columns: ExtendedColumnDef<Conversation>[] = [
     width: "200px",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium text-gray-900">{row.original.patient.name}</div>
-        <div className="text-sm text-gray-500">{row.original.patient.phone_number}</div>
+        <div className="font-medium text-gray-900">{row.original.patient?.name || "N/A"}</div>
+        <div className="text-sm text-gray-500">{row.original.patient?.phone_number || "N/A"}</div>
       </div>
     ),
   },
@@ -65,7 +65,7 @@ const columns: ExtendedColumnDef<Conversation>[] = [
     accessorKey: "status",
     header: "Status",
     width: "120px",
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
   },
   {
     accessorKey: "call_sid",
@@ -80,7 +80,9 @@ const columns: ExtendedColumnDef<Conversation>[] = [
     header: "Started At",
     width: "160px",
     cell: ({ row }) => (
-      <div className="text-sm text-gray-600">{new Date(row.original.started_at).toLocaleString()}</div>
+      <div className="text-sm text-gray-600">
+        {row.original.started_at ? new Date(row.original.started_at).toLocaleString() : "N/A"}
+      </div>
     ),
   },
   {

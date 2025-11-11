@@ -35,8 +35,8 @@ export default function DoctorsPage() {
       width: "250px",
       cell: ({ row }) => (
         <div>
-          <div className="font-medium text-gray-900">{row.original.name}</div>
-          <div className="text-sm text-gray-500">{row.original.specialty.name}</div>
+          <div className="font-medium text-gray-900">{row.original.name || ""}</div>
+          <div className="text-sm text-gray-500">{row.original?.specialty?.name || "N/A"}</div>
         </div>
       ),
     },
@@ -44,17 +44,23 @@ export default function DoctorsPage() {
       accessorKey: "phone_number",
       header: "Phone Number",
       width: "150px",
+      cell: ({ row }) => <div>{row.original.phone_number || "N/A"}</div>,
     },
     {
       accessorKey: "specialty.name",
       header: "Specialty",
       width: "150px",
+      cell: ({ row }) => <div>{row.original?.specialty?.name || "N/A"}</div>,
     },
     {
       accessorKey: "created_at",
       header: "Created Date",
       width: "150px",
-      cell: ({ row }) => <div>{new Date(row.original.created_at).toLocaleDateString()}</div>,
+      cell: ({ row }) => (
+        <div>
+          {row.original.created_at ? new Date(row.original.created_at).toLocaleDateString() : "N/A"}
+        </div>
+      ),
     },
     {
       id: "actions",

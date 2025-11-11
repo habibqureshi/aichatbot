@@ -104,6 +104,14 @@ export default function CallsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalConversations, setTotalConversations] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Status options passed from parent
+  const statusOptions = [
+    { value: "all", label: "All Status" },
+    { value: "active", label: "Active" },
+    { value: "ended", label: "Ended" },
+  ];
 
   // Debounced search value
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -122,7 +130,13 @@ export default function CallsPage() {
     async (page: number = 1, limit: number = 10, name: string = "") => {
       try {
         setLoading(true);
-        const response = await getConversationsList(page, limit, user_timezone, undefined, name);
+        const response = await getConversationsList(
+          page,
+          limit,
+          user_timezone,
+          statusFilter === "all" ? undefined : statusFilter || undefined,
+          name
+        );
         console.log("API Response:", response);
         console.log("Conversations data:", response.data);
         setConversations(response.data);
@@ -139,8 +153,13 @@ export default function CallsPage() {
         setLoading(false);
       }
     },
-    [user_timezone]
+    [user_timezone, statusFilter]
   );
+
+  // Reset to first page when status filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchConversations(currentPage, pageSize, debouncedSearchQuery);
@@ -175,12 +194,16 @@ export default function CallsPage() {
         columns={columns}
         data={conversations}
         searchKey="patient.name"
-        searchPlaceholder="Search conversations by patient name..."
+        searchPlaceholder="Search by patient name..."
         showSearch={true}
         loading={loading}
         initialLoading={loading && conversations.length === 0}
         externalSearchValue={searchQuery}
         onExternalSearchChange={handleSearchChange}
+        externalStatusValue={statusFilter}
+        onExternalStatusChange={setStatusFilter}
+        statusOptions={statusOptions}
+        statusPlaceholder="All Status"
         enablePagination={true}
         externalPageIndex={currentPage - 1}
         totalPages={totalPages}

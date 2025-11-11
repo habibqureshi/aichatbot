@@ -49,6 +49,11 @@ interface DataTableProps<TData, TValue> {
   // External search control (for server-side search with debouncing)
   externalSearchValue?: string;
   onExternalSearchChange?: (value: string) => void;
+  // External status filter control
+  externalStatusValue?: string;
+  onExternalStatusChange?: (value: string) => void;
+  statusOptions?: Array<{ value: string; label: string }>;
+  statusPlaceholder?: string;
   // External pagination control (for server-side pagination)
   externalPageIndex?: number;
   externalPageSize?: number;
@@ -75,6 +80,10 @@ export function DataTable<TData, TValue>({
   initialLoading = false,
   externalSearchValue,
   onExternalSearchChange,
+  externalStatusValue,
+  onExternalStatusChange,
+  statusOptions,
+  statusPlaceholder = "All Status",
   externalPageIndex,
   externalPageSize,
   totalPages,
@@ -166,6 +175,25 @@ export function DataTable<TData, TValue>({
                 className="pl-8 border-gray-200 w-full"
               />
             </div>
+          )}
+
+          {/* Status Filter */}
+          {onExternalStatusChange && statusOptions && (
+            <Select
+              value={externalStatusValue ?? ""}
+              onValueChange={(value) => onExternalStatusChange(value)}
+            >
+              <SelectTrigger className="w-full sm:w-[180px] border-gray-200">
+                <SelectValue placeholder={statusPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
 
           {/* Sort By Dropdown */}

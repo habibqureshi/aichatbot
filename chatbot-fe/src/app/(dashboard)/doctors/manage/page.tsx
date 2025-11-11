@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SingleSelect from "@/components/common/SingleSelect";
 import TimeRangePicker from "@/components/common/TimeRangePicker";
@@ -40,7 +40,7 @@ const DAYS_OF_WEEK = [
   { id: "sunday", label: "Sunday", value: "sunday" },
 ];
 
-export default function AddDoctorPage() {
+function AddDoctorPageContent() {
   const searchParams = useSearchParams();
   const doctorId = searchParams.get("id");
   const isEditMode = !!doctorId;
@@ -487,5 +487,21 @@ export default function AddDoctorPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AddDoctorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-6">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
+      }
+    >
+      <AddDoctorPageContent />
+    </Suspense>
   );
 }

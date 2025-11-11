@@ -80,6 +80,8 @@ export async function updateDoctor(
   user_timezone: string = "UTC"
 ): Promise<Doctor> {
   try {
+    // console.log("Update Payload (doctorData):", JSON.stringify(doctorData, null, 2));
+    // console.log("Update Payload doctorId:", doctorId);
     const response = await API.put(
       `/api/v1/doctors/${doctorId}?user_timezone=${user_timezone}`,
       doctorData

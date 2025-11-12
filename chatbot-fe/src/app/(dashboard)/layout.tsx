@@ -9,35 +9,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="min-h-screen flex flex-col gradient-bg">
+      {/* Topbar - Full width at the top */}
+      <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
-      <div className="flex-1 flex flex-col w-full lg:w-auto">
-        {/* Mobile header with hamburger */}
-        <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900">Ask AI</h1>
-          <div className="w-10"></div> {/* Spacer for centering */}
+      <div className="flex flex-1">
+        {/* Sidebar with margin-top for topbar space */}
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col w-full lg:ml-0 content-glass">
+          <main className="flex-1 p-1 sm:p-4 overflow-auto">
+            <div className="w-full h-full relative z-10">{children}</div>
+          </main>
+          <Bottombar />
         </div>
-
-        <Topbar />
-
-        <main className="flex-1 p-1 sm:p-4 bg-gray-50 overflow-auto">
-          <div className="w-full h-full">{children}</div>
-        </main>
-        <Bottombar />
       </div>
     </div>
   );

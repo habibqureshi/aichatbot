@@ -5,7 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
-export default function Topbar() {
+interface TopbarProps {
+  onMenuClick: () => void;
+}
+
+export default function Topbar({ onMenuClick }: TopbarProps) {
   const [session, setSession] = useState<AuthResponse | null>(null);
   useEffect(() => {
     const fetchSession = async () => {
@@ -15,15 +19,33 @@ export default function Topbar() {
     fetchSession();
   }, []);
   return (
-    <header className="sticky top-0 hidden lg:block bg-white shadow-sm">
-      <div className="h-16 flex items-center justify-between px-10">
-        <div className="flex items-center">
-          <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+    <header className="sticky top-0 w-full shadow-sm z-30 backdrop-blur-md bg-white/30">
+      <div className="h-16 flex items-center justify-between px-4 lg:px-10">
+        <div className="flex items-center gap-4">
+          {/* Hamburger menu button */}
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2 rounded-md hover:bg-[#E3C5FF55] transition-colors"
+            style={{ color: "#751AE5" }}
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold" style={{ color: "#751AE5" }}>
+            MediCall AI
+          </h1>
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <button className="p-2 rounded-full hover:bg-gray-100">
+          <button className="p-2 rounded-full hover:bg-[#E3C5FF55] transition-colors">
             <svg
-              className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500"
+              className="h-5 w-5 sm:h-6 sm:w-6"
+              style={{ color: "#666666" }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -45,17 +67,22 @@ export default function Topbar() {
                 alt="User avatar"
                 className="h-8 w-8 rounded-full"
               />
-              <span className="hidden sm:block text-sm font-medium text-gray-700">
+              <span className="hidden sm:block text-sm font-medium" style={{ color: "#2A2A2A" }}>
                 {session?.user?.username || session?.user?.email}
               </span>
             </button>
-            <div className="absolute right-0  w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block hover:block z-50">
-              <Link href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block hover:block z-50">
+              <Link
+                href="/settings"
+                className="block px-4 py-2 text-sm hover:bg-[#E3C5FF55]"
+                style={{ color: "#2A2A2A" }}
+              >
                 Settings
               </Link>
               <Link
                 href="/auth/logout"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                className="block px-4 py-2 text-sm hover:bg-[#E3C5FF55]"
+                style={{ color: "#2A2A2A" }}
               >
                 Logout
               </Link>

@@ -39,23 +39,34 @@ const columns: ExtendedColumnDef<Appointment>[] = [
   {
     accessorKey: "doctor.name",
     header: "Doctor Information",
-    width: "200px",
+    width: "220px",
     cell: ({ row }) => (
       <div>
         <div className="font-medium text-gray-900">{row.original.doctor?.name || "N/A"}</div>
         <div className="text-sm text-gray-500">{row.original.doctor?.specialty?.name || "N/A"}</div>
+        <div className="text-xs text-gray-400">{row.original.doctor?.phone_number || "N/A"}</div>
       </div>
     ),
   },
   {
     accessorKey: "appointment_date",
-    header: "Appointment Date",
-    width: "180px",
+    header: "Appointment Date & Time",
+    width: "200px",
     cell: ({ row }) => (
-      <div className="text-sm text-gray-600">
-        {row.original.appointment_date
-          ? new Date(row.original.appointment_date).toLocaleString()
-          : "N/A"}
+      <div>
+        <div className="font-medium text-gray-900">
+          {row.original.appointment_date
+            ? new Date(row.original.appointment_date).toLocaleDateString()
+            : "N/A"}
+        </div>
+        <div className="text-sm text-gray-600">
+          {row.original.start_time && row.original.end_time
+            ? `${row.original.start_time.slice(0, 5)} - ${row.original.end_time.slice(0, 5)}`
+            : "N/A"}
+        </div>
+        <div className="text-xs text-gray-500">
+          Duration: {row.original.doctor?.duration ? `${row.original.doctor.duration} min` : "N/A"}
+        </div>
       </div>
     ),
   },
@@ -64,6 +75,14 @@ const columns: ExtendedColumnDef<Appointment>[] = [
     header: "Status",
     width: "120px",
     cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
+  },
+  {
+    accessorKey: "call_sid",
+    header: "Call SID",
+    width: "200px",
+    cell: ({ row }) => (
+      <div className="text-xs text-gray-600 font-mono break-all">{row.original.call_sid || "N/A"}</div>
+    ),
   },
   {
     accessorKey: "notes",
@@ -172,8 +191,8 @@ export default function BookingsPage() {
         columns={columns}
         data={appointments}
         title="Appointments List"
-        searchKey="patient.name"
-        searchPlaceholder="Search by name..."
+        // searchKey="patient.name"
+        // searchPlaceholder="Search by name..."
         showSearch={true}
         loading={loading}
         initialLoading={loading && appointments.length === 0}

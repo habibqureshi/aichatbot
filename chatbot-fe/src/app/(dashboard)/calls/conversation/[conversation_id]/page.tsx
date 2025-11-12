@@ -8,10 +8,10 @@ import { toast } from "react-toastify";
 const MessageBubble = ({ message }: { message: Message }) => {
   const isUser = message.role === "user";
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
+    <div className={`flex ${!isUser ? "justify-end" : "justify-start"} mb-4`}>
       <div
         className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-          isUser ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"
+          !isUser ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"
         }`}
       >
         <p className="text-sm">{message.content}</p>
@@ -28,13 +28,14 @@ export default function ConversationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalMessages, setTotalMessages] = useState(0);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getConversationMessages(conversationId, 1, 100);
-      setMessages(response.data);
+      // Reverse the messages array to show chronological order (oldest first)
+      setMessages(response.data.reverse());
       setTotalMessages(response.metadata.total);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -53,8 +54,9 @@ export default function ConversationPage() {
   }, [fetchMessages, conversationId]);
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    // Scroll only the chat container to the bottom
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -75,16 +77,14 @@ export default function ConversationPage() {
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4 flex-1 overflow-y-auto max-h-[75vh]">
+      <div
+        ref={chatContainerRef}
+        className="bg-white rounded-lg shadow p-4 flex-1 overflow-y-auto max-h-[75vh]"
+      >
         {messages.length === 0 ? (
           <p className="text-center text-gray-500">No messages found.</p>
         ) : (
-          <>
-            {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))}
-            <div ref={messagesEndRef} />
-          </>
+          messages.map((message) => <MessageBubble key={message.id} message={message} />)
         )}
       </div>
     </div>

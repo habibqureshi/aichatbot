@@ -8,6 +8,8 @@ export interface Appointment {
   patient_id: number;
   doctor_id: number;
   appointment_date: string;
+  start_time: string;
+  end_time: string;
   status: string;
   notes: string;
   call_sid: string;
@@ -27,6 +29,7 @@ export interface Appointment {
     };
     phone_number: string;
     created_at: string;
+    duration: number;
   };
 }
 

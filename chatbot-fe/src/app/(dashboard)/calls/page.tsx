@@ -56,7 +56,6 @@ export default function CallsPage() {
   const statusOptions = [
     { value: "all", label: "All Status" },
     { value: "active", label: "Active" },
-    { value: "ended", label: "Ended" },
   ];
 
   // Debounced search value
@@ -229,8 +228,8 @@ export default function CallsPage() {
         title="Conversations List"
         columns={columns}
         data={conversations}
-        searchKey="patient.name"
-        searchPlaceholder="Search by patient name..."
+        // searchKey="patient.name"
+        // searchPlaceholder="Search by patient name..."
         showSearch={true}
         loading={loading}
         initialLoading={loading && conversations.length === 0}

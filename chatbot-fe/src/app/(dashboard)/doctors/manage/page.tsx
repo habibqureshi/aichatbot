@@ -190,6 +190,7 @@ function AddDoctorPageContent() {
         // Update existing doctor
         await updateDoctor(parseInt(doctorId), doctorData, user_timezone);
         toast.success("Doctor updated successfully!");
+        router.push("/doctors");
       } else {
         // Create new doctor
         await createDoctor(doctorData, user_timezone);

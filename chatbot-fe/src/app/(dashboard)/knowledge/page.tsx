@@ -112,6 +112,28 @@ export default function KnowledgePage() {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+
+    if (file) {
+      // Validate file type
+      const allowedTypes = ["text/csv", "text/plain", "application/pdf"];
+      const allowedExtensions = [".csv", ".txt", ".pdf"];
+
+      const fileType = file.type;
+      const fileName = file.name.toLowerCase();
+      const hasAllowedExtension = allowedExtensions.some((ext) => fileName.endsWith(ext));
+
+      if (!allowedTypes.includes(fileType) && !hasAllowedExtension) {
+        toast.error("Please select a valid file type: PDF, TXT, or CSV only");
+        e.target.value = ""; // Clear the input
+        return;
+      }
+    }
+
+    setNewKnowledgeFile(file);
+  };
+
   const selectedKnowledge = knowledgeList.find((k) => k.id === selectedKnowledgeId);
 
   if (isLoading) {
@@ -344,14 +366,12 @@ export default function KnowledgePage() {
                   <input
                     type="file"
                     id="knowledge-file"
-                    accept=".csv,.txt,.pdf,.doc,.docx,.json,.xml"
-                    onChange={(e) => setNewKnowledgeFile(e.target.files?.[0] || null)}
+                    accept=".pdf,.txt,.csv"
+                    onChange={handleFileChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Supported formats: CSV, TXT, PDF, DOC, DOCX, JSON, XML
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Supported formats: PDF, TXT, CSV</p>
                   {newKnowledgeFile && (
                     <p className="text-sm text-green-600 mt-1">
                       Selected: {newKnowledgeFile.name} ({(newKnowledgeFile.size / 1024).toFixed(1)} KB)

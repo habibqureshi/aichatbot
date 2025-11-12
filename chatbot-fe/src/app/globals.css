@@ -127,3 +127,55 @@
     @apply cursor-pointer;
   }
 }
+
+/* Custom Medical AI Colors */
+:root {
+  --primary-purple: #751ae5;
+  --secondary-purple: #ab74ef;
+  --light-purple-bg: #e3c5ff55;
+  --lighter-purple-bg: #f1e6ff55;
+  --dark-text: #2a2a2a;
+  --gray-text: #666666;
+  --body-bg: #eee3fa;
+}
+
+/* Gradient Background with Blurred Circles */
+.gradient-bg {
+  position: relative;
+  background: #eee3fa;
+  overflow: hidden;
+}
+
+.gradient-bg::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 60%;
+  height: 80%;
+  background: radial-gradient(circle, #ab74ef 0%, transparent 70%);
+  filter: blur(1397.91px);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gradient-bg::after {
+  content: "";
+  position: absolute;
+  top: 10%;
+  right: -15%;
+  width: 50%;
+  height: 70%;
+  background: radial-gradient(circle, #d5e8fd 0%, transparent 70%);
+  filter: blur(838.44px);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Content area glassmorphism */
+.content-glass {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.3);
+}

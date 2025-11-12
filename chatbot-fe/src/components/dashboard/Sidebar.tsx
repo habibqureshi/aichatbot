@@ -62,20 +62,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen && <div className="fixed inset-0 bg-black/20 z-40 lg:hidden" onClick={onClose} />}
 
       {/* Sidebar */}
+      {/* Sidebar */}
       <div
-        className={`fixed lg:sticky inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 text-gray-900 
+        className={`fixed lg:sticky top-0 lg:top-16 left-0 z-50 w-64 border-r border-[#E3C5FF55]
               flex flex-col transform transition-transform duration-300 ease-in-out 
+              h-screen lg:h-[calc(100vh-4rem)]
               ${isOpen ? "translate-x-0" : "-translate-x-full"} 
-              lg:translate-x-0 lg:top-0 lg:h-screen`}
+              lg:translate-x-0 backdrop-blur-md bg-white/30`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h1 className="text-lg font-semibold text-gray-900">Ask AI</h1>
-
+        {/* Header - Only show close button on mobile */}
+        <div className="flex items-center justify-end p-4 border-b border-[#E3C5FF55] lg:hidden">
           {/* Close button for mobile */}
           <button
             onClick={onClose}
-            className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            className="p-2 rounded-md hover:bg-[#E3C5FF55] transition-colors"
+            style={{ color: "#751AE5" }}
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -90,7 +91,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6">
-          <div className="space-y-2">
+          <div className="space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -98,18 +99,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   key={item.name}
                   href={item.href}
                   onClick={handleLinkClick}
-                  className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors
-                                    ${
-                                      isActive
-                                        ? "bg-gray-100 text-blue-700 font-semibold"
-                                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    }`}
+                  className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all
+                                    ${isActive ? "font-semibold" : ""}`}
+                  style={{
+                    background: isActive ? "#751AE5" : "transparent",
+                    color: isActive ? "white" : "#2A2A2A",
+                  }}
                   aria-current={isActive ? "page" : undefined}
                 >
                   <svg
-                    className={`mr-3 h-5 w-5 transition-colors ${
-                      isActive ? "text-blue-700" : "text-gray-500 group-hover:text-gray-700"
-                    }`}
+                    className="mr-3 h-5 w-5 transition-colors"
+                    style={{ color: isActive ? "white" : "#666666" }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -124,22 +124,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-[#E3C5FF55] p-4">
           <Link
             href="/settings"
             onClick={handleLinkClick}
-            className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors
-                        ${
-                          pathname === "/settings"
-                            ? "bg-gray-100 text-blue-700 font-semibold"
-                            : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                        }`}
+            className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all
+                        ${pathname === "/settings" ? "font-semibold" : ""}`}
+            style={{
+              background: pathname === "/settings" ? "#751AE5" : "transparent",
+              color: pathname === "/settings" ? "white" : "#2A2A2A",
+            }}
             aria-current={pathname === "/settings" ? "page" : undefined}
           >
             <svg
-              className={`mr-3 h-5 w-5 transition-colors ${
-                pathname === "/settings" ? "text-blue-700" : "text-gray-500 group-hover:text-gray-700"
-              }`}
+              className="mr-3 h-5 w-5 transition-colors"
+              style={{ color: pathname === "/settings" ? "white" : "#666666" }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

@@ -57,8 +57,7 @@ export default function KnowledgePage() {
 
     try {
       setIsUpdating(true);
-      const response = await updateActiveKnowledge(selectedKnowledgeId);
-      console.log("Knowledge activation successful:", response);
+      await updateActiveKnowledge(selectedKnowledgeId);
 
       // Refresh the knowledge list to get updated active status from backend
       await fetchKnowledge();
@@ -92,8 +91,7 @@ export default function KnowledgePage() {
       formData.append("file", newKnowledgeFile);
 
       // Upload file to backend
-      const uploadResponse = await createKnowledge(formData);
-      console.log("Upload successful:", uploadResponse);
+      await createKnowledge(formData);
 
       // Refresh the knowledge list to get the updated data from backend
       await fetchKnowledge();

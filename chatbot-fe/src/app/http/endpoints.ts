@@ -94,6 +94,13 @@ export const ENDPOINTS = {
       }
       return `/api/v1/conversation/?${params.toString()}`;
     },
+    MESSAGES: (conversationId: number, page: number = 1, limit: number = 10) => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      return `/api/v1/conversation/${conversationId}/messages?${params.toString()}`;
+    },
   },
   SPECIALITIES: {
     LIST: (page: number = 1, limit: number = 10, user_timezone: string = "UTC") => {

@@ -368,7 +368,7 @@ function AddDoctorPageContent() {
                   label="Select Day for Slot Creation"
                   options={DAYS_OF_WEEK}
                   selectedValue={selectedDayForSlot}
-                  onChange={setSelectedDayForSlot}
+                  onChange={(value) => setSelectedDayForSlot(value as string)}
                   placeholder="Choose a day to create slots"
                 />
               </div>

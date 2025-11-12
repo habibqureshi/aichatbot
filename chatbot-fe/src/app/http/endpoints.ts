@@ -126,8 +126,8 @@ export const ENDPOINTS = {
     UPDATE: (id: number) => `/settings/${id}`,
   },
   KNOWLEDGE: {
-    LIST: "/api/v1/knowledge",
-    CREATE: "/api/v1/knowledge",
-    UPDATE_ACTIVE: "/api/v1/knowledge/active",
+    LIST: (page: number = 1, limit: number = 10) => `/api/v1/rag/?page=${page}&limit=${limit}`,
+    CREATE: "/api/v1/rag/upload-file",
+    UPDATE_ACTIVE: (knowledgeId: number) => `/api/v1/rag/activate/${knowledgeId}`,
   },
 };

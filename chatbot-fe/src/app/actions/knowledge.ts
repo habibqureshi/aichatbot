@@ -2,11 +2,14 @@
 
 import { API } from "@/app/http/axio";
 import { ENDPOINTS } from "@/app/http/endpoints";
-import { KnowledgeResponse, Knowledge } from "@/app/types/knowledge";
+import { KnowledgeResponse } from "@/app/types/knowledge";
 
-export async function getKnowledgeList(): Promise<KnowledgeResponse> {
+export async function getKnowledgeList(
+  page: number = 1,
+  limit: number = 10
+): Promise<KnowledgeResponse> {
   try {
-    const response = await API.get(ENDPOINTS.KNOWLEDGE.LIST);
+    const response = await API.get(ENDPOINTS.KNOWLEDGE.LIST(page, limit));
     return response.data;
   } catch (error) {
     console.error("Error fetching knowledge list:", error);
@@ -14,8 +17,9 @@ export async function getKnowledgeList(): Promise<KnowledgeResponse> {
   }
 }
 
-export async function createKnowledge(formData: FormData): Promise<Knowledge> {
+export async function createKnowledge(formData: FormData): Promise<string> {
   try {
+    console.log("FORM DATA...", formData);
     const response = await API.post(ENDPOINTS.KNOWLEDGE.CREATE, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -28,9 +32,10 @@ export async function createKnowledge(formData: FormData): Promise<Knowledge> {
   }
 }
 
-export async function updateActiveKnowledge(knowledgeId: string): Promise<void> {
+export async function updateActiveKnowledge(knowledgeId: number): Promise<string> {
   try {
-    await API.put(ENDPOINTS.KNOWLEDGE.UPDATE_ACTIVE, { knowledgeId });
+    const response = await API.patch(ENDPOINTS.KNOWLEDGE.UPDATE_ACTIVE(knowledgeId));
+    return response.data;
   } catch (error) {
     console.error("Error updating active knowledge:", error);
     throw new Error("Failed to update active knowledge");

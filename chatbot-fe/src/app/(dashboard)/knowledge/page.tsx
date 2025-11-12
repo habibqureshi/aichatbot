@@ -3,167 +3,39 @@
 import { useState, useEffect, useCallback } from "react";
 import { getKnowledgeList, updateActiveKnowledge, createKnowledge } from "@/app/actions/knowledge";
 import { Knowledge } from "@/app/types/knowledge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import SingleSelect from "@/components/common/SingleSelect";
 import { toast } from "react-toastify";
-
-const dummyKnowledgeList: Knowledge[] = [
-  {
-    id: "general-healthcare",
-    name: "General Healthcare Knowledge",
-    description: "Basic healthcare procedures, appointment scheduling, and general medical information",
-    content: `Healthcare Knowledge Base:
-
-APPOINTMENT SCHEDULING:
-- Schedule appointments for patients
-- Check doctor availability
-- Handle rescheduling and cancellations
-- Confirm appointment details
-
-PATIENT INFORMATION:
-- Collect patient name, phone number, and reason for visit
-- Verify insurance information
-- Update patient records
-
-GENERAL PROCEDURES:
-- Direct patients to appropriate departments
-- Provide basic medical advice
-- Handle emergency situations
-- Coordinate with medical staff
-
-COMMUNICATION:
-- Maintain professional and empathetic tone
-- Confirm all information
-- Provide clear next steps`,
-    isActive: true,
-    createdAt: "2024-01-15T10:00:00Z",
-    updatedAt: "2024-01-15T10:00:00Z",
-  },
-  {
-    id: "cardiology-specialist",
-    name: "Cardiology Specialist Knowledge",
-    description: "Specialized knowledge for heart-related conditions and cardiology appointments",
-    content: `Cardiology Specialist Knowledge:
-
-HEART CONDITIONS:
-- Coronary artery disease
-- Heart failure
-- Arrhythmias
-- Valvular heart disease
-
-DIAGNOSTIC PROCEDURES:
-- ECG/EKG interpretation
-- Echocardiograms
-- Stress tests
-- Cardiac catheterization
-
-TREATMENT OPTIONS:
-- Medication management
-- Lifestyle modifications
-- Interventional procedures
-- Surgical interventions
-
-EMERGENCY SYMPTOMS:
-- Chest pain
-- Shortness of breath
-- Irregular heartbeat
-- Dizziness/fainting`,
-    isActive: false,
-    createdAt: "2024-01-20T14:30:00Z",
-    updatedAt: "2024-01-25T09:15:00Z",
-  },
-  {
-    id: "pediatric-care",
-    name: "Pediatric Care Knowledge",
-    description: "Child healthcare, vaccinations, and pediatric appointment management",
-    content: `Pediatric Care Knowledge:
-
-CHILD HEALTHCARE:
-- Well-child visits
-- Immunization schedules
-- Growth and development monitoring
-- Common childhood illnesses
-
-VACCINATION SCHEDULE:
-- Birth to 6 months
-- 6 to 12 months
-- 12 to 18 months
-- Annual flu shots
-
-PARENTS CONCERNS:
-- Fever management
-- Feeding issues
-- Sleep problems
-- Behavioral concerns
-
-SPECIALIZED CARE:
-- Neonatal care
-- Adolescent health
-- Chronic conditions
-- Developmental disorders`,
-    isActive: false,
-    createdAt: "2024-02-01T11:45:00Z",
-    updatedAt: "2024-02-10T16:20:00Z",
-  },
-  {
-    id: "emergency-response",
-    name: "Emergency Response Knowledge",
-    description: "Emergency medical situations and urgent care coordination",
-    content: `Emergency Response Knowledge:
-
-URGENT SYMPTOMS:
-- Severe chest pain
-- Difficulty breathing
-- Severe bleeding
-- Loss of consciousness
-
-EMERGENCY PROTOCOLS:
-- Call emergency services (911)
-- Provide immediate first aid
-- Coordinate with emergency room
-- Notify appropriate medical staff
-
-TRIAGE SYSTEM:
-- Assess severity of condition
-- Prioritize urgent cases
-- Direct to appropriate care level
-- Monitor patient status
-
-COORDINATION:
-- Communicate with emergency services
-- Prepare medical records
-- Arrange transportation
-- Follow up with patient/family`,
-    isActive: false,
-    createdAt: "2024-02-15T08:00:00Z",
-    updatedAt: "2024-02-20T13:30:00Z",
-  },
-];
 export default function KnowledgePage() {
-  const [knowledgeList, setKnowledgeList] = useState<Knowledge[]>(dummyKnowledgeList);
-  const [activeKnowledgeId, setActiveKnowledgeId] = useState<string>(
-    dummyKnowledgeList.find((k) => k.isActive)?.id || ""
-  );
-  const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string>(
-    dummyKnowledgeList.find((k) => k.isActive)?.id || ""
-  );
+  const [knowledgeList, setKnowledgeList] = useState<Knowledge[]>([]);
+  const [activeKnowledgeId, setActiveKnowledgeId] = useState<number | null>(null);
+  const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newKnowledgeName, setNewKnowledgeName] = useState("");
   const [newKnowledgeFile, setNewKnowledgeFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  // const [currentPage, setCurrentPage] = useState(1);
+  // const [totalPages, setTotalPages] = useState(0);
+  // const [totalItems, setTotalItems] = useState(0);
 
-  const fetchKnowledge = useCallback(async () => {
+  const fetchKnowledge = useCallback(async (page: number = 1, limit: number = 10) => {
     try {
       setIsLoading(true);
-      const response = await getKnowledgeList();
-      setKnowledgeList(response.knowledge);
-      setActiveKnowledgeId(response.activeKnowledgeId);
-      setSelectedKnowledgeId(response.activeKnowledgeId);
+      const response = await getKnowledgeList(page, limit);
+      setKnowledgeList(response.data);
+      // setTotalItems(response.metadata.total);
+      // setTotalPages(response.metadata.total_pages);
+      // setCurrentPage(response.metadata.page);
+
+      // Find the active knowledge from the list
+      const activeKnowledge = response.data.find((k) => k.is_active);
+      setActiveKnowledgeId(activeKnowledge?.id || null);
+      setSelectedKnowledgeId(activeKnowledge?.id || null);
     } catch (error) {
       console.error("Error fetching knowledge:", error);
-      toast.error("Failed to load knowledge base from server, using local data");
+      toast.error("Failed to load knowledge.");
     } finally {
       setIsLoading(false);
     }
@@ -173,16 +45,24 @@ export default function KnowledgePage() {
   //   fetchKnowledge();
   // }, [fetchKnowledge]);
 
+  useEffect(() => {
+    fetchKnowledge();
+  }, [fetchKnowledge]);
+
   const handleUpdateActiveKnowledge = async () => {
-    if (selectedKnowledgeId === activeKnowledgeId) {
+    if (!selectedKnowledgeId || selectedKnowledgeId === activeKnowledgeId) {
       toast.info("This knowledge is already active");
       return;
     }
 
     try {
       setIsUpdating(true);
-      await updateActiveKnowledge(selectedKnowledgeId);
-      setActiveKnowledgeId(selectedKnowledgeId);
+      const response = await updateActiveKnowledge(selectedKnowledgeId);
+      console.log("Knowledge activation successful:", response);
+
+      // Refresh the knowledge list to get updated active status from backend
+      await fetchKnowledge();
+
       toast.success("Active knowledge updated successfully");
     } catch (error) {
       console.error("Error updating active knowledge:", error);
@@ -211,49 +91,14 @@ export default function KnowledgePage() {
       formData.append("name", newKnowledgeName.trim());
       formData.append("file", newKnowledgeFile);
 
-      // Try API call first
-      try {
-        const newKnowledge = await createKnowledge(formData);
+      // Upload file to backend
+      const uploadResponse = await createKnowledge(formData);
+      console.log("Upload successful:", uploadResponse);
 
-        // Update the knowledge list
-        setKnowledgeList((prev) => {
-          // Set all existing knowledge to inactive
-          const updatedList = prev.map((k) => ({ ...k, isActive: false }));
-          // Add new knowledge as active
-          return [...updatedList, newKnowledge];
-        });
+      // Refresh the knowledge list to get the updated data from backend
+      await fetchKnowledge();
 
-        setActiveKnowledgeId(newKnowledge.id);
-        setSelectedKnowledgeId(newKnowledge.id);
-
-        toast.success("New knowledge created and set as active!");
-      } catch (apiError) {
-        // Fallback to local simulation if API fails
-        console.warn("API call failed, using local simulation:", apiError);
-
-        const newKnowledge: Knowledge = {
-          id: `knowledge-${Date.now()}`,
-          name: newKnowledgeName.trim(),
-          description: `Knowledge base created from file: ${newKnowledgeFile.name}`,
-          content: `File uploaded: ${newKnowledgeFile.name}\nSize: ${newKnowledgeFile.size} bytes\nType: ${newKnowledgeFile.type}`,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        // Update the knowledge list
-        setKnowledgeList((prev) => {
-          // Set all existing knowledge to inactive
-          const updatedList = prev.map((k) => ({ ...k, isActive: false }));
-          // Add new knowledge as active
-          return [...updatedList, newKnowledge];
-        });
-
-        setActiveKnowledgeId(newKnowledge.id);
-        setSelectedKnowledgeId(newKnowledge.id);
-
-        toast.success("New knowledge created locally and set as active!");
-      }
+      toast.success("New knowledge uploaded and created successfully!");
 
       // Reset form
       setNewKnowledgeName("");
@@ -328,26 +173,20 @@ export default function KnowledgePage() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Knowledge Base</label>
-                <Select value={selectedKnowledgeId} onValueChange={setSelectedKnowledgeId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a knowledge base" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {knowledgeList.map((knowledge) => (
-                      <SelectItem key={knowledge.id} value={knowledge.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{knowledge.name}</span>
-                          {knowledge.id === activeKnowledgeId && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SingleSelect
+                  label="Knowledge Base"
+                  options={knowledgeList.map((knowledge) => ({
+                    id: knowledge.id,
+                    label: knowledge.name,
+                    value: knowledge.id,
+                  }))}
+                  selectedValue={selectedKnowledgeId}
+                  onChange={(value) =>
+                    setSelectedKnowledgeId(typeof value === "string" ? parseInt(value) : value)
+                  }
+                  placeholder="Select a knowledge base"
+                  emptyMessage="No knowledge bases available"
+                />
               </div>
               <div className="flex items-end">
                 <Button
@@ -374,25 +213,31 @@ export default function KnowledgePage() {
                   </span>
                 )}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">{selectedKnowledge.description}</p>
+              <p className="text-sm text-gray-600 mt-1">Blob: {selectedKnowledge.blob_name}</p>
             </div>
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Knowledge Content</h4>
-                <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                  <pre className="text-sm text-gray-800 whitespace-pre-wrap">
-                    {selectedKnowledge.content}
-                  </pre>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">File Information</h4>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-800">
+                    <span className="font-medium">Blob Name:</span> {selectedKnowledge.blob_name}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <span className="font-medium">Status:</span>{" "}
+                    {selectedKnowledge.is_active ? "Active" : "Inactive"}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 text-sm text-gray-500">
                 <div>
                   <span className="font-medium">Created:</span>{" "}
-                  {new Date(selectedKnowledge.createdAt).toLocaleDateString()}
+                  {new Date(selectedKnowledge.created_at).toLocaleDateString()}
                 </div>
                 <div>
                   <span className="font-medium">Last Updated:</span>{" "}
-                  {new Date(selectedKnowledge.updatedAt).toLocaleDateString()}
+                  {selectedKnowledge.updatedAt
+                    ? new Date(selectedKnowledge.updatedAt).toLocaleDateString()
+                    : new Date(selectedKnowledge.created_at).toLocaleDateString()}
                 </div>
               </div>
             </div>
@@ -428,9 +273,12 @@ export default function KnowledgePage() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-600 line-clamp-2">{knowledge.description}</p>
+                <p className="text-xs text-gray-600 line-clamp-2">{knowledge.blob_name}</p>
                 <p className="text-xs text-gray-400 mt-2">
-                  Updated: {new Date(knowledge.updatedAt).toLocaleDateString()}
+                  Updated:{" "}
+                  {knowledge.updatedAt
+                    ? new Date(knowledge.updatedAt).toLocaleDateString()
+                    : new Date(knowledge.created_at).toLocaleDateString()}
                 </p>
               </div>
             ))}

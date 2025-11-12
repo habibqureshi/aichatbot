@@ -27,6 +27,36 @@ export interface ConversationsResponse {
   };
 }
 
+export interface Message {
+  id: number;
+  content: string;
+  role: string;
+  timestamp: string;
+}
+
+export interface ConversationMessagesResponse {
+  data: Message[];
+  metadata: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  };
+}
+
+export async function getConversationMessages(
+  conversationId: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<ConversationMessagesResponse> {
+  try {
+    const response = await API.get(ENDPOINTS.CONVERSATIONS.MESSAGES(conversationId, page, limit));
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching conversation messages:", error);
+    throw new Error("Failed to fetch conversation messages");
+  }
+}
 export async function getConversationsList(
   page: number = 1,
   limit: number = 10,

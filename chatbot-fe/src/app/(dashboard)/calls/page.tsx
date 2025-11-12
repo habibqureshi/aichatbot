@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
+import { DataTable, ExtendedColumnDef, ActionsMenu } from "@/components/common/DataTable";
 import { getConversationsList, Conversation } from "@/app/actions/conversations";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusStyles: Record<string, string> = {
@@ -39,65 +40,8 @@ const calculateDuration = (startedAt: string, endedAt: string | null): string =>
   return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 };
 
-const columns: ExtendedColumnDef<Conversation>[] = [
-  {
-    accessorKey: "patient.name",
-    header: "Patient Information",
-    width: "200px",
-    cell: ({ row }) => (
-      <div>
-        <div className="font-medium text-gray-900">{row.original.patient?.name || "N/A"}</div>
-        <div className="text-sm text-gray-500">{row.original.patient?.phone_number || "N/A"}</div>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "started_at",
-    header: "Call Duration",
-    width: "120px",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-600">
-        {calculateDuration(row.original.started_at, row.original.ended_at)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    width: "120px",
-    cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
-  },
-  {
-    accessorKey: "call_sid",
-    header: "Call SID",
-    width: "180px",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-600 font-mono">{row.original.call_sid || "N/A"}</div>
-    ),
-  },
-  {
-    id: "started_at_display",
-    header: "Started At",
-    width: "160px",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-600">
-        {row.original.started_at ? new Date(row.original.started_at).toLocaleString() : "N/A"}
-      </div>
-    ),
-  },
-  {
-    id: "ended_at_display",
-    header: "Ended At",
-    width: "160px",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-600">
-        {row.original.ended_at ? new Date(row.original.ended_at).toLocaleString() : "Ongoing"}
-      </div>
-    ),
-  },
-];
-
 export default function CallsPage() {
+  const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [loading, setLoading] = useState(true);
@@ -117,6 +61,96 @@ export default function CallsPage() {
 
   // Debounced search value
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  // Define columns inside the component to access router
+  const columns: ExtendedColumnDef<Conversation>[] = [
+    {
+      accessorKey: "patient.name",
+      header: "Patient Information",
+      width: "200px",
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium text-gray-900">{row.original.patient?.name || "N/A"}</div>
+          <div className="text-sm text-gray-500">{row.original.patient?.phone_number || "N/A"}</div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "started_at",
+      header: "Call Duration",
+      width: "120px",
+      cell: ({ row }) => (
+        <div className="text-sm text-gray-600">
+          {calculateDuration(row.original.started_at, row.original.ended_at)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      width: "120px",
+      cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
+    },
+    {
+      accessorKey: "call_sid",
+      header: "Call SID",
+      width: "180px",
+      cell: ({ row }) => (
+        <div className="text-sm text-gray-600 font-mono">{row.original.call_sid || "N/A"}</div>
+      ),
+    },
+    {
+      id: "started_at_display",
+      header: "Started At",
+      width: "160px",
+      cell: ({ row }) => (
+        <div className="text-sm text-gray-600">
+          {row.original.started_at ? new Date(row.original.started_at).toLocaleString() : "N/A"}
+        </div>
+      ),
+    },
+    {
+      id: "ended_at_display",
+      header: "Ended At",
+      width: "160px",
+      cell: ({ row }) => (
+        <div className="text-sm text-gray-600">
+          {row.original.ended_at ? new Date(row.original.ended_at).toLocaleString() : "Ongoing"}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      width: "100px",
+      cell: ({ row }) => (
+        <ActionsMenu
+          actions={[
+            {
+              label: "View",
+              icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+              ),
+              onClick: () => router.push(`/calls/conversation/${row.original.id}`),
+            },
+          ]}
+        />
+      ),
+    },
+  ];
 
   // Debounce search query
   useEffect(() => {

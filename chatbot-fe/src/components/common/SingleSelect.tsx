@@ -1,11 +1,12 @@
 import { useState } from "react";
 
 interface SingleSelectProps {
-  options: { id: string; label: string; value: string }[];
-  selectedValue: string;
-  onChange: (selectedValue: string) => void;
+  options: { id: string | number; label: string; value: string | number }[];
+  selectedValue: string | number | null;
+  onChange: (value: string | number | null) => void;
   placeholder?: string;
   label?: string;
+  emptyMessage?: string;
 }
 
 export default function SingleSelect({
@@ -14,10 +15,11 @@ export default function SingleSelect({
   onChange,
   placeholder = "Select option",
   label,
+  emptyMessage = "No data available",
 }: SingleSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleSelect = (value: string) => {
+  const handleSelect = (value: string | number) => {
     onChange(value);
     setIsOpen(false);
   };
@@ -51,18 +53,22 @@ export default function SingleSelect({
 
         {isOpen && (
           <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none">
-            {options.map((option) => (
-              <div
-                key={option.id}
-                className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSelect(option.value);
-                }}
-              >
-                <span className="block font-normal truncate">{option.label}</span>
-              </div>
-            ))}
+            {options.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-gray-500 text-center">{emptyMessage}</div>
+            ) : (
+              options.map((option) => (
+                <div
+                  key={option.id}
+                  className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelect(option.value);
+                  }}
+                >
+                  <span className="block font-normal truncate">{option.label}</span>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>

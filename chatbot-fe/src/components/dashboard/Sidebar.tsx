@@ -63,9 +63,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed lg:sticky top-0 lg:top-[81px] left-0 z-50 w-64 border-r border-[#A491FE]
+        className={`fixed top-0 lg:top-20 left-0 z-40 w-64 border-r border-[#A491FE]
               flex flex-col transform transition-transform duration-300 ease-in-out 
-              h-[calc(100vh-1rem)] lg:h-[calc(100vh-85px)]
+              h-screen lg:h-[calc(100vh-5rem)]
               ${isOpen ? "translate-x-0" : "-translate-x-full"} 
               lg:translate-x-0`}
         // style={{

@@ -65,6 +65,8 @@ interface DataTableProps<TData, TValue> {
   totalPages?: number;
   onExternalPageChange?: (pageIndex: number) => void;
   onExternalPageSizeChange?: (pageSize: number) => void;
+  // Row click handler
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -98,6 +100,7 @@ export function DataTable<TData, TValue>({
   totalPages,
   onExternalPageChange,
   onExternalPageSizeChange,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -247,8 +250,8 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="bg-[#F3F0FD] border rounded-sm  " style={{ borderColor: "#D5BAF6" }}>
-        <div className="overflow-auto" style={{ minHeight: "400px" }}>
+      <div className="bg-[#F3F0FD] border rounded-sm relative" style={{ borderColor: "#D5BAF6" }}>
+        <div className="overflow-y-auto overflow-x-auto" style={{ maxHeight: "650px" }}>
           <Table className="min-w-[950px] table-auto w-full">
             <TableHeader
               className="sticky top-0 rounded-tl-lg rounded-tr-sm z-10 py-4"
@@ -290,8 +293,9 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-[#F9F6FD] border-b"
+                    className={`hover:bg-[#F9F6FD] border-b ${onRowClick ? "cursor-pointer" : ""}`}
                     style={{ borderColor: "#E2DAFB" }}
+                    onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   >
                     {row.getVisibleCells().map((cell) => {
                       const columnDef = cell.column.columnDef as ExtendedColumnDef<TData, TValue>;

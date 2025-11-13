@@ -20,9 +20,9 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
   }, []);
   return (
     <header
-      className="sticky top-0 w-full z-30  border-b border-[#E3C5FF] "
+      className="sticky top-0 w-full z-30  border-b border-[#DFDAFD] "
       style={{
-        background: "linear-gradient(to right, #e8daf7 0%, #e8daf7 60%, #F5F1FC 100%)",
+        background: "linear-gradient(to right, #ecebfc 0%, #F7F6FB 60%, #F2F2F2 100%)",
       }}
     >
       <div className="h-18 flex items-center justify-between px-4 lg:px-10">
@@ -42,7 +42,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
               />
             </svg>
           </button>
-          <h1 className="logo-text" style={{ color: "#751AE5" }}>
+          <h1 className="logo-text" style={{ color: "#4318FF" }}>
             MediCall AI
           </h1>
         </div>

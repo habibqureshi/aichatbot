@@ -142,7 +142,7 @@
 /* Gradient Background with Mixed Gradients */
 .gradient-bg {
   position: relative;
-  background: linear-gradient(135deg, #ecebfc 0%, #f7f6fb 50%, #dfdafd 100%);
+  background: linear-gradient(55deg, #f7f6fb 0%, #E5E2FC 50%, #dfdafd 100%);
   overflow: hidden;
 }
 

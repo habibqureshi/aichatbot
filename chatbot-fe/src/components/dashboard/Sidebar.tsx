@@ -63,13 +63,23 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed lg:sticky top-0 lg:top-18 left-0 z-50 w-64 border-r border-[#DFDAFD]
+        className={`fixed lg:sticky top-0 lg:top-20 left-0 z-50 w-64 border-r border-[#A491FE]
               flex flex-col transform transition-transform duration-300 ease-in-out 
-              h-[calc(100vh-1rem)] lg:h-[calc(100vh-74px)]
+              h-[calc(100vh-1rem)] lg:h-[calc(100vh-82px)]
               ${isOpen ? "translate-x-0" : "-translate-x-full"} 
               lg:translate-x-0`}
+        // style={{
+        //   background: "linear-gradient(to bottom,#F7F6FB  0%, #e6e2fa 30%, #e6e2fa 100%)",
+        // }}
         style={{
-          background: "linear-gradient(to bottom, #ecebfc 0%, #F7F6FB 60%, #DFDAFD 100%)",
+          background: `linear-gradient(
+      to bottom,
+      #EEEDFB 0%,    /* top very light (white-pinkish) */
+      #ECEAFC 15%,   /* subtle purple mix */
+      #EAE8FC 50%,   /* middle soft lavender */
+      #E8E6FC 85%,   /* subtle purple mix again */
+      #F7F6FB 100%   /* bottom very light */
+    )`,
         }}
       >
         {/* Header - Only show close button on mobile */}
@@ -93,7 +103,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6">
-          <div className="space-y-1">
+          <div className="space-y-2">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -101,16 +111,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   key={item.name}
                   href={item.href}
                   onClick={handleLinkClick}
-                  className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all hover:bg-[#E3C5FF55]
-                                    ${isActive ? "bg-gradient-to-r from-[#F1E6FF] to-[#E3C5FF]" : ""}`}
+                  className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px]
+                                    ${
+                                      isActive
+                                        ? "bg-gradient-to-r from-[#EEEAFF] to-[#DAD2FF]"
+                                        : "bg-[#FCFCFC33] hover:bg-gradient-to-r hover:from-[#EEEAFF] hover:to-[#DAD2FF]"
+                                    }`}
                   style={{
-                    color: isActive ? "#751AE5" : "#2A2A2A",
+                    color: isActive ? "#751AE5" : "#787878",
                   }}
                   aria-current={isActive ? "page" : undefined}
                 >
                   <svg
                     className="mr-3 h-5 w-5 transition-colors"
-                    style={{ color: isActive ? "#751AE5" : "#666666" }}
+                    style={{ color: isActive ? "#603CFF" : "#666666" }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -125,7 +139,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* Bottom Section */}
-        <div className="border-t border-[#E3C5FF55] p-4">
+        {/* <div className="border-t border-[#E3C5FF55] p-4">
           <Link
             href="/settings"
             onClick={handleLinkClick}
@@ -160,7 +174,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </svg>
             Settings
           </Link>
-        </div>
+        </div> */}
       </div>
     </>
   );

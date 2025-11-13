@@ -31,8 +31,8 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 export default function CallDetails({ conversation, messages, loading = false }: Props) {
   // Fallback values if no conversation is selected
-  const caller = conversation?.patient?.name || "Muhammad Rizwan";
-  const phone = conversation?.patient?.phone_number || "+92 3150921150";
+  const caller = conversation?.patient?.name || "Not Available";
+  const phone = conversation?.patient?.phone_number || "Not Available";
   const status = conversation?.status || "Unknown";
   const summary =
     (conversation && (conversation as unknown as { summary?: string }).summary) ||
@@ -129,7 +129,7 @@ export default function CallDetails({ conversation, messages, loading = false }:
           </div>
 
           <div className="mt-6">
-            <button className="w-full bg-gradient-to-r from-[#8A6BFF] to-[#6A4BFF] text-white py-3 rounded-lg shadow-md hover:opacity-90 transition-opacity">
+            <button className="w-full bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white py-3 rounded-lg shadow-md hover:opacity-90 transition-opacity">
               ▶ Play Recording
             </button>
           </div>

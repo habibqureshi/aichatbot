@@ -293,7 +293,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                 <button
                   type="submit"
                   disabled={!inputValue.trim() || isLoading}
-                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white hover:opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path

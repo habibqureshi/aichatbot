@@ -138,46 +138,41 @@
   --gray-text: #666666;
   --body-bg: #eee3fa;
 }
-
-/* Gradient Background with Blurred Circles */
+/* Gradient Background with Soft Diagonal Glow */
 .gradient-bg {
   position: relative;
-  background: #eee3fa;
+  background: linear-gradient(25deg, #ede1f9 0%, #e8d8f6 70%, #f4eafc 100%);
   overflow: hidden;
 }
 
+/* Bottom-left purple glow */
 .gradient-bg::before {
   content: "";
   position: absolute;
-  top: -20%;
-  left: -10%;
-  width: 60%;
-  height: 80%;
+  bottom: -25%;
+  left: -20%;
+  width: 70%;
+  height: 90%;
   background: radial-gradient(circle, #ab74ef 0%, transparent 70%);
-  filter: blur(1397.91px);
+  filter: blur(1200px);
   opacity: 0.6;
   pointer-events: none;
   z-index: 0;
 }
 
+/* Top-right soft white glow */
 .gradient-bg::after {
   content: "";
   position: absolute;
-  top: 10%;
-  right: -15%;
-  width: 50%;
-  height: 70%;
-  background: radial-gradient(circle, #d5e8fd 0%, transparent 70%);
-  filter: blur(838.44px);
-  opacity: 0.6;
+  top: -15%;
+  right: -10%;
+  width: 35%;
+  height: 45%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
+  filter: blur(500px);
+  opacity: 0.5;
   pointer-events: none;
   z-index: 0;
-}
-
-/* Content area glassmorphism */
-.content-glass {
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Sidebar item styles */

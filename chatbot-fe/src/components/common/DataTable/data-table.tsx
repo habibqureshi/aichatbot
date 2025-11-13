@@ -146,7 +146,7 @@ export function DataTable<TData, TValue>({
   const [firstWord, ...rest] = (title ?? "").split(" ");
   const restTitle = rest.join(" ");
   return (
-    <div className="border rounded-lg p-4 px-6" style={{ backgroundColor: "#F2ECFA" }}>
+    <div className="border rounded-lg p-4 px-6" style={{ backgroundColor: "#F3F0FD" }}>
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 gap-3 py-4">
         <div className="flex items-center space-x-2 px-2">
@@ -247,13 +247,13 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="bg-[#F1E9FA] border rounded-sm  " style={{ borderColor: "#D5BAF6" }}>
+      <div className="bg-[#F3F0FD] border rounded-sm  " style={{ borderColor: "#D5BAF6" }}>
         <div className="overflow-auto" style={{ minHeight: "400px" }}>
           <Table className="min-w-full table-fixed" style={{ minWidth: "950px" }}>
             <TableHeader
               className="sticky top-0 rounded-tl-lg rounded-tr-sm z-10 py-4"
               style={{
-                background: "linear-gradient(to right, #F1E7FE 0%, #E7D1FE 100%)",
+                background: "linear-gradient(to right, #F1E7FE 0%, #F3F0FD 100%)",
               }}
             >
               {table.getHeaderGroups().map((headerGroup) => (

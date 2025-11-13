@@ -138,42 +138,44 @@
   --gray-text: #666666;
   --body-bg: #eee3fa;
 }
-/* Gradient Background with Soft Diagonal Glow */
+
+/* Gradient Background with Mixed Gradients */
 .gradient-bg {
   position: relative;
-  background: linear-gradient(25deg, #ede1f9 0%, #e8d8f6 70%, #f4eafc 100%);
+  background: linear-gradient(135deg, #ecebfc 0%, #f7f6fb 50%, #dfdafd 100%);
   overflow: hidden;
 }
 
-/* Bottom-left purple glow */
+/* Purple gradient glow - bottom left */
 .gradient-bg::before {
   content: "";
   position: absolute;
-  bottom: -25%;
-  left: -20%;
-  width: 70%;
-  height: 90%;
-  background: radial-gradient(circle, #ab74ef 0%, transparent 70%);
-  filter: blur(1200px);
+  bottom: -30%;
+  left: -25%;
+  width: 80%;
+  height: 100%;
+  background: radial-gradient(ellipse, #dfdafd 0%, transparent 60%);
+  filter: blur(1000px);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Light gray-white gradient - top right */
+.gradient-bg::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  right: -15%;
+  width: 60%;
+  height: 70%;
+  background: radial-gradient(ellipse, #f2f2f2 0%, #f7f6fb 40%, transparent 70%);
+  filter: blur(800px);
   opacity: 0.6;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Top-right soft white glow */
-.gradient-bg::after {
-  content: "";
-  position: absolute;
-  top: -15%;
-  right: -10%;
-  width: 35%;
-  height: 45%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
-  filter: blur(500px);
-  opacity: 0.5;
-  pointer-events: none;
-  z-index: 0;
-}
 
 /* Sidebar item styles */
 .sidebar-item {

@@ -63,13 +63,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed lg:sticky top-0 lg:top-18 left-0 z-50 w-64 border-r border-[#E3C5FF]
+        className={`fixed lg:sticky top-0 lg:top-18 left-0 z-50 w-64 border-r border-[#DFDAFD]
               flex flex-col transform transition-transform duration-300 ease-in-out 
               h-[calc(100vh-1rem)] lg:h-[calc(100vh-74px)]
               ${isOpen ? "translate-x-0" : "-translate-x-full"} 
               lg:translate-x-0`}
         style={{
-          background: "linear-gradient(to bottom, #e8daf7 0%, #e8daf7 60%, #eee2fa 100%)",
+          background: "linear-gradient(to bottom, #ecebfc 0%, #F7F6FB 60%, #DFDAFD 100%)",
         }}
       >
         {/* Header - Only show close button on mobile */}

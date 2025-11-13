@@ -37,7 +37,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
               />
             </svg>
           </button>
-          <h1 className="text-xl font-bold" style={{ color: "#751AE5" }}>
+          <h1 className="logo-text" style={{ color: "#751AE5" }}>
             MediCall AI
           </h1>
         </div>

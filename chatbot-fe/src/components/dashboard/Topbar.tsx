@@ -20,7 +20,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
   }, []);
   return (
     <header className="sticky top-0 w-full z-30 backdrop-blur-md bg-white/30 border-b border-[#E3C5FF] ">
-      <div className="h-16 flex items-center justify-between px-4 lg:px-10">
+      <div className="h-18 flex items-center justify-between px-4 lg:px-10">
         <div className="flex items-center gap-4">
           {/* Hamburger menu button */}
           <button

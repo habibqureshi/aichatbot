@@ -237,6 +237,7 @@ export default function CallsPage() {
     try {
       setMessagesLoading(true);
       const messagesResponse = await getConversationMessages(conversation.id);
+      console.log("message response", messagesResponse?.data);
       setSelectedMessages(messagesResponse.data);
     } catch (error) {
       console.error("Error fetching messages:", error);

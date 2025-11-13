@@ -130,19 +130,92 @@
 
 /* Custom Medical AI Colors */
 :root {
-  --primary-purple: #751ae5;
-  --secondary-purple: #ab74ef;
-  --light-purple-bg: #e3c5ff55;
-  --lighter-purple-bg: #f1e6ff55;
+  --primary-purple: #4318ff;
+  --secondary-purple: #a199ff;
+  --light-purple-bg: #f0effc;
+  --lighter-purple-bg: linear-gradient(135deg, #f1f0fd 0%, #a199ff 100%);
   --dark-text: #2a2a2a;
-  --gray-text: #666666;
-  --body-bg: #eee3fa;
+  --gray-text: #787878;
+  --body-bg: #f1f0fd;
+}
+
+/* Call Details Font Classes */
+.calldetails-title {
+  color: var(--dark-text);
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 100%;
+  letter-spacing: -4%;
+}
+
+.calldetails-label {
+  color: var(--gray-text);
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 100%;
+  letter-spacing: -4%;
+}
+
+.calldetails-value {
+  color: var(--dark-text);
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 100%;
+  letter-spacing: -4%;
+}
+
+.calldetails-section-title {
+  color: var(--dark-text);
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 100%;
+  letter-spacing: -4%;
+}
+
+.calldetails-summary-text {
+  color: var(--dark-text);
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: -4%;
+}
+
+.calldetails-chat-user {
+  color: var(--primary-purple);
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 120%;
+  letter-spacing: -4%;
+  vertical-align: middle;
+}
+
+.calldetails-chat-bot {
+  color: var(--dark-text);
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 120%;
+  letter-spacing: -4%;
+  vertical-align: middle;
 }
 
 /* Gradient Background with Mixed Gradients */
 .gradient-bg {
   position: relative;
-  background: linear-gradient(55deg, #f7f6fb 0%, #E5E2FC 50%, #dfdafd 100%);
+  background: linear-gradient(55deg, #f7f6fb 0%, #e5e2fc 50%, #dfdafd 100%);
   overflow: hidden;
 }
 
@@ -176,7 +249,6 @@
   z-index: 0;
 }
 
-
 /* Sidebar item styles */
 .sidebar-item {
   font-family: var(--font-inter), sans-serif;
@@ -196,3 +268,27 @@
   line-height: 100%;
   letter-spacing: -4%;
 }
+
+/* Custom Scrollbar Style */
+/* ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #D9C8FF 0%, #BFA8FF 100%);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #CDBAFF 0%, #A789FF 100%);
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #CBB7FF transparent;
+} */

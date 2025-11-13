@@ -251,13 +251,16 @@ export function DataTable<TData, TValue>({
 
       {/* Table */}
       <div className="bg-[#F3F0FD] border rounded-sm relative" style={{ borderColor: "#D5BAF6" }}>
-        <div className="overflow-y-auto overflow-x-auto" style={{ maxHeight: "650px" }}>
-          <Table className="min-w-[950px] table-auto w-full">
+        <div
+          className="overflow-y-auto overflow-x-auto relative"
+          style={{ maxHeight: "650px", position: "relative" }}
+        >
+          <Table className="min-w-[950px] table-auto w-full border-collapse">
             <TableHeader
-              className="sticky top-0 rounded-tl-lg rounded-tr-sm z-10 py-4"
-              style={{
-                background: "linear-gradient(to right, #F1E7FE 0%, #F3F0FD 100%)",
-              }}
+              className="sticky top-0 z-20 shadow-sm"
+      style={{
+        background: "linear-gradient(to right, #F1E7FE 0%, #F3F0FD 100%)",
+      }}
             >
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} style={{ background: "transparent" }}>

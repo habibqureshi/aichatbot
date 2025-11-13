@@ -225,7 +225,7 @@ function AddDoctorPageContent() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-[#2A2A2A]">
           {isEditMode ? "Edit Doctor Profile" : "Add Doctor Profile"}
         </h1>
       </div>
@@ -233,15 +233,13 @@ function AddDoctorPageContent() {
       <div className="bg-transparent py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Doctor Information Card */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="border-b border-gray-200 pb-2 mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Doctor Information</h3>
-              <p className="text-sm text-gray-600">Enter the doctor&apos;s basic details</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-[#F4F4FD] rounded-lg p-4 shadow-sm">
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 py-8 px-4 rounded-lg"
+              style={{ border: "1px solid #E3C5FF" }}
+            >
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="name" className="block text-sm font-medium text-[#2A2A2A]">
                   Doctor Name
                 </label>
                 <input
@@ -251,13 +249,14 @@ function AddDoctorPageContent() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 bg-white text-[#2A2A2A]"
+                  style={{ border: "1px solid #E3C5FF" }}
                   placeholder="Enter doctor's full name"
                 />
               </div>
 
               <div>
-                <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="phone_number" className="block text-sm font-medium text-[#2A2A2A]">
                   Phone Number
                 </label>
                 <input
@@ -267,183 +266,195 @@ function AddDoctorPageContent() {
                   value={formData.phone_number}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 bg-white text-[#2A2A2A]"
+                  style={{ border: "1px solid #E3C5FF" }}
                   placeholder="Enter phone number"
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Specialty Selection */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="border-b border-gray-200 pb-2 mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Specialty</h3>
-              <p className="text-sm text-gray-600">Select the doctor&apos;s specialty</p>
-            </div>
-
-            <div className="max-w-md">
-              {loadingSpecialities ? (
-                <SpecialtySkeleton />
-              ) : (
-                <>
-                  <label htmlFor="specialty_id" className="block text-sm font-medium text-gray-700">
-                    Specialty
-                  </label>
-                  <select
-                    id="specialty_id"
-                    name="specialty_id"
-                    value={formData.specialty_id}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value={0}>Select Specialty</option>
-                    {specialities.map((specialty) => (
-                      <option key={specialty.id} value={specialty.id}>
-                        {specialty.name}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
+              <div className="max-w-md">
+                {loadingSpecialities ? (
+                  <SpecialtySkeleton />
+                ) : (
+                  <>
+                    <label htmlFor="specialty_id" className="block text-sm font-medium text-[#2A2A2A]">
+                      Specialty
+                    </label>
+                    <select
+                      id="specialty_id"
+                      name="specialty_id"
+                      value={formData.specialty_id}
+                      onChange={handleChange}
+                      required
+                      className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 bg-white text-[#2A2A2A]"
+                      style={{ border: "1px solid #E3C5FF" }}
+                    >
+                      <option value={0}>Select Specialty</option>
+                      {specialities.map((specialty) => (
+                        <option key={specialty.id} value={specialty.id}>
+                          {specialty.name}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Duration Card */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="border-b border-gray-200 pb-2 mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Appointment Duration</h3>
-              <p className="text-sm text-gray-600">Select the duration for each appointment</p>
-            </div>
-
-            <div className="max-w-md">
-              <label className="block text-sm font-medium text-gray-700 mb-3">Duration</label>
-              <div className="grid grid-cols-3 gap-3">
-                {[15, 30, 60].map((duration) => (
-                  <button
-                    key={duration}
-                    type="button"
-                    onClick={() => handleDurationChange(duration)}
-                    disabled={formData.timeSlots.length > 0}
-                    className={`px-4 py-3 text-sm font-medium rounded-md border transition-colors ${
-                      formData.duration === duration
-                        ? "bg-blue-500 text-white border-blue-500"
-                        : formData.timeSlots.length > 0
-                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    {duration} minutes
-                  </button>
-                ))}
+          <div className="bg-[#F4F4FD] rounded-lg p-4 shadow-sm space-y-6">
+            <div className=" rounded-lg p-6 shadow-sm" style={{ border: "1px solid #E3C5FF" }}>
+              <div className="pb-2 mb-4" style={{ borderBottom: "1px solid #E3C5FF" }}>
+                <h3 className="text-lg font-medium text-[#2A2A2A]">Appointment Duration</h3>
+                <p className="text-sm text-[#787878]">Select the duration for each appointment</p>
               </div>
-              {formData.timeSlots.length > 0 && (
-                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <p className="text-sm text-yellow-800">
-                    Duration cannot be changed while slots exist.{" "}
+
+              <div className="max-w-md">
+                <label className="block text-sm font-medium text-[#2A2A2A] mb-3">Duration</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[15, 30, 60].map((duration) => (
                     <button
+                      key={duration}
                       type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, timeSlots: [] }))}
-                      className="text-yellow-900 underline hover:text-yellow-700 font-medium"
+                      onClick={() => handleDurationChange(duration)}
+                      disabled={formData.timeSlots.length > 0}
+                      className={`px-4 py-3 text-sm font-medium rounded-md transition-colors ${
+                        formData.duration === duration
+                          ? "text-white"
+                          : formData.timeSlots.length > 0
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-white text-[#2A2A2A]"
+                      }`}
+                      style={{
+                        border:
+                          formData.duration === duration ? "1px solid #4318ff" : "1px solid #E3C5FF",
+                        backgroundColor:
+                          formData.duration === duration
+                            ? "#4318ff"
+                            : formData.timeSlots.length > 0
+                            ? "#f3f4f6"
+                            : "white",
+                      }}
                     >
-                      Clear all slots
-                    </button>{" "}
-                    to change duration.
-                  </p>
+                      {duration} minutes
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Time Slots Card */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="border-b border-gray-200 pb-2 mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Time Slots</h3>
-              <p className="text-sm text-gray-600">Set the available time slots for appointments</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="max-w-lg">
-                <SingleSelect
-                  label="Select Day for Slot Creation"
-                  options={DAYS_OF_WEEK}
-                  selectedValue={selectedDayForSlot}
-                  onChange={(value) => setSelectedDayForSlot(value as string)}
-                  placeholder="Choose a day to create slots"
-                />
-              </div>
-
-              {selectedDayForSlot && (
-                <TimeRangePicker
-                  timeSlots={formData.timeSlots}
-                  onChange={handleTimeSlotsChange}
-                  onDurationChange={handleDurationChange}
-                  label=""
-                  hideDuration={true}
-                  selectedDay={selectedDayForSlot}
-                />
-              )}
-            </div>
-
-            {/* Display created slots in cards */}
-            {formData.timeSlots.length > 0 && (
-              <div className="mt-6">
-                <h4 className="text-md font-medium text-gray-900 mb-4">Created Time Slots</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {formData.timeSlots.map((slot) => {
-                    const dayLabel = DAYS_OF_WEEK.find((d) => d.value === slot.day)?.label || slot.day;
-                    return (
-                      <div
-                        key={slot.id}
-                        className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                {formData.timeSlots.length > 0 && (
+                  <div
+                    className="mt-3 p-3 rounded-md"
+                    style={{ backgroundColor: "#FEF3C7", border: "1px solid #FDE68A" }}
+                  >
+                    <p className="text-sm" style={{ color: "#92400E" }}>
+                      Duration cannot be changed while slots exist.{" "}
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, timeSlots: [] }))}
+                        className="underline font-medium"
+                        style={{ color: "#78350F" }}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h5 className="font-medium text-gray-900">{dayLabel}</h5>
-                            <p className="text-sm text-gray-600">
-                              {formatTimeDisplay(slot.startTime)} - {formatTimeDisplay(slot.endTime)}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeTimeSlot(slot.id)}
-                            className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full"
-                            aria-label={`Remove slot for ${dayLabel}`}
-                          >
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Duration: {formData.duration} minutes
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                        Clear all slots
+                      </button>{" "}
+                      to change duration.
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="flex justify-end pt-6 border-t border-gray-200">
+            {/* Time Slots Card */}
+            <div className="rounded-lg p-6 shadow-sm" style={{ border: "1px solid #E3C5FF" }}>
+              <div className="pb-2 mb-4" style={{ borderBottom: "1px solid #E3C5FF" }}>
+                <h3 className="text-lg font-medium text-[#2A2A2A]">Time Slots</h3>
+                <p className="text-sm text-[#787878]">Set the available time slots for appointments</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="max-w-lg">
+                  <SingleSelect
+                    label="Select Day for Slot Creation"
+                    options={DAYS_OF_WEEK}
+                    selectedValue={selectedDayForSlot}
+                    onChange={(value) => setSelectedDayForSlot(value as string)}
+                    placeholder="Choose a day to create slots"
+                  />
+                </div>
+
+                {selectedDayForSlot && (
+                  <TimeRangePicker
+                    timeSlots={formData.timeSlots}
+                    onChange={handleTimeSlotsChange}
+                    onDurationChange={handleDurationChange}
+                    label=""
+                    hideDuration={true}
+                    selectedDay={selectedDayForSlot}
+                  />
+                )}
+              </div>
+
+              {/* Display created slots in cards */}
+              {formData.timeSlots.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-md font-medium text-[#2A2A2A] mb-4">Created Time Slots</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {formData.timeSlots.map((slot) => {
+                      const dayLabel = DAYS_OF_WEEK.find((d) => d.value === slot.day)?.label || slot.day;
+                      return (
+                        <div
+                          key={slot.id}
+                          className="bg-white rounded-lg p-4 shadow-sm"
+                          style={{ border: "1px solid #E3C5FF" }}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h5 className="font-medium text-[#2A2A2A]">{dayLabel}</h5>
+                              <p className="text-sm text-[#787878]">
+                                {formatTimeDisplay(slot.startTime)} - {formatTimeDisplay(slot.endTime)}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeTimeSlot(slot.id)}
+                              className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full"
+                              aria-label={`Remove slot for ${dayLabel}`}
+                            >
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="text-xs text-[#787878]">
+                            Duration: {formData.duration} minutes
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end pt-6" style={{ borderTop: "1px solid #E3C5FF" }}>
             <div className="flex flex-col items-end gap-3 w-full">
               {!isFormValid() && (
-                <div className="w-full bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <p className="text-sm text-amber-800 font-medium mb-2">
+                <div
+                  className="w-full rounded-lg p-4"
+                  style={{ backgroundColor: "#FEF3C7", border: "1px solid #FDE68A" }}
+                >
+                  <p className="text-sm font-medium mb-2" style={{ color: "#92400E" }}>
                     Please complete all required fields:
                   </p>
-                  <ul className="text-sm text-amber-700 space-y-1 ml-4 list-disc">
+                  <ul className="text-sm space-y-1 ml-4 list-disc" style={{ color: "#B45309" }}>
                     {formData.name.trim() === "" && <li>Doctor Name is required</li>}
                     {formData.phone_number.trim() === "" && <li>Phone Number is required</li>}
                     {formData.specialty_id === 0 && <li>Specialty must be selected</li>}
@@ -454,7 +465,11 @@ function AddDoctorPageContent() {
               <button
                 type="submit"
                 disabled={isSubmitting || !isFormValid()}
-                className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="inline-flex items-center px-6 py-3 text-white text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                style={{
+                  backgroundColor: isSubmitting || !isFormValid() ? "#9CA3AF" : "#4318ff",
+                  borderColor: isSubmitting || !isFormValid() ? "#9CA3AF" : "#4318ff",
+                }}
               >
                 {isSubmitting ? (
                   <>

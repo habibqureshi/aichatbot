@@ -67,7 +67,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               flex flex-col transform transition-transform duration-300 ease-in-out 
               h-[calc(100vh-1rem)] lg:h-[calc(100vh-74px)]
               ${isOpen ? "translate-x-0" : "-translate-x-full"} 
-              lg:translate-x-0 backdrop-blur-md bg-white/30`}
+              lg:translate-x-0`}
+        style={{
+          background: "linear-gradient(to bottom, #e8daf7 0%, #e8daf7 60%, #eee2fa 100%)",
+        }}
       >
         {/* Header - Only show close button on mobile */}
         <div className="flex items-center justify-end p-4 border-b border-[#E3C5FF55] lg:hidden">

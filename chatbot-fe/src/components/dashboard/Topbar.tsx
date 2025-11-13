@@ -19,7 +19,12 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
     fetchSession();
   }, []);
   return (
-    <header className="sticky top-0 w-full z-30 backdrop-blur-md bg-white/30 border-b border-[#E3C5FF] ">
+    <header
+      className="sticky top-0 w-full z-30  border-b border-[#E3C5FF] "
+      style={{
+        background: "linear-gradient(to right, #e8daf7 0%, #e8daf7 60%, #F5F1FC 100%)",
+      }}
+    >
       <div className="h-18 flex items-center justify-between px-4 lg:px-10">
         <div className="flex items-center gap-4">
           {/* Hamburger menu button */}

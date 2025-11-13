@@ -98,17 +98,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   key={item.name}
                   href={item.href}
                   onClick={handleLinkClick}
-                  className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all
-                                    ${isActive ? "font-semibold" : ""}`}
+                  className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all hover:bg-[#E3C5FF55]
+                                    ${isActive ? "bg-gradient-to-r from-[#F1E6FF] to-[#E3C5FF]" : ""}`}
                   style={{
-                    background: isActive ? "#751AE5" : "transparent",
-                    color: isActive ? "white" : "#2A2A2A",
+                    color: isActive ? "#751AE5" : "#2A2A2A",
                   }}
                   aria-current={isActive ? "page" : undefined}
                 >
                   <svg
                     className="mr-3 h-5 w-5 transition-colors"
-                    style={{ color: isActive ? "white" : "#666666" }}
+                    style={{ color: isActive ? "#751AE5" : "#666666" }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -127,17 +126,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <Link
             href="/settings"
             onClick={handleLinkClick}
-            className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all
-                        ${pathname === "/settings" ? "font-semibold" : ""}`}
+            className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all hover:bg-[#E3C5FF55]
+                        ${
+                          pathname === "/settings" ? "bg-gradient-to-r from-[#F1E6FF] to-[#E3C5FF]" : ""
+                        }`}
             style={{
-              background: pathname === "/settings" ? "#751AE5" : "transparent",
-              color: pathname === "/settings" ? "white" : "#2A2A2A",
+              color: pathname === "/settings" ? "#751AE5" : "#2A2A2A",
             }}
             aria-current={pathname === "/settings" ? "page" : undefined}
           >
             <svg
               className="mr-3 h-5 w-5 transition-colors"
-              style={{ color: pathname === "/settings" ? "white" : "#666666" }}
+              style={{ color: pathname === "/settings" ? "#751AE5" : "#666666" }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

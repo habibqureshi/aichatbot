@@ -2,9 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { DataTable, ExtendedColumnDef, ActionsMenu } from "@/components/common/DataTable";
-import { getConversationsList, Conversation } from "@/app/actions/conversations";
+import CallDetails from "@/components/dashboard/CallDetails";
+import {
+  getConversationsList,
+  Conversation,
+  Message,
+  getConversationMessages,
+} from "@/app/actions/conversations";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusStyles: Record<string, string> = {
@@ -41,14 +46,15 @@ const calculateDuration = (startedAt: string, endedAt: string | null): string =>
 };
 
 export default function CallsPage() {
-  const router = useRouter();
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [selectedMessages, setSelectedMessages] = useState<Message[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalConversations, setTotalConversations] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -61,7 +67,7 @@ export default function CallsPage() {
   // Debounced search value
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
-  // Define columns inside the component to access router
+  // Define columns inside the component
   const columns: ExtendedColumnDef<Conversation>[] = [
     {
       accessorKey: "patient.name",
@@ -145,7 +151,10 @@ export default function CallsPage() {
                   />
                 </svg>
               ),
-              onClick: () => router.push(`/calls/conversation/${row.original.id}`),
+              onClick: () => {
+                // Set selected conversation in right pane
+                handleRowClick(row.original);
+              },
             },
           ]}
         />
@@ -177,15 +186,27 @@ export default function CallsPage() {
         console.log("API Response:", response);
         console.log("Conversations data:", response.data);
         setConversations(response.data);
-        setTotalPages(response.metadata.total_pages);
-        setTotalConversations(response.metadata.total);
-        setCurrentPage(response.metadata.page);
+        const firstConversation = response.data?.[0];
+        setSelectedConversation(firstConversation || null);
+        if (firstConversation) {
+          try {
+            setMessagesLoading(true);
+            const messagesResponse = await getConversationMessages(firstConversation.id);
+            setSelectedMessages(messagesResponse.data);
+          } catch (error) {
+            console.error("Error fetching messages for first conversation:", error);
+            setSelectedMessages([]);
+          } finally {
+            setMessagesLoading(false);
+          }
+        } else {
+          setSelectedMessages([]);
+        }
       } catch (error) {
         console.error("Error fetching conversations:", error);
         toast.error("Failed to load conversations from server");
         setConversations([]);
         setTotalPages(0);
-        setTotalConversations(0);
       } finally {
         setLoading(false);
       }
@@ -211,43 +232,63 @@ export default function CallsPage() {
     setCurrentPage(1); // Reset to first page when page size changes
   };
 
+  const handleRowClick = async (conversation: Conversation) => {
+    setSelectedConversation(conversation);
+    try {
+      setMessagesLoading(true);
+      const messagesResponse = await getConversationMessages(conversation.id);
+      setSelectedMessages(messagesResponse.data);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      setSelectedMessages([]);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
   };
 
   return (
     <div className="p-2 sm:p-4 lg:p-6">
-      <div className="flex justify-between items-center mb-4 sm:mb-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Call History</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
-            Manage conversation records and call history ({totalConversations} total)
-          </p>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="col-span-1 lg:col-span-8">
+          <div className="h-full overflow-auto">
+            <DataTable
+              title="Recent Calls"
+              columns={columns}
+              data={conversations}
+              // searchKey="patient.name"
+              // searchPlaceholder="Search by patient name..."
+              showSearch={true}
+              loading={loading}
+              initialLoading={loading && conversations.length === 0}
+              externalSearchValue={searchQuery}
+              onExternalSearchChange={handleSearchChange}
+              externalStatusValue={statusFilter}
+              onExternalStatusChange={setStatusFilter}
+              statusOptions={statusOptions}
+              statusPlaceholder="All Status"
+              enablePagination={true}
+              externalPageIndex={currentPage - 1}
+              externalPageSize={pageSize}
+              totalPages={totalPages}
+              onExternalPageChange={handlePageChange}
+              onExternalPageSizeChange={handlePageSizeChange}
+              onRowClick={handleRowClick}
+            />
+          </div>
+        </div>
+
+        <div className="col-span-1 lg:col-span-4">
+          <CallDetails
+            conversation={selectedConversation}
+            messages={selectedMessages}
+            loading={messagesLoading}
+          />
         </div>
       </div>
-
-      <DataTable
-        title="Conversations List"
-        columns={columns}
-        data={conversations}
-        // searchKey="patient.name"
-        // searchPlaceholder="Search by patient name..."
-        showSearch={true}
-        loading={loading}
-        initialLoading={loading && conversations.length === 0}
-        externalSearchValue={searchQuery}
-        onExternalSearchChange={handleSearchChange}
-        externalStatusValue={statusFilter}
-        onExternalStatusChange={setStatusFilter}
-        statusOptions={statusOptions}
-        statusPlaceholder="All Status"
-        enablePagination={true}
-        externalPageIndex={currentPage - 1}
-        externalPageSize={pageSize}
-        totalPages={totalPages}
-        onExternalPageChange={handlePageChange}
-        onExternalPageSizeChange={handlePageSizeChange}
-      />
     </div>
   );
 }

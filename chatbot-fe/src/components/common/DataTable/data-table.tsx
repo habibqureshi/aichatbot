@@ -18,7 +18,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableBody, TableCell, TableHead, TableRow } from "@/components/ui/table";
 
 import { LoadingSpinner } from "./loading-spinner";
 import { TableSkeleton } from "./table-skeleton";
@@ -250,13 +250,10 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="bg-[#F0EEFD] border rounded-sm relative" style={{ borderColor: "#AB99FE" }}>
-        <div
-          className="overflow-y-auto overflow-x-auto relative"
-          style={{ maxHeight: "650px", position: "relative" }}
-        >
-          <Table className="min-w-[950px] table-auto w-full border-collapse">
-            <TableHeader
+      <div className="bg-[#F0EEFD] border rounded-sm overflow-hidden" style={{ borderColor: "#AB99FE" }}>
+        <div className="overflow-auto" style={{ maxHeight: "650px" }}>
+          <table className="min-w-[950px] table-auto w-full border-collapse">
+            <thead
               className="sticky top-0 z-20 shadow-sm"
               style={{
                 background: "linear-gradient(to right, #F0EEFD 0%, #D9D6FE 100%)",
@@ -283,7 +280,7 @@ export function DataTable<TData, TValue>({
                   })}
                 </TableRow>
               ))}
-            </TableHeader>
+            </thead>
             <TableBody>
               {initialLoading ? (
                 <TableRow>
@@ -348,7 +345,7 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               )}
             </TableBody>
-          </Table>
+          </table>
         </div>
       </div>
       {/* Pagination */}

@@ -66,18 +66,20 @@ export default function CallsPage() {
     {
       accessorKey: "patient.name",
       header: "Patient Information",
-      width: "200px",
+      minWidth: "160px",
       cell: ({ row }) => (
         <div>
-          <div className="font-medium text-gray-900">{row.original.patient?.name || "N/A"}</div>
-          <div className="text-sm text-gray-500">{row.original.patient?.phone_number || "N/A"}</div>
+          <div className="font-medium text-gray-900 truncate">{row.original.patient?.name || "N/A"}</div>
+          <div className="text-sm text-gray-500 truncate">
+            {row.original.patient?.phone_number || "N/A"}
+          </div>
         </div>
       ),
     },
     {
       accessorKey: "started_at",
       header: "Call Duration",
-      width: "120px",
+      minWidth: "100px",
       cell: ({ row }) => (
         <div className="text-sm text-gray-600">
           {calculateDuration(row.original.started_at, row.original.ended_at)}
@@ -87,21 +89,21 @@ export default function CallsPage() {
     {
       accessorKey: "status",
       header: "Status",
-      width: "120px",
+      minWidth: "80px",
       cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
     },
     {
       accessorKey: "call_sid",
       header: "Call SID",
-      width: "180px",
+      minWidth: "140px",
       cell: ({ row }) => (
-        <div className="text-sm text-gray-600 font-mono">{row.original.call_sid || "N/A"}</div>
+        <div className="text-sm text-gray-600 font-mono truncate">{row.original.call_sid || "N/A"}</div>
       ),
     },
     {
       id: "started_at_display",
       header: "Started At",
-      width: "160px",
+      minWidth: "140px",
       cell: ({ row }) => (
         <div className="text-sm text-gray-600">
           {row.original.started_at ? new Date(row.original.started_at).toLocaleString() : "N/A"}
@@ -111,7 +113,7 @@ export default function CallsPage() {
     {
       id: "ended_at_display",
       header: "Ended At",
-      width: "160px",
+      minWidth: "140px",
       cell: ({ row }) => (
         <div className="text-sm text-gray-600">
           {row.original.ended_at ? new Date(row.original.ended_at).toLocaleString() : "Ongoing"}
@@ -121,7 +123,7 @@ export default function CallsPage() {
     {
       id: "actions",
       header: "Actions",
-      width: "100px",
+      minWidth: "80px",
       cell: ({ row }) => (
         <ActionsMenu
           actions={[

@@ -31,61 +31,67 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 export default function CallDetails({ conversation, messages, loading = false }: Props) {
   // Fallback values if no conversation is selected
-  const caller = conversation?.patient?.name || "-";
-  const phone = conversation?.patient?.phone_number || "-";
+  const caller = conversation?.patient?.name || "Muhammad Rizwan";
+  const phone = conversation?.patient?.phone_number || "+92 3150921150";
   const status = conversation?.status || "Unknown";
-  console.log("status123", status);
   const summary =
     (conversation && (conversation as unknown as { summary?: string }).summary) ||
     "No summary available.";
 
   return (
-    <aside className="w-full max-h-[82vh] overflow-y-auto">
-      <div className="bg-white/60 backdrop-blur-sm border border-[#E3C5FF55] rounded-xl p-4 shadow-sm">
-        <h3 className="text-lg font-semibold mb-3">Call Details</h3>
+    <aside className="w-full h-fit">
+      <div
+        className="bg-white/60 backdrop-blur-sm border border-[#E3C5FF55] rounded-xl p-4 shadow-sm"
+        style={{
+          // background: "var(--lighter-purple-bg)",
+          minHeight: "400px",
+          maxHeight: "920px",
+        }}
+      >
+        <h3 className="calldetails-title mb-6">Call Details</h3>
         <div className="bg-[#E6E4FB] h-[0.5px] my-4" />
-        <div className="space-y-3">
-          <div className="text-sm text-gray-600">
-            <div className="font-medium text-gray-900">Caller</div>
-            <div className="text-sm text-gray-700">{caller}</div>
-          </div>
-
-          <div className="text-sm text-gray-600">
-            <div className="font-medium text-gray-900">Phone no</div>
-            <div className="text-sm text-gray-700">{phone}</div>
+        <div className="space-y-5">
+          <div>
+            <div className="calldetails-label mb-1">Caller</div>
+            <div className="calldetails-value">{caller}</div>
           </div>
 
           <div>
-            <div className="font-medium text-gray-900">Status</div>
+            <div className="calldetails-label mb-1">Phone no</div>
+            <div className="calldetails-value">{phone}</div>
+          </div>
+
+          <div>
+            <div className="calldetails-label mb-2">Status</div>
             <div className="mt-2 inline-block">
               <StatusBadge status={status} />
             </div>
           </div>
 
           <div className="bg-[#E6E4FB] rounded-lg p-4">
-            <div className="font-medium text-gray-900 mb-2">Summary</div>
-            <div className=" rounded-lg border p-3 text-sm text-gray-700 min-h-[80px] max-h[150px]">
-              {summary}
+            <div className="calldetails-section-title mb-2">Summary</div>
+            <div className=" rounded-lg border p-3 min-h-[80px]">
+              <p className="calldetails-summary-text">{summary}</p>
             </div>
           </div>
           <div className="bg-[#E6E4FB] rounded-lg p-4">
-            <div className="font-medium text-gray-900 mb-2">Transcript Preview</div>
+            <div className="calldetails-section-title mb-3">Transcript Preview</div>
             <div className="h-[354px] overflow-y-auto">
               <div className="space-y-3">
                 {loading ? (
                   // Skeleton loader for messages
                   <>
                     <div className="flex justify-start">
-                      <div className="h-10 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
+                      <div className="h-12 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
                     </div>
                     <div className="flex justify-end">
-                      <div className="h-10 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
+                      <div className="h-12 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
                     </div>
                     <div className="flex justify-start">
-                      <div className="h-10 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
+                      <div className="h-12 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
                     </div>
                     <div className="flex justify-end">
-                      <div className="h-10 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
+                      <div className="h-12 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
                     </div>
                   </>
                 ) : messages && messages.length > 0 ? (
@@ -101,30 +107,29 @@ export default function CallDetails({ conversation, messages, loading = false }:
                             : "bg-white text-gray-700 border"
                         }`}
                       >
-                        {message.content}
+                        <p
+                          className={
+                            message.role === "user" ? "calldetails-chat-user" : "calldetails-chat-bot"
+                          }
+                        >
+                          {message.content}
+                        </p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <>
-                    <div className="flex justify-start">
-                      <div className="bg-[#F6F5FF] text-sm text-[#6A4BFF] p-3 rounded-lg max-w-xs lg:max-w-md">
-                        Hello there! How may I assist you today?
-                      </div>
+                  <div className="flex justify-center">
+                    <div className="p-3 rounded-lg bg-gray-100 text-gray-500">
+                      <p>No chat transcript available</p>
                     </div>
-                    <div className="flex justify-end">
-                      <div className="bg-white text-sm text-gray-700 p-3 rounded-lg border max-w-xs lg:max-w-md">
-                        I&apos;m looking for a name that reflects adventure and exploration.
-                      </div>
-                    </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="mt-4">
-            <button className="w-full bg-gradient-to-r from-[#8A6BFF] to-[#6A4BFF] text-white py-3 rounded-lg shadow-md">
+          <div className="mt-6">
+            <button className="w-full bg-gradient-to-r from-[#8A6BFF] to-[#6A4BFF] text-white py-3 rounded-lg shadow-md hover:opacity-90 transition-opacity">
               ▶ Play Recording
             </button>
           </div>

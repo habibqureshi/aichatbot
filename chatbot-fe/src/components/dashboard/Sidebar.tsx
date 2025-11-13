@@ -62,11 +62,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen && <div className="fixed inset-0 bg-black/20 z-40 lg:hidden" onClick={onClose} />}
 
       {/* Sidebar */}
-      {/* Sidebar */}
       <div
-        className={`fixed lg:sticky top-0 lg:top-16 left-0 z-50 w-64 border-r border-[#E3C5FF]
+        className={`fixed lg:sticky top-0 lg:top-18 left-0 z-50 w-64 border-r border-[#E3C5FF]
               flex flex-col transform transition-transform duration-300 ease-in-out 
-              h-screen lg:h-[calc(100vh-4rem)]
+              h-[calc(100vh-1rem)] lg:h-[calc(100vh-74px)]
               ${isOpen ? "translate-x-0" : "-translate-x-full"} 
               lg:translate-x-0 backdrop-blur-md bg-white/30`}
       >

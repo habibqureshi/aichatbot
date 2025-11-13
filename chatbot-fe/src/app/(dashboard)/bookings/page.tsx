@@ -6,18 +6,22 @@ import { getAppointmentsList, Appointment } from "@/app/actions/appointments";
 import { toast } from "react-toastify";
 
 const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<string, string> = {
-    confirmed: "bg-green-100 text-green-800",
-    pending: "bg-yellow-100 text-yellow-800",
-    cancelled: "bg-red-100 text-red-800",
-    completed: "bg-blue-100 text-blue-800",
+  const statusStyles: Record<string, { bg: string; text: string }> = {
+    scheduled: { bg: "#10B981", text: "#FFFFFF" },
+    confirmed: { bg: "#10B981", text: "#FFFFFF" },
+    pending: { bg: "#FBBF24", text: "#FFFFFF" },
+    cancelled: { bg: "#EF4444", text: "#FFFFFF" },
+    canceled: { bg: "#EF4444", text: "#FFFFFF" },
+    completed: { bg: "#3B82F6", text: "#FFFFFF" },
+    rescheduled: { bg: "#3B82F6", text: "#FFFFFF" },
   };
+
+  const style = statusStyles[status.toLowerCase()] || { bg: "#6B7280", text: "#FFFFFF" };
 
   return (
     <span
-      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-        statusStyles[status] || "bg-gray-100 text-gray-800"
-      }`}
+      className="inline-flex px-3 py-1 text-xs font-medium rounded"
+      style={{ backgroundColor: style.bg, color: style.text }}
     >
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
@@ -26,81 +30,61 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const columns: ExtendedColumnDef<Appointment>[] = [
   {
+    accessorKey: "id",
+    header: "Booking ID",
+    width: "120px",
+    cell: ({ row }) => <div className="font-medium text-gray-900">BK-{row.original.id}</div>,
+  },
+  {
     accessorKey: "patient.name",
-    header: "Patient Information",
-    width: "200px",
+    header: "Patient Name",
+    width: "180px",
     cell: ({ row }) => (
-      <div>
-        <div className="font-medium text-gray-900">{row.original.patient?.name || "N/A"}</div>
-        <div className="text-sm text-gray-500">{row.original.patient?.phone_number || "N/A"}</div>
-      </div>
+      <div className="font-medium text-gray-900">{row.original.patient?.name || "N/A"}</div>
+    ),
+  },
+  {
+    accessorKey: "patient.phone_number",
+    header: "Phone no",
+    width: "150px",
+    cell: ({ row }) => (
+      <div className="text-gray-600">{row.original.patient?.phone_number || "N/A"}</div>
     ),
   },
   {
     accessorKey: "doctor.name",
-    header: "Doctor Information",
-    width: "220px",
+    header: "Doctor",
+    width: "150px",
+    cell: ({ row }) => <div className="text-gray-900">{row.original.doctor?.name || "N/A"}</div>,
+  },
+  {
+    accessorKey: "doctor.specialty.name",
+    header: "Department",
+    width: "150px",
     cell: ({ row }) => (
-      <div>
-        <div className="font-medium text-gray-900">{row.original.doctor?.name || "N/A"}</div>
-        <div className="text-sm text-gray-500">{row.original.doctor?.specialty?.name || "N/A"}</div>
-        <div className="text-xs text-gray-400">{row.original.doctor?.phone_number || "N/A"}</div>
-      </div>
+      <div className="text-gray-600">{row.original.doctor?.specialty?.name || "N/A"}</div>
     ),
   },
   {
     accessorKey: "appointment_date",
-    header: "Appointment Date & Time",
-    width: "200px",
+    header: "Appointment Date/Time",
+    width: "180px",
     cell: ({ row }) => (
-      <div>
-        <div className="font-medium text-gray-900">
-          {row.original.appointment_date
-            ? new Date(row.original.appointment_date).toLocaleDateString()
-            : "N/A"}
-        </div>
-        <div className="text-sm text-gray-600">
-          {row.original.start_time && row.original.end_time
-            ? `${row.original.start_time.slice(0, 5)} - ${row.original.end_time.slice(0, 5)}`
-            : "N/A"}
-        </div>
-        <div className="text-xs text-gray-500">
-          Duration: {row.original.doctor?.duration ? `${row.original.doctor.duration} min` : "N/A"}
-        </div>
+      <div className="text-gray-900">
+        {row.original.appointment_date && row.original.start_time
+          ? `${new Date(row.original.appointment_date).toLocaleDateString("en-US", {
+              day: "numeric",
+              month: "short",
+            })}, ${row.original.start_time.slice(0, 5)}`
+          : "N/A"}
       </div>
     ),
   },
   {
     accessorKey: "status",
     header: "Status",
-    width: "120px",
+    width: "130px",
     cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
-  },
-  {
-    accessorKey: "call_sid",
-    header: "Call SID",
-    width: "200px",
-    cell: ({ row }) => (
-      <div className="text-xs text-gray-600 font-mono break-all">{row.original.call_sid || "N/A"}</div>
-    ),
-  },
-  {
-    accessorKey: "notes",
-    header: "Notes",
-    width: "200px",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-600 truncate max-w-xs">{row.original.notes || "No notes"}</div>
-    ),
-  },
-  {
-    accessorKey: "created_at",
-    header: "Created Date",
-    width: "150px",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-500">
-        {row.original.created_at ? new Date(row.original.created_at).toLocaleDateString() : "N/A"}
-      </div>
-    ),
   },
 ];
 
@@ -186,13 +170,10 @@ export default function BookingsPage() {
           </p>
         </div>
       </div>
-
       <DataTable
         columns={columns}
         data={appointments}
-        title="Appointments List"
-        // searchKey="patient.name"
-        // searchPlaceholder="Search by name..."
+        title="All Bookings"
         showSearch={true}
         loading={loading}
         initialLoading={loading && appointments.length === 0}

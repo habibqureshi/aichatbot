@@ -54,6 +54,11 @@ interface DataTableProps<TData, TValue> {
   onExternalStatusChange?: (value: string) => void;
   statusOptions?: Array<{ value: string; label: string }>;
   statusPlaceholder?: string;
+  // External department filter control
+  externalDepartmentValue?: string;
+  onExternalDepartmentChange?: (value: string) => void;
+  departmentOptions?: Array<{ value: string; label: string }>;
+  departmentPlaceholder?: string;
   // External pagination control (for server-side pagination)
   externalPageIndex?: number;
   externalPageSize?: number;
@@ -84,6 +89,10 @@ export function DataTable<TData, TValue>({
   onExternalStatusChange,
   statusOptions,
   statusPlaceholder = "All Status",
+  externalDepartmentValue,
+  onExternalDepartmentChange,
+  departmentOptions,
+  departmentPlaceholder = "All Department",
   externalPageIndex,
   externalPageSize,
   totalPages,
@@ -137,16 +146,13 @@ export function DataTable<TData, TValue>({
   const [firstWord, ...rest] = (title ?? "").split(" ");
   const restTitle = rest.join(" ");
   return (
-    <div className="border rounded-lg bg-white">
+    <div className="border rounded-lg p-4 px-6" style={{ backgroundColor: "#F2ECFA" }}>
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 gap-1 mb-4 sm:mb-4">
-        <div className="flex items-center space-x-2 px-2 py-3 sm:py-4">
-          <h2 className="text-lg sm:text-[22px] font-bold tracking-tight">
-            <span className="text-black">{firstWord} </span>
-            <span className="text-primary">{restTitle}</span>
-          </h2>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 gap-3 py-4">
+        <div className="flex items-center space-x-2 px-2">
+          <h2 className="text-lg sm:text-[18px] font-semibold tracking-tight text-[#2A2A2A]">{title}</h2>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto px-2 sm:px-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto px-2 sm:px-0">
           {/* Loading Spinner */}
           {loading && (
             <div className="flex items-center">
@@ -157,7 +163,7 @@ export function DataTable<TData, TValue>({
           {/* Search Input */}
           {showSearch && searchKey && (enableFiltering || onExternalSearchChange) && (
             <div className="relative w-full sm:max-w-sm">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <Input
                 placeholder={searchPlaceholder}
                 value={
@@ -172,7 +178,7 @@ export function DataTable<TData, TValue>({
                     table.getColumn(searchKey)?.setFilterValue(event.target.value);
                   }
                 }}
-                className="pl-8 border-gray-200 w-full"
+                className="pl-10 border-[#E3C5FF] bg-white rounded-md h-10 text-sm"
               />
             </div>
           )}
@@ -183,11 +189,30 @@ export function DataTable<TData, TValue>({
               value={externalStatusValue ?? ""}
               onValueChange={(value) => onExternalStatusChange(value)}
             >
-              <SelectTrigger className="w-full sm:w-[180px] border-gray-200">
+              <SelectTrigger className="w-full sm:w-[180px] border-[#E3C5FF] bg-white rounded-md h-10">
                 <SelectValue placeholder={statusPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {/* Department Filter */}
+          {onExternalDepartmentChange && departmentOptions && (
+            <Select
+              value={externalDepartmentValue ?? ""}
+              onValueChange={(value) => onExternalDepartmentChange(value)}
+            >
+              <SelectTrigger className="w-full sm:w-[180px] border-[#E3C5FF] bg-white rounded-md h-10">
+                <SelectValue placeholder={departmentPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {departmentOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -209,7 +234,7 @@ export function DataTable<TData, TValue>({
                 }
               }}
             >
-              <SelectTrigger className="w-full sm:w-[180px] border-gray-200">
+              <SelectTrigger className="w-full sm:w-[180px] border-[#E3C5FF] bg-white rounded-md h-10">
                 <SelectValue placeholder="Sort by: Newest" />
               </SelectTrigger>
               <SelectContent>
@@ -222,12 +247,17 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="bg-[#ffffff] border-t">
+      <div className="bg-[#F1E9FA] border rounded-sm  " style={{ borderColor: "#D5BAF6" }}>
         <div className="overflow-auto" style={{ minHeight: "400px" }}>
           <Table className="min-w-full table-fixed" style={{ minWidth: "950px" }}>
-            <TableHeader className="sticky top-0 bg-gray-100 rounded-none z-10">
+            <TableHeader
+              className="sticky top-0 rounded-tl-lg rounded-tr-sm z-10 py-4"
+              style={{
+                background: "linear-gradient(to right, #F1E7FE 0%, #E7D1FE 100%)",
+              }}
+            >
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="bg-gray-100">
+                <TableRow key={headerGroup.id} style={{ background: "transparent" }}>
                   {headerGroup.headers.map((header) => {
                     const columnDef = header.column.columnDef as ExtendedColumnDef<TData, TValue>;
                     const widthStyle = columnDef.width ? { width: columnDef.width } : {};
@@ -236,7 +266,7 @@ export function DataTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className="font-medium text-xs sm:text-sm text-black py-2 sm:py-3 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-3 sm:last:pr-6 border-0"
+                        className="font-medium text-xs sm:text-sm text-[#2A2A2A] py-3 px-4 first:pl-6 last:pr-6 border-0"
                         style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
                       >
                         {header.isPlaceholder
@@ -260,7 +290,8 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-gray-100 border-b"
+                    className="hover:bg-[#F9F6FD] border-b"
+                    style={{ borderColor: "#E2DAFB" }}
                   >
                     {row.getVisibleCells().map((cell) => {
                       const columnDef = cell.column.columnDef as ExtendedColumnDef<TData, TValue>;

@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <main className="flex-1 p-1 sm:p-4 overflow-auto">
             {/* <div className="w-full h-full relative z-10">{children}</div> */}
           </main>
-          <Bottombar />
+          {/* <Bottombar /> */}
         </div>
       </div>
     </div>

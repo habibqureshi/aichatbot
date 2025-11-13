@@ -189,3 +189,13 @@
   line-height: 100%;
   letter-spacing: -4%;
 }
+
+/* Logo text styles */
+.logo-text {
+  font-family: Inter, sans-serif;
+  font-weight: 900;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 100%;
+  letter-spacing: -4%;
+}

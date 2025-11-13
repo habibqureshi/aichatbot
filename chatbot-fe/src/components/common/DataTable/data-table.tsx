@@ -249,7 +249,7 @@ export function DataTable<TData, TValue>({
       {/* Table */}
       <div className="bg-[#F3F0FD] border rounded-sm  " style={{ borderColor: "#D5BAF6" }}>
         <div className="overflow-auto" style={{ minHeight: "400px" }}>
-          <Table className="min-w-full table-fixed" style={{ minWidth: "950px" }}>
+          <Table className="min-w-[950px] table-auto w-full">
             <TableHeader
               className="sticky top-0 rounded-tl-lg rounded-tr-sm z-10 py-4"
               style={{

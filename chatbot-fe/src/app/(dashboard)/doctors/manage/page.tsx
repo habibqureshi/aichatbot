@@ -337,15 +337,15 @@ function AddDoctorPageContent() {
                 {formData.timeSlots.length > 0 && (
                   <div
                     className="mt-3 p-3 rounded-md"
-                    style={{ backgroundColor: "#FEF3C7", border: "1px solid #FDE68A" }}
+                    style={{ backgroundColor: "#F4F4FD", border: "1px solid #E3C5FF" }}
                   >
-                    <p className="text-sm" style={{ color: "#92400E" }}>
+                    <p className="text-sm" style={{ color: "#2A2A2A" }}>
                       Duration cannot be changed while slots exist.{" "}
                       <button
                         type="button"
                         onClick={() => setFormData((prev) => ({ ...prev, timeSlots: [] }))}
                         className="underline font-medium"
-                        style={{ color: "#78350F" }}
+                        style={{ color: "#4318FF" }}
                       >
                         Clear all slots
                       </button>{" "}
@@ -441,12 +441,12 @@ function AddDoctorPageContent() {
               {!isFormValid() && (
                 <div
                   className="w-full rounded-lg p-4 shadow-sm"
-                  style={{ backgroundColor: "#FEF3F3", border: "1px solid #FCA5A5" }}
+                  style={{ backgroundColor: "#F4F4FD", border: "1px solid #E3C5FF" }}
                 >
-                  <p className="text-sm font-semibold mb-2" style={{ color: "#7F1D1D" }}>
+                  <p className="text-sm font-semibold mb-2" style={{ color: "#2A2A2A" }}>
                     Please complete all required fields:
                   </p>
-                  <ul className="text-sm space-y-1 ml-4 list-disc" style={{ color: "#991B1B" }}>
+                  <ul className="text-sm space-y-1 ml-4 list-disc" style={{ color: "#4318FF" }}>
                     {formData.name.trim() === "" && <li>Doctor Name is required</li>}
                     {formData.phone_number.trim() === "" && <li>Phone Number is required</li>}
                     {formData.specialty_id === 0 && <li>Specialty must be selected</li>}

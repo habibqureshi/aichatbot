@@ -249,8 +249,8 @@ function AddDoctorPageContent() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 bg-white text-[#2A2A2A]"
-                  style={{ border: "1px solid #E3C5FF" }}
+                  className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm bg-white text-[#2A2A2A]"
+                  style={{ border: "1px solid #E3C5FF", outline: "none" }}
                   placeholder="Enter doctor's full name"
                 />
               </div>
@@ -266,8 +266,8 @@ function AddDoctorPageContent() {
                   value={formData.phone_number}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 bg-white text-[#2A2A2A]"
-                  style={{ border: "1px solid #E3C5FF" }}
+                  className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm bg-white text-[#2A2A2A]"
+                  style={{ border: "1px solid #E3C5FF", outline: "none" }}
                   placeholder="Enter phone number"
                 />
               </div>
@@ -285,8 +285,8 @@ function AddDoctorPageContent() {
                       value={formData.specialty_id}
                       onChange={handleChange}
                       required
-                      className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 bg-white text-[#2A2A2A]"
-                      style={{ border: "1px solid #E3C5FF" }}
+                      className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm bg-white text-[#2A2A2A]"
+                      style={{ border: "1px solid #E3C5FF", outline: "none" }}
                     >
                       <option value={0}>Select Specialty</option>
                       {specialities.map((specialty) => (
@@ -320,7 +320,7 @@ function AddDoctorPageContent() {
                       disabled={formData.timeSlots.length > 0}
                       className={`px-4 py-3 text-sm font-medium rounded-md transition-colors ${
                         formData.duration === duration
-                          ? "text-white"
+                          ? "bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white"
                           : formData.timeSlots.length > 0
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                           : "bg-white text-[#2A2A2A]"
@@ -328,12 +328,6 @@ function AddDoctorPageContent() {
                       style={{
                         border:
                           formData.duration === duration ? "1px solid #4318ff" : "1px solid #E3C5FF",
-                        backgroundColor:
-                          formData.duration === duration
-                            ? "#4318ff"
-                            : formData.timeSlots.length > 0
-                            ? "#f3f4f6"
-                            : "white",
                       }}
                     >
                       {duration} minutes
@@ -380,16 +374,14 @@ function AddDoctorPageContent() {
                   />
                 </div>
 
-                {selectedDayForSlot && (
-                  <TimeRangePicker
-                    timeSlots={formData.timeSlots}
-                    onChange={handleTimeSlotsChange}
-                    onDurationChange={handleDurationChange}
-                    label=""
-                    hideDuration={true}
-                    selectedDay={selectedDayForSlot}
-                  />
-                )}
+                <TimeRangePicker
+                  timeSlots={formData.timeSlots}
+                  onChange={handleTimeSlotsChange}
+                  onDurationChange={handleDurationChange}
+                  label=""
+                  hideDuration={true}
+                  selectedDay={selectedDayForSlot}
+                />
               </div>
 
               {/* Display created slots in cards */}
@@ -448,13 +440,13 @@ function AddDoctorPageContent() {
             <div className="flex flex-col items-end gap-3 w-full">
               {!isFormValid() && (
                 <div
-                  className="w-full rounded-lg p-4"
-                  style={{ backgroundColor: "#FEF3C7", border: "1px solid #FDE68A" }}
+                  className="w-full rounded-lg p-4 shadow-sm"
+                  style={{ backgroundColor: "#FEF3F3", border: "1px solid #FCA5A5" }}
                 >
-                  <p className="text-sm font-medium mb-2" style={{ color: "#92400E" }}>
+                  <p className="text-sm font-semibold mb-2" style={{ color: "#7F1D1D" }}>
                     Please complete all required fields:
                   </p>
-                  <ul className="text-sm space-y-1 ml-4 list-disc" style={{ color: "#B45309" }}>
+                  <ul className="text-sm space-y-1 ml-4 list-disc" style={{ color: "#991B1B" }}>
                     {formData.name.trim() === "" && <li>Doctor Name is required</li>}
                     {formData.phone_number.trim() === "" && <li>Phone Number is required</li>}
                     {formData.specialty_id === 0 && <li>Specialty must be selected</li>}
@@ -465,9 +457,8 @@ function AddDoctorPageContent() {
               <button
                 type="submit"
                 disabled={isSubmitting || !isFormValid()}
-                className="inline-flex items-center px-6 py-3 text-white text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="inline-flex items-center px-6 py-3 text-white text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 bg-gradient-to-r from-[#9882F7] to-[#4318FF]"
                 style={{
-                  backgroundColor: isSubmitting || !isFormValid() ? "#9CA3AF" : "#4318ff",
                   borderColor: isSubmitting || !isFormValid() ? "#9CA3AF" : "#4318ff",
                 }}
               >

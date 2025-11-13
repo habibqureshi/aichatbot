@@ -171,7 +171,7 @@ export default function TimeRangePicker({
               <button
                 type="button"
                 onClick={() => setIsDurationOpen((v) => !v)}
-                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
+                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-2  focus:border-blue-500 flex items-center justify-between"
               >
                 <span className="text-gray-900">
                   {DURATION_OPTIONS.find((d) => d.value === selectedDuration)?.label ||
@@ -220,7 +220,8 @@ export default function TimeRangePicker({
               <button
                 type="button"
                 onClick={() => setIsStartOpen((v) => !v)}
-                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
+             className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-0 focus:border-gray-300 flex items-center justify-between"
+
               >
                 <span className={newStartTime ? "text-gray-900" : "text-gray-500"}>
                   {newStartTime ? formatTimeDisplay(newStartTime) : "Select time"}
@@ -266,7 +267,8 @@ export default function TimeRangePicker({
               <button
                 type="button"
                 onClick={() => setIsEndOpen((v) => !v)}
-                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
+            className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-0 focus:border-gray-300 flex items-center justify-between"
+
               >
                 <span className={newEndTime ? "text-gray-900" : "text-gray-500"}>
                   {newEndTime ? formatTimeDisplay(newEndTime) : "Select time"}
@@ -319,7 +321,7 @@ export default function TimeRangePicker({
               type="button"
               onClick={addOrUpdateSlot}
               disabled={!newStartTime || !newEndTime}
-              className="px-4 py-2 mt-4 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 mt-4 bg-transparent text-[#4318FF] border border-[#4318FF] text-sm font-medium rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {editingSlotId ? "Update Slot" : "Add Slot"}
             </button>

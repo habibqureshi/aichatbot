@@ -7,9 +7,10 @@ import React, { useEffect, useState } from "react";
 
 interface TopbarProps {
   onMenuClick: () => void;
+  isSidebarOpen?: boolean;
 }
 
-export default function Topbar({ onMenuClick }: TopbarProps) {
+export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarProps) {
   const [session, setSession] = useState<AuthResponse | null>(null);
   useEffect(() => {
     const fetchSession = async () => {
@@ -20,7 +21,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
   }, []);
   return (
     <header
-      className="sticky top-0 w-full z-30  border-b border-[#A491FE] "
+      className="fixed top-0 w-full z-50 border-b border-[#A491FE]"
       style={{
         background: "linear-gradient(to right, #ecebfc 0%, #F7F6FB 60%, #F2F2F2 100%)",
       }}
@@ -33,14 +34,25 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
             className="lg:hidden p-2 rounded-md hover:bg-[#E3C5FF55] transition-colors"
             style={{ color: "#751AE5" }}
           >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+            {isSidebarOpen ? (
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            )}
           </button>
           <h1 className="logo-text" style={{ color: "#4318FF" }}>
             MediCall AI

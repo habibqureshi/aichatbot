@@ -251,7 +251,7 @@ export function DataTable<TData, TValue>({
 
       {/* Table */}
       <div className="bg-[#F0EEFD] border rounded-sm overflow-hidden" style={{ borderColor: "#AB99FE" }}>
-        <div className="overflow-auto" style={{ maxHeight: "650px" }}>
+        <div className="overflow-auto" style={{ minHeight: "400px", maxHeight: "650px" }}>
           <table className="min-w-[950px] table-auto w-full border-collapse">
             <thead
               className="sticky top-0 z-20 shadow-sm"
@@ -338,9 +338,11 @@ export function DataTable<TData, TValue>({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="py-12 text-center font-medium text-[14px] text-muted-foreground border-0"
+                    className="py-12 text-center font-medium text-[18px] text-muted-foreground border-0 "
                   >
-                    <div className="flex items-center justify-center">No results found.</div>
+                    <div className="flex items-center justify-center min-h-[220px]">
+                      No results found.
+                    </div>
                   </TableCell>
                 </TableRow>
               )}

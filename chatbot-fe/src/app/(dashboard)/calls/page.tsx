@@ -241,6 +241,7 @@ export default function CallsPage() {
         statusPlaceholder="All Status"
         enablePagination={true}
         externalPageIndex={currentPage - 1}
+        externalPageSize={pageSize}
         totalPages={totalPages}
         onExternalPageChange={handlePageChange}
         onExternalPageSizeChange={handlePageSizeChange}

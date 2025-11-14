@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Search } from "lucide-react";
+import { FilterIcon, Search } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { TableBody, TableCell, TableHead, TableRow } from "@/components/ui/table
 
 import { LoadingSpinner } from "./loading-spinner";
 import { TableSkeleton } from "./table-skeleton";
+import Image from "next/image";
 
 // Extended ColumnDef with width properties
 export type ExtendedColumnDef<TData, TValue = unknown> = ColumnDef<TData, TValue> & {
@@ -166,7 +167,14 @@ export function DataTable<TData, TValue>({
           {/* Search Input */}
           {showSearch && searchKey && (enableFiltering || onExternalSearchChange) && (
             <div className="relative w-full sm:max-w-sm">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              <Image
+                height={28}
+                width={28}
+                src="/assets/images/search_icon.svg"
+                alt="search"
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70"
+              />
+
               <Input
                 placeholder={searchPlaceholder}
                 value={
@@ -175,34 +183,47 @@ export function DataTable<TData, TValue>({
                     : (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
                 }
                 onChange={(event) => {
-                  if (onExternalSearchChange) {
-                    onExternalSearchChange(event.target.value);
-                  } else {
-                    table.getColumn(searchKey)?.setFilterValue(event.target.value);
-                  }
+                  if (onExternalSearchChange) onExternalSearchChange(event.target.value);
+                  else table.getColumn(searchKey)?.setFilterValue(event.target.value);
                 }}
-                className="pl-10 border-[#E3C5FF] bg-white rounded-md h-10 text-sm"
+                className="h-[42px] w-full rounded-[8px] bg-[#FCFCFC] pl-10 pr-3 border-none ring-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-[#787878] placeholder:text-[#787878] text-[14px] font-normal leading-none tracking-[-0.04em]"
               />
             </div>
           )}
 
           {/* Status Filter */}
           {onExternalStatusChange && statusOptions && (
-            <Select
-              value={externalStatusValue ?? ""}
-              onValueChange={(value) => onExternalStatusChange(value)}
-            >
-              <SelectTrigger className="w-full sm:w-[180px] border-[#E3C5FF] bg-white rounded-md h-10">
-                <SelectValue placeholder={statusPlaceholder} />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative w-full sm:max-w-sm min-w-[180px]">
+              <Image
+                height={28}
+                width={28}
+                src="/assets/images/filter_icon.svg"
+                alt="filter"
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70"
+              />
+              <Select value={externalStatusValue ?? ""} onValueChange={onExternalStatusChange}>
+                <SelectTrigger
+                  className="
+        h-[42px] w-full rounded-[8px] bg-[#FCFCFC]
+        pl-10 pr-6
+        border-none shadow-none ring-0
+        focus:ring-0 focus:ring-offset-0
+        text-[#787878] placeholder:text-[#787878]
+        text-[14px] font-normal leading-none tracking-[-0.04em]
+      "
+                >
+                  <SelectValue placeholder={statusPlaceholder} />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
           {/* Department Filter */}
@@ -211,7 +232,7 @@ export function DataTable<TData, TValue>({
               value={externalDepartmentValue ?? ""}
               onValueChange={(value) => onExternalDepartmentChange(value)}
             >
-              <SelectTrigger className="w-full sm:w-[180px] border-[#E3C5FF] bg-white rounded-md h-10">
+              <SelectTrigger className="select-component">
                 <SelectValue placeholder={departmentPlaceholder} />
               </SelectTrigger>
               <SelectContent>
@@ -392,7 +413,7 @@ export function DataTable<TData, TValue>({
           </div>
 
           <div className="flex flex-row sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 lg:space-x-8">
-            <div className="flex w-full sm:w-[100px] items-center justify-center text-sm font-medium text-[#787878] mt-3">
+            <div className="flex w-full sm:w-[100px] items-center justify-center text-sm font-medium text-[#787878] mt-3 sm:mt-0">
               Page {currentPageIndex + 1} of {totalPages || table.getPageCount()}
             </div>
             <div className="flex items-center space-x-1">

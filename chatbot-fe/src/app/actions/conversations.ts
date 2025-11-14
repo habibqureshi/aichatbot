@@ -57,6 +57,18 @@ export async function getConversationMessages(
     throw new Error("Failed to fetch conversation messages");
   }
 }
+
+export async function streamConversationRecording(conversationId: number): Promise<ArrayBuffer> {
+  try {
+    const response = await API.get(ENDPOINTS.CONVERSATIONS.STREAM(conversationId), {
+      responseType: "arraybuffer",
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error streaming conversation recording:", error);
+    throw new Error("Failed to stream conversation recording");
+  }
+}
 export async function getConversationsList(
   page: number = 1,
   limit: number = 10,

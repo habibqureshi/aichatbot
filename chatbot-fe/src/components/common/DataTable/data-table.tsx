@@ -12,7 +12,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { FilterIcon, Search } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -147,14 +146,14 @@ export function DataTable<TData, TValue>({
     pageCount: totalPages,
     manualPagination: !!onExternalPageChange,
   });
-  const [firstWord, ...rest] = (title ?? "").split(" ");
-  const restTitle = rest.join(" ");
+  // const [firstWord, ...rest] = (title ?? "").split(" ");
+  // const restTitle = rest.join(" ");
   return (
     <div className="bg-[#FFFFFF80] backdrop-blur-sm border border-[#E3C5FF55] rounded-xl p-4 px-6 shadow-sm">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 gap-3 py-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 mt-1">
         <div className="flex items-center space-x-2 px-2">
-          <h2 className="text-lg sm:text-[18px] font-semibold tracking-tight text-[#2A2A2A]">{title}</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-[#343434] font-inter">{title}</h2>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto px-2 sm:px-0">
           {/* Loading Spinner */}
@@ -202,16 +201,7 @@ export function DataTable<TData, TValue>({
                 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70"
               />
               <Select value={externalStatusValue ?? ""} onValueChange={onExternalStatusChange}>
-                <SelectTrigger
-                  className="
-        h-[42px] w-full rounded-[8px] bg-[#FCFCFC]
-        pl-10 pr-6
-        border-none shadow-none ring-0
-        focus:ring-0 focus:ring-offset-0
-        text-[#787878] placeholder:text-[#787878]
-        text-[14px] font-normal leading-none tracking-[-0.04em]
-      "
-                >
+                <SelectTrigger className="h-[42px] w-full rounded-[8px] bg-[#FCFCFC] pl-10 pr-6 border-none shadow-none ring-0 focus:ring-0 focus:ring-offset-0  text-[#787878] placeholder:text-[#787878]  text-[14px] font-normal leading-none tracking-[-0.04em]">
                   <SelectValue placeholder={statusPlaceholder} />
                 </SelectTrigger>
 

@@ -3,9 +3,10 @@ from datetime import datetime
 import os
 import importlib
 from starlette.requests import Request
+from src.middleware.user import UserMiddleware
 from starlette.responses import JSONResponse
 
-mcp = FastMCP("SaaS MCP Server")
+mcp = FastMCP("SaaS MCP Server", middleware=[UserMiddleware()])
 
 
 tools_dir = os.path.join(os.path.dirname(__file__), "tools")

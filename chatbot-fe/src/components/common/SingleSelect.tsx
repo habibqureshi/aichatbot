@@ -28,14 +28,14 @@ export default function SingleSelect({
 
   return (
     <div className="relative">
-      {label && <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>}
+      {label && <label className="block form-label text-base mb-2">{label}</label>}
       <div className="mt-1 relative" onClick={() => setIsOpen(!isOpen)}>
         <div
           className={`select-component w-full cursor-pointer flex items-center justify-between ${
             isOpen ? "open" : ""
           }`}
         >
-          <span className={`flex-1 text-left ${selectedOption ? "text-[#2A2A2A]" : ""}`}>
+          <span className={`flex-1 text-left ${selectedOption ? "selected-text" : ""}`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           <svg
@@ -54,7 +54,7 @@ export default function SingleSelect({
         </div>
 
         {isOpen && (
-          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none">
+          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none border border-[#4318FF]">
             {options.length === 0 ? (
               <div className="px-3 py-2 text-sm text-gray-500 text-center">{emptyMessage}</div>
             ) : (
@@ -62,7 +62,7 @@ export default function SingleSelect({
                 <div
                   key={option.id}
                   className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 ${
-                    selectedValue === option.value ? "bg-[#FCFCFC] text-[#2A2A2A]" : ""
+                    selectedValue === option.value ? "bg-[#FCFCFC] selected-text" : ""
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();

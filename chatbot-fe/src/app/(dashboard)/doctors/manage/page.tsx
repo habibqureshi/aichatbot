@@ -233,7 +233,7 @@ function AddDoctorPageContent() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-[#2A2A2A]">
+        <h1 className="text-xl font-semibold text-[#2A2A2A]">
           {isEditMode ? "Edit Doctor Profile" : "Add Doctor Profile"}
         </h1>
       </div>
@@ -247,7 +247,7 @@ function AddDoctorPageContent() {
               style={{ border: "1px solid #E3C5FF" }}
             >
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-[#2A2A2A]">
+                <label htmlFor="name" className="block form-label text-base">
                   Doctor Name
                 </label>
                 <div className="max-w-lg">
@@ -265,7 +265,7 @@ function AddDoctorPageContent() {
               </div>
 
               <div>
-                <label htmlFor="phone_number" className="block text-sm font-medium text-[#2A2A2A]">
+                <label htmlFor="phone_number" className="block form-label text-base">
                   Phone Number
                 </label>
                 <div className="max-w-lg">
@@ -286,7 +286,7 @@ function AddDoctorPageContent() {
                   <SpecialtySkeleton />
                 ) : (
                   <>
-                    <label htmlFor="specialty_id" className="block text-sm font-medium text-[#2A2A2A]">
+                    <label htmlFor="specialty_id" className="block form-label text-base">
                       Specialty
                     </label>
                     <SingleSelect
@@ -311,13 +311,13 @@ function AddDoctorPageContent() {
           {/* Duration Card */}
           <div className="bg-[#FFFFFF66] rounded-lg p-4 shadow-sm space-y-6">
             <div className=" rounded-lg p-6 shadow-sm" style={{ border: "1px solid #E3C5FF" }}>
-              <div className="pb-2 mb-4" style={{ borderBottom: "1px solid #E3C5FF" }}>
-                <h3 className="text-lg font-medium text-[#2A2A2A]">Appointment Duration</h3>
+              <div className="pb-2 mb-4">
+                <p className="form-label text-xl">Appointment Duration</p>
                 <p className="text-sm text-[#787878]">Select the duration for each appointment</p>
               </div>
 
               <div className="max-w-md">
-                <label className="block text-sm font-medium text-[#2A2A2A] mb-3">Duration</label>
+                <label className="block form-label text-base mb-3">Duration</label>
                 <div className="grid grid-cols-3 gap-3">
                   {[15, 30, 60].map((duration) => (
                     <button
@@ -365,8 +365,8 @@ function AddDoctorPageContent() {
 
             {/* Time Slots Card */}
             <div className="rounded-lg p-6 shadow-sm" style={{ border: "1px solid #E3C5FF" }}>
-              <div className="pb-2 mb-4" style={{ borderBottom: "1px solid #E3C5FF" }}>
-                <h3 className="text-lg font-medium text-[#2A2A2A]">Time Slots</h3>
+              <div className="pb-2 mb-4">
+                <p className="form-label text-xl">Time Slots</p>
                 <p className="text-sm text-[#787878]">Set the available time slots for appointments</p>
               </div>
 
@@ -394,7 +394,7 @@ function AddDoctorPageContent() {
               {/* Display created slots in cards */}
               {formData.timeSlots.length > 0 && (
                 <div className="mt-6">
-                  <h4 className="text-md font-medium text-[#2A2A2A] mb-4">Created Time Slots</h4>
+                  <h4 className="form-label text-base mb-4">Created Time Slots</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {formData.timeSlots.map((slot) => {
                       const dayLabel = DAYS_OF_WEEK.find((d) => d.value === slot.day)?.label || slot.day;
@@ -443,7 +443,7 @@ function AddDoctorPageContent() {
               )}
             </div>
           </div>
-          <div className="flex justify-end pt-6" style={{ borderTop: "1px solid #E3C5FF" }}>
+          <div className="flex justify-end">
             <div className="flex flex-col items-end gap-3 w-full">
               {!isFormValid() && (
                 <div

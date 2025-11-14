@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { Conversation, Message } from "@/app/actions/conversations";
 
 type Props = {
@@ -76,7 +77,7 @@ export default function CallDetails({ conversation, messages, loading = false }:
           </div>
           <div className="bg-[#E6E4FB] rounded-lg p-4">
             <div className="calldetails-section-title mb-3">Transcript Preview</div>
-            <div className="h-[354px] overflow-y-auto">
+            <div className="min-h-[100px] max-h-[354px] overflow-y-auto">
               <div className="space-y-3">
                 {loading ? (
                   // Skeleton loader for messages
@@ -129,8 +130,15 @@ export default function CallDetails({ conversation, messages, loading = false }:
           </div>
 
           <div className="mt-6">
-            <button className="w-full bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white py-3 rounded-lg shadow-md hover:opacity-90 transition-opacity">
-              ▶ Play Recording
+            <button className="w-full bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white py-3 rounded-lg shadow-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              <Image
+                width={20}
+                height={20}
+                src="/assets/images/audioIcon.svg"
+                alt="Audio icon"
+                className="flex-shrink-0"
+              />
+              Play Recording
             </button>
           </div>
         </div>

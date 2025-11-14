@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Conversation, Message, streamConversationRecording } from "@/app/actions/conversations";
+import { toast } from "react-toastify";
 
 type Props = {
   conversation?: Conversation | null;
@@ -35,7 +36,24 @@ export default function CallDetails({ conversation, messages, loading = false }:
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Cleanup blob URLs to prevent memory leaks
+  // Reset audio when conversation changes
+  useEffect(() => {
+    // Store current audioSrc to cleanup
+    const currentAudioSrc = audioSrc;
+
+    // Cleanup previous audio
+    if (currentAudioSrc && currentAudioSrc.startsWith("blob:")) {
+      URL.revokeObjectURL(currentAudioSrc);
+    }
+
+    // Reset audio state when conversation changes
+    setAudioSrc(null);
+    setIsPlaying(false);
+    setIsStreaming(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversation?.id]);
+
+  // Cleanup blob URLs to prevent memory leaks on unmount
   useEffect(() => {
     return () => {
       if (audioSrc && audioSrc.startsWith("blob:")) {
@@ -55,8 +73,10 @@ export default function CallDetails({ conversation, messages, loading = false }:
 
     try {
       setIsStreaming(true);
+      console.log("Fetching recording for conversation:", conversation.id);
       const streamData = await streamConversationRecording(conversation.id);
-      console.log("stream Data received, size:", streamData.byteLength);
+
+      console.log("Stream data received, size:", streamData.byteLength);
 
       // Convert ArrayBuffer to blob URL for audio playback
       const audioBlob = new Blob([streamData], { type: "audio/mpeg" });
@@ -65,9 +85,46 @@ export default function CallDetails({ conversation, messages, loading = false }:
       // Set the audio source
       setAudioSrc(audioUrl);
       setIsPlaying(true);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error streaming recording:", error);
-      // You might want to show a toast notification here
+
+      // Handle axios error responses
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { status?: number; data?: ArrayBuffer | { detail?: string } };
+        };
+
+        if (axiosError.response?.status === 400) {
+          let errorMessage = "No recording available";
+
+          if (axiosError.response.data instanceof ArrayBuffer) {
+            try {
+              const decoder = new TextDecoder();
+              const text = decoder.decode(axiosError.response.data);
+              const parsed = JSON.parse(text);
+              errorMessage = parsed.detail || errorMessage;
+            } catch (e) {
+              console.error("Error parsing error response:", e);
+            }
+          } else if (axiosError.response.data && typeof axiosError.response.data === "object") {
+            errorMessage = (axiosError.response.data as { detail?: string }).detail || errorMessage;
+          }
+
+          toast.error(errorMessage);
+        } else if (axiosError.response?.status === 404) {
+          toast.error("Recording not found");
+        } else {
+          toast.error("Failed to load recording. Please try again.");
+        }
+      } else if (error instanceof Error && error.message) {
+        toast.error(`Failed to load recording: ${error.message}`);
+      } else {
+        toast.error("Failed to load recording. Please try again.");
+      }
+
+      // Reset audio state on error
+      setAudioSrc(null);
+      setIsPlaying(false);
     } finally {
       setIsStreaming(false);
     }

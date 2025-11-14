@@ -44,9 +44,7 @@ async def load_file_from_stream(f: UploadFile) -> list:
     with 'page_content' and 'metadata' fields, similar to GCSFileLoader output.
     """
     try:
-        print(f.filename)
         content = await f.read()
-        print(content)
         name = f.filename
         doc = Document(page_content=content, metadata={"source": name})
         return [doc]

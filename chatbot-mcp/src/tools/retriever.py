@@ -9,7 +9,7 @@ collection = client.get_or_create_collection(name=CHROMA_INDEX_NAME)
 
 def register_tools(mcp: FastMCP):
     @mcp.tool()
-    def search_knowledge_base(query: str, k: int = 3) -> str:
+    def knowledge_retriever(query: str, k: int = 3) -> str:
         """
         Retrieve information from the knowledge base using a RAG (Retrieval-Augmented Generation) approach.
 

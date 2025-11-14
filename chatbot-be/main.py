@@ -1,15 +1,20 @@
-
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from router import chatbot_router, rag_router
+from router import (
+    appointment_crud_router,
+    appointment_router,
+    chatbot_router,
+    conversation_router,
+    doctor_router,
+    rag_router,
+    speciality_router,
+)
 from graph import bot_graph
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    lifespan=bot_graph.lifespan,
-    docs_url="/ai/docs",
-    openapi_url="/ai/openapi.json"
+    lifespan=bot_graph.lifespan, docs_url="/ai/docs", openapi_url="/ai/openapi.json"
 )
 app.add_middleware(
     CORSMiddleware,
@@ -19,12 +24,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
+
 app.include_router(chatbot_router.router)
 app.include_router(rag_router.router)
+app.include_router(appointment_router.router)
+app.include_router(conversation_router.router)
+app.include_router(speciality_router.router)
+app.include_router(doctor_router.router)
+app.include_router(appointment_crud_router.router)
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -34,14 +47,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "error": "Validation Error",
             "details": [
                 {
-                    "field": error["loc"][1] if len(error["loc"]) > 1 else error["loc"][0],
-                    "message": error["msg"]
+                    "field": (
+                        error["loc"][1] if len(error["loc"]) > 1 else error["loc"][0]
+                    ),
+                    "message": error["msg"],
                 }
                 for error in exc.errors()
             ],
         },
     )
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)

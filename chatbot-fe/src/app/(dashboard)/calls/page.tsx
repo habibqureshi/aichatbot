@@ -73,7 +73,7 @@ export default function CallsPage() {
     {
       accessorKey: "patient.name",
       header: "Patient Information",
-      minWidth: "160px",
+      minWidth: "200px",
       cell: ({ row }) => (
         <div>
           <div className="font-medium text-gray-900 truncate">{row.original.patient?.name || "N/A"}</div>
@@ -86,7 +86,7 @@ export default function CallsPage() {
     {
       accessorKey: "started_at",
       header: "Call Duration",
-      minWidth: "100px",
+      minWidth: "140px",
       cell: ({ row }) => (
         <div className="text-sm text-gray-600">
           {calculateDuration(row.original.started_at, row.original.ended_at)}
@@ -192,7 +192,7 @@ export default function CallsPage() {
           try {
             setMessagesLoading(true);
             const messagesResponse = await getConversationMessages(firstConversation.id);
-            setSelectedMessages(messagesResponse.data);
+            setSelectedMessages(messagesResponse.data.reverse());
           } catch (error) {
             console.error("Error fetching messages for first conversation:", error);
             setSelectedMessages([]);

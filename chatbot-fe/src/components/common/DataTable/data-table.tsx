@@ -260,7 +260,7 @@ export function DataTable<TData, TValue>({
         >
           <table className="min-w-[950px] table-auto w-full border-collapse">
             <thead
-              className="sticky top-0 z-20 shadow-sm"
+              className="sticky top-0 z-20"
               style={{
                 background: "linear-gradient(to right, #F0EEFD 0%, #D9D6FE 100%)",
               }}
@@ -299,7 +299,9 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={`hover:bg-[#F9F6FD] border-b ${onRowClick ? "cursor-pointer" : ""}`}
+                    className={`bg-[#FFFFFF80] hover:bg-[linear-gradient(to_right,_#F0EEFD_0%,_#D9D6FE_100%)] border-b ${
+                      onRowClick ? "cursor-pointer" : ""
+                    }`}
                     style={{ borderColor: "#E2DAFB" }}
                     onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   >

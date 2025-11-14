@@ -352,9 +352,12 @@ export function DataTable<TData, TValue>({
       </div>
       {/* Pagination */}
       {enablePagination && (
-        <div className="flex flex-row sm:flex-row items-center justify-between space-y-2 sm:space-y-0 space-x-0 sm:space-x-2 py-2 px-4 sm:px-6 border-t">
+        <div
+          className="flex flex-row sm:flex-row items-center justify-between space-y-2 sm:space-y-0 space-x-0 sm:space-x-2 py-2 px-4 sm:px-6 border-t"
+          style={{ borderColor: "#E3C5FF" }}
+        >
           <div className="flex items-center space-x-1 sm:space-x-2 mt-3 sm:mt-0">
-            <p className="text-sm font-medium text-muted-foreground">Rows per page</p>
+            <p className="text-sm font-medium text-[#787878]">Rows per page</p>
             <Select
               value={`${currentPageSize}`}
               onValueChange={(value) => {
@@ -367,7 +370,7 @@ export function DataTable<TData, TValue>({
                 }
               }}
             >
-              <SelectTrigger className="h-8 w-[70px] border-gray-200">
+              <SelectTrigger className="h-8 w-[70px] border-[#E3C5FF] bg-white hover:bg-[#F9F6FD]">
                 <SelectValue placeholder={currentPageSize} />
               </SelectTrigger>
               <SelectContent side="top">
@@ -381,13 +384,13 @@ export function DataTable<TData, TValue>({
           </div>
 
           <div className="flex flex-row sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 lg:space-x-8">
-            <div className="flex w-full sm:w-[100px] items-center justify-center text-sm font-medium text-muted-foreground mt-3">
+            <div className="flex w-full sm:w-[100px] items-center justify-center text-sm font-medium text-[#787878] mt-3">
               Page {currentPageIndex + 1} of {totalPages || table.getPageCount()}
             </div>
             <div className="flex items-center space-x-1">
               <Button
                 variant="outline"
-                className="hidden lg:flex h-8 w-8 p-0 border-gray-200 hover:bg-gray-50"
+                className="hidden lg:flex h-8 w-8 p-0 border-[#E3C5FF] bg-white hover:bg-[#F9F6FD] text-[#2A2A2A]"
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange(0);
@@ -402,7 +405,7 @@ export function DataTable<TData, TValue>({
               </Button>
               <Button
                 variant="outline"
-                className="h-8 w-8 p-0 border-gray-200 hover:bg-gray-50"
+                className="h-8 w-8 p-0 border-[#E3C5FF] bg-white hover:bg-[#F9F6FD] text-[#2A2A2A]"
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange(currentPageIndex - 1);
@@ -436,8 +439,8 @@ export function DataTable<TData, TValue>({
                         variant={page === pageIndex ? "default" : "outline"}
                         className={`h-8 w-8 p-0 font-medium text-[14px] ${
                           page === pageIndex
-                            ? "bg-primary text-white hover:bg-primary/90"
-                            : "border-gray-200 text-muted-foreground hover:bg-gray-50"
+                            ? "bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white hover:from-[#8872E7] hover:to-[#3518EF] border-[#4318FF]"
+                            : "border-[#E3C5FF] bg-white text-[#2A2A2A] hover:bg-[#F9F6FD]"
                         }`}
                         onClick={() => {
                           if (onExternalPageChange) {
@@ -457,7 +460,7 @@ export function DataTable<TData, TValue>({
 
               <Button
                 variant="outline"
-                className="h-8 w-8 p-0 border-gray-200 hover:bg-gray-50"
+                className="h-8 w-8 p-0 border-[#E3C5FF] bg-white hover:bg-[#F9F6FD] text-[#2A2A2A]"
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange(currentPageIndex + 1);
@@ -472,7 +475,7 @@ export function DataTable<TData, TValue>({
               </Button>
               <Button
                 variant="outline"
-                className="hidden lg:flex h-8 w-8 p-0 border-gray-200 hover:bg-gray-50"
+                className="hidden lg:flex h-8 w-8 p-0 border-[#E3C5FF] bg-white hover:bg-[#F9F6FD] text-[#2A2A2A]"
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange((totalPages || table.getPageCount()) - 1);

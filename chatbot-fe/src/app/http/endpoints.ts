@@ -101,6 +101,7 @@ export const ENDPOINTS = {
       });
       return `/api/v1/conversation/${conversationId}/messages?${params.toString()}`;
     },
+    STREAM: (conversationId: number) => `/api/v1/appointment/${conversationId}/stream`,
   },
   SPECIALITIES: {
     LIST: (page: number = 1, limit: number = 10, user_timezone: string = "UTC") => {

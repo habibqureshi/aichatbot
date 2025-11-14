@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Conversation, Message } from "@/app/actions/conversations";
+import { Conversation, Message, streamConversationRecording } from "@/app/actions/conversations";
 
 type Props = {
   conversation?: Conversation | null;
@@ -31,6 +31,18 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 export default function CallDetails({ conversation, messages, loading = false }: Props) {
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Cleanup blob URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (audioSrc && audioSrc.startsWith("blob:")) {
+        URL.revokeObjectURL(audioSrc);
+      }
+    };
+  }, [audioSrc]);
   // Fallback values if no conversation is selected
   const caller = conversation?.patient?.name || "Not Available";
   const phone = conversation?.patient?.phone_number || "Not Available";
@@ -38,6 +50,28 @@ export default function CallDetails({ conversation, messages, loading = false }:
   const summary =
     (conversation && (conversation as unknown as { summary?: string }).summary) ||
     "No summary available.";
+  const handlePlayRecording = async () => {
+    if (!conversation?.id) return;
+
+    try {
+      setIsStreaming(true);
+      const streamData = await streamConversationRecording(conversation.id);
+      console.log("stream Data received, size:", streamData.byteLength);
+
+      // Convert ArrayBuffer to blob URL for audio playback
+      const audioBlob = new Blob([streamData], { type: "audio/mpeg" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Set the audio source
+      setAudioSrc(audioUrl);
+      setIsPlaying(true);
+    } catch (error) {
+      console.error("Error streaming recording:", error);
+      // You might want to show a toast notification here
+    } finally {
+      setIsStreaming(false);
+    }
+  };
 
   return (
     <aside className="w-full h-fit">
@@ -130,7 +164,11 @@ export default function CallDetails({ conversation, messages, loading = false }:
           </div>
 
           <div className="mt-6">
-            <button className="w-full bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white py-3 rounded-lg shadow-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+            <button
+              onClick={handlePlayRecording}
+              disabled={isStreaming || !conversation?.id}
+              className="w-full bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white py-3 rounded-lg shadow-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Image
                 width={20}
                 height={20}
@@ -138,9 +176,50 @@ export default function CallDetails({ conversation, messages, loading = false }:
                 alt="Audio icon"
                 className="flex-shrink-0"
               />
-              Play Recording
+              {isStreaming ? (
+                <>
+                  <span>Loading</span>
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
+                    <div
+                      className="w-2 h-2 bg-white rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-white rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                  </div>
+                </>
+              ) : (
+                "Play Recording"
+              )}
             </button>
           </div>
+
+          {/* Audio Player */}
+          {audioSrc && (
+            <div className="mt-4">
+              <audio
+                controls
+                autoPlay={isPlaying}
+                className="w-full"
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+                onError={(e) => {
+                  console.error("Audio playback error:", e);
+                  setIsPlaying(false);
+                }}
+              >
+                <source src={audioSrc} type="audio/mpeg" />
+                <source src={audioSrc} type="audio/mp3" />
+                <source src={audioSrc} type="audio/wav" />
+                <source src={audioSrc} type="audio/ogg" />
+                Your browser does not support the audio element.
+              </audio>
+            </div>
+          )}
         </div>
       </div>
     </aside>

@@ -88,7 +88,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
                 {session?.user?.username || session?.user?.email}
               </span>
             </button>
-            <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block hover:block z-50">
+            {/* <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block hover:block z-50">
               <Link
                 href="/settings"
                 className="block px-4 py-2 text-sm hover:bg-[#E3C5FF55]"
@@ -103,7 +103,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
               >
                 Logout
               </Link>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

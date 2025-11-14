@@ -399,42 +399,32 @@ function AddDoctorPageContent() {
                     {formData.timeSlots.map((slot) => {
                       const dayLabel = DAYS_OF_WEEK.find((d) => d.value === slot.day)?.label || slot.day;
                       return (
-                        <div
-                          key={slot.id}
-                          className="bg-white rounded-lg p-4 shadow-sm"
-                          style={{ border: "1px solid #E3C5FF" }}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h5 className="font-medium text-[#2A2A2A]">{dayLabel}</h5>
-                              <p className="text-sm text-[#787878]">
-                                {formatTimeDisplay(slot.startTime)} - {formatTimeDisplay(slot.endTime)}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeTimeSlot(slot.id)}
-                              className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full"
-                              aria-label={`Remove slot for ${dayLabel}`}
+                        <div key={slot.id} className="time-slot-card">
+                          <h5 className="time-slot-day">{dayLabel}</h5>
+                          <p className="time-slot-text">
+                            {formatTimeDisplay(slot.startTime)} - {formatTimeDisplay(slot.endTime)}
+                          </p>
+                          <div className="time-slot-text">Duration: {formData.duration} minutes</div>
+                          <button
+                            type="button"
+                            onClick={() => removeTimeSlot(slot.id)}
+                            className="absolute top-3 right-3 text-[#4318FF] hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full"
+                            aria-label={`Remove slot for ${dayLabel}`}
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
                             >
-                              <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                          <div className="text-xs text-[#787878]">
-                            Duration: {formData.duration} minutes
-                          </div>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
                         </div>
                       );
                     })}

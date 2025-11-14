@@ -253,7 +253,7 @@ export function DataTable<TData, TValue>({
       <div className="bg-[#F0EEFD] border rounded-sm overflow-hidden" style={{ borderColor: "#AB99FE" }}>
         <div
           className="overflow-auto"
-          style={{ minHeight: "calc(100vh - 350px)", maxHeight: "calc(100vh - 310px)" }}
+          style={{ minHeight: "calc(100vh - 450px)", maxHeight: "calc(100vh - 320px)" }}
         >
           <table className="min-w-[950px] table-auto w-full border-collapse">
             <thead

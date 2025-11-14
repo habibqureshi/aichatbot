@@ -45,8 +45,8 @@ export default function CallDetails({ conversation, messages, loading = false }:
         className="bg-white/60 backdrop-blur-sm border border-[#E3C5FF55] rounded-xl p-4 shadow-sm"
         style={{
           // background: "var(--lighter-purple-bg)",
-          minHeight: "400px",
-          maxHeight: "920px",
+          minHeight: "calc(100vh - 320px)",
+          maxHeight: "calc(100vh -220px)",
         }}
       >
         <h3 className="calldetails-title mb-6">Call Details</h3>
@@ -77,7 +77,7 @@ export default function CallDetails({ conversation, messages, loading = false }:
           </div>
           <div className="bg-[#E6E4FB] rounded-lg p-4">
             <div className="calldetails-section-title mb-3">Transcript Preview</div>
-            <div className="min-h-[100px] max-h-[354px] overflow-y-auto">
+            <div className="min-h-[100px] max-h-[200px] overflow-y-auto">
               <div className="space-y-3">
                 {loading ? (
                   // Skeleton loader for messages

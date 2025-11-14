@@ -319,17 +319,30 @@ html {
 }
 
 .select-component {
-  background-color: #fcfcfc;
+  height: 51px;
+  background-color: #ffffff80;
+  color: #787878;
   font-family: Inter;
   font-weight: 400;
-  font-style: Regular;
-  font-size: 14px;
+  font-style: normal;
+  font-size: 16px;
   line-height: 100%;
   letter-spacing: -4%;
-  color: #787878;
   border: none;
   border-radius: 8px;
   padding: 10px;
+  transition: all 0.2s ease;
+}
+
+.select-component:focus {
+  background-color: #fcfcfc;
+  color: #2a2a2a;
+  outline: none;
+}
+
+.select-component.open {
+  background-color: #fcfcfc;
+  color: #2a2a2a;
 }
 
 /* Global input styling with focus border */

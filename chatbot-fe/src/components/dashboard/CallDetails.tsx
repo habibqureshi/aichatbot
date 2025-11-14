@@ -71,7 +71,7 @@ export default function CallDetails({ conversation, messages, loading = false }:
 
           <div className="bg-[#E6E4FB] rounded-lg p-4">
             <div className="calldetails-section-title mb-2">Summary</div>
-            <div className=" rounded-lg border p-3 min-h-[80px]">
+            <div className=" rounded-lg border p-3 min-h-[70px]">
               <p className="calldetails-summary-text">{summary}</p>
             </div>
           </div>

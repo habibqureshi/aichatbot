@@ -67,6 +67,8 @@ interface DataTableProps<TData, TValue> {
   onExternalPageSizeChange?: (pageSize: number) => void;
   // Row click handler
   onRowClick?: (row: TData) => void;
+  // Row tooltip text
+  rowTooltipText?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -101,6 +103,7 @@ export function DataTable<TData, TValue>({
   onExternalPageChange,
   onExternalPageSizeChange,
   onRowClick,
+  rowTooltipText,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -315,6 +318,7 @@ export function DataTable<TData, TValue>({
                     }`}
                     style={{ borderColor: "#E2DAFB" }}
                     onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                    title={onRowClick && rowTooltipText ? rowTooltipText : undefined}
                   >
                     {row.getVisibleCells().map((cell) => {
                       const columnDef = cell.column.columnDef as ExtendedColumnDef<TData, TValue>;

@@ -171,9 +171,11 @@ export default function TimeRangePicker({
               <button
                 type="button"
                 onClick={() => setIsDurationOpen((v) => !v)}
-                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-2  focus:border-blue-500 flex items-center justify-between"
+                className={`select-component w-full flex items-center justify-between ${
+                  isDurationOpen ? "open" : ""
+                }`}
               >
-                <span className="text-gray-900">
+                <span className={`flex-1 text-left ${selectedDuration ? "text-[#2A2A2A]" : ""}`}>
                   {DURATION_OPTIONS.find((d) => d.value === selectedDuration)?.label ||
                     "Select duration"}
                 </span>
@@ -201,7 +203,11 @@ export default function TimeRangePicker({
                       key={duration.value}
                       type="button"
                       onClick={() => handleDurationSelect(duration.value)}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                      className={`w-full text-left px-3 py-2 focus:outline-none ${
+                        selectedDuration === duration.value
+                          ? "bg-[#FCFCFC] text-[#2A2A2A]"
+                          : "hover:bg-gray-100 focus:bg-gray-100"
+                      }`}
                     >
                       {duration.label}
                     </button>
@@ -220,10 +226,11 @@ export default function TimeRangePicker({
               <button
                 type="button"
                 onClick={() => setIsStartOpen((v) => !v)}
-             className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-0 focus:border-gray-300 flex items-center justify-between"
-
+                className={`select-component w-full flex items-center justify-between ${
+                  isStartOpen ? "open" : ""
+                }`}
               >
-                <span className={newStartTime ? "text-gray-900" : "text-gray-500"}>
+                <span className={`flex-1 text-left ${newStartTime ? "text-[#2A2A2A]" : ""}`}>
                   {newStartTime ? formatTimeDisplay(newStartTime) : "Select time"}
                 </span>
                 <svg
@@ -250,7 +257,11 @@ export default function TimeRangePicker({
                       key={time}
                       type="button"
                       onClick={() => handleStartTimeSelect(time)}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                      className={`w-full text-left px-3 py-2 focus:outline-none ${
+                        time === newStartTime
+                          ? "bg-[#FCFCFC] text-[#2A2A2A]"
+                          : "hover:bg-gray-100 focus:bg-gray-100"
+                      }`}
                     >
                       {formatTimeDisplay(time)}
                     </button>
@@ -267,10 +278,11 @@ export default function TimeRangePicker({
               <button
                 type="button"
                 onClick={() => setIsEndOpen((v) => !v)}
-            className="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-0 focus:border-gray-300 flex items-center justify-between"
-
+                className={`select-component w-full flex items-center justify-between ${
+                  isEndOpen ? "open" : ""
+                }`}
               >
-                <span className={newEndTime ? "text-gray-900" : "text-gray-500"}>
+                <span className={`flex-1 text-left ${newEndTime ? "text-[#2A2A2A]" : ""}`}>
                   {newEndTime ? formatTimeDisplay(newEndTime) : "Select time"}
                 </span>
                 <svg
@@ -303,6 +315,8 @@ export default function TimeRangePicker({
                         className={`w-full text-left px-3 py-2 focus:outline-none ${
                           isDisabled
                             ? "text-gray-400 cursor-not-allowed bg-gray-50"
+                            : time === newEndTime
+                            ? "bg-[#FCFCFC] text-[#2A2A2A]"
                             : "hover:bg-gray-100 focus:bg-gray-100 text-gray-900"
                         }`}
                       >

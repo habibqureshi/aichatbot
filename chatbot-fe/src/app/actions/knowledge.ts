@@ -1,5 +1,3 @@
-"use server";
-
 import { API } from "@/app/http/axio";
 import { ENDPOINTS } from "@/app/http/endpoints";
 import { KnowledgeResponse } from "@/app/types/knowledge";

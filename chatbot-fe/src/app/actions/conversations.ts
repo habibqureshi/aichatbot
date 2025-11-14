@@ -1,5 +1,3 @@
-"use server";
-
 import { API } from "@/app/http/axio";
 import { ENDPOINTS } from "@/app/http/endpoints";
 
@@ -59,15 +57,10 @@ export async function getConversationMessages(
 }
 
 export async function streamConversationRecording(conversationId: number): Promise<ArrayBuffer> {
-  try {
-    const response = await API.get(ENDPOINTS.CONVERSATIONS.STREAM(conversationId), {
-      responseType: "arraybuffer",
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error streaming conversation recording:", error);
-    throw new Error("Failed to stream conversation recording");
-  }
+  const response = await API.get(ENDPOINTS.CONVERSATIONS.STREAM(conversationId), {
+    responseType: "arraybuffer",
+  });
+  return response.data;
 }
 export async function getConversationsList(
   page: number = 1,

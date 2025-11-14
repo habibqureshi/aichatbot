@@ -138,16 +138,16 @@ export default function KnowledgePage() {
     return (
       <div className="p-2 sm:p-4 lg:p-6">
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Current Knowledge</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#2A2A2A]">Current Knowledge</h1>
+          <p className="text-sm sm:text-base text-[#787878] mt-1">
             View and manage the system&apos;s current knowledge base
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-[#F4F4FD] rounded-lg shadow p-6" style={{ border: "1px solid #E3C5FF" }}>
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
-            <div className="h-32 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-[#E3C5FF] rounded w-1/4"></div>
+            <div className="h-10 bg-white rounded" style={{ border: "1px solid #E3C5FF" }}></div>
+            <div className="h-32 bg-white rounded" style={{ border: "1px solid #E3C5FF" }}></div>
           </div>
         </div>
       </div>
@@ -159,14 +159,14 @@ export default function KnowledgePage() {
       <div className="mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Current Knowledge</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#2A2A2A]">Current Knowledge</h1>
+            <p className="text-sm sm:text-base text-[#787878] mt-1">
               View and manage the system&apos;s current knowledge base for AI agent instructions
             </p>
           </div>
           <Button
             onClick={() => setIsCreateModalOpen(true)}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
           >
             Create New Knowledge
           </Button>
@@ -175,17 +175,20 @@ export default function KnowledgePage() {
 
       <div className="space-y-6">
         {/* Knowledge Selection */}
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div
+          className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
+          style={{ border: "1px solid #E3C5FF" }}
+        >
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-[#2A2A2A] flex items-center gap-2">
               Select Active Knowledge
               {activeKnowledgeId && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white">
                   Active: {knowledgeList.find((k) => k.id === activeKnowledgeId)?.name}
                 </span>
               )}
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-[#787878] mt-1">
               Choose which knowledge base the AI agent should use for processing calls and providing
               responses
             </p>
@@ -212,7 +215,7 @@ export default function KnowledgePage() {
                 <Button
                   onClick={handleUpdateActiveKnowledge}
                   disabled={isUpdating || selectedKnowledgeId === activeKnowledgeId}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
                 >
                   {isUpdating ? "Updating..." : "Update Active Knowledge"}
                 </Button>
@@ -223,32 +226,35 @@ export default function KnowledgePage() {
 
         {/* Knowledge Details */}
         {selectedKnowledge && (
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div
+            className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
+            style={{ border: "1px solid #E3C5FF" }}
+          >
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-[#2A2A2A] flex items-center gap-2">
                 {selectedKnowledge.name}
                 {selectedKnowledge.id === activeKnowledgeId && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white">
                     Currently Active
                   </span>
                 )}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">Blob: {selectedKnowledge.blob_name}</p>
+              <p className="text-sm text-[#787878] mt-1">Blob: {selectedKnowledge.blob_name}</p>
             </div>
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">File Information</h4>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-800">
+                <h4 className="text-sm font-medium text-[#2A2A2A] mb-2">File Information</h4>
+                <div className="bg-white rounded-lg p-4" style={{ border: "1px solid #E3C5FF" }}>
+                  <p className="text-sm text-[#2A2A2A]">
                     <span className="font-medium">Blob Name:</span> {selectedKnowledge.blob_name}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-[#787878] mt-1">
                     <span className="font-medium">Status:</span>{" "}
                     {selectedKnowledge.is_active ? "Active" : "Inactive"}
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-4 text-sm text-gray-500">
+              <div className="flex flex-col sm:flex-row gap-4 text-sm text-[#787878]">
                 <div>
                   <span className="font-medium">Created:</span>{" "}
                   {new Date(selectedKnowledge.created_at).toLocaleDateString()}
@@ -265,10 +271,13 @@ export default function KnowledgePage() {
         )}
 
         {/* Knowledge List Overview */}
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div
+          className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
+          style={{ border: "1px solid #E3C5FF" }}
+        >
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">All Knowledge Bases</h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <h2 className="text-lg font-semibold text-[#2A2A2A]">All Knowledge Bases</h2>
+            <p className="text-sm text-[#787878] mt-1">
               Overview of all available knowledge bases in the system
             </p>
           </div>
@@ -276,25 +285,26 @@ export default function KnowledgePage() {
             {knowledgeList.map((knowledge) => (
               <div
                 key={knowledge.id}
-                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                className={`p-4 rounded-lg cursor-pointer transition-colors ${
                   knowledge.id === activeKnowledgeId
-                    ? "border-green-500 bg-green-50"
+                    ? "bg-gradient-to-r from-[#EEEAFF] to-[#DAD2FF] border-[#4318FF]"
                     : knowledge.id === selectedKnowledgeId
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "bg-white border-[#9882F7]"
+                    : "bg-white border-[#E3C5FF] hover:border-[#9882F7]"
                 }`}
+                style={{ border: "1px solid" }}
                 onClick={() => setSelectedKnowledgeId(knowledge.id)}
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-sm">{knowledge.name}</h4>
+                  <h4 className="font-medium text-sm text-[#2A2A2A]">{knowledge.name}</h4>
                   {knowledge.id === activeKnowledgeId && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white">
                       Active
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-600 line-clamp-2">{knowledge.blob_name}</p>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-xs text-[#787878] line-clamp-2">{knowledge.blob_name}</p>
+                <p className="text-xs text-[#787878] mt-2">
                   Updated:{" "}
                   {knowledge.updatedAt
                     ? new Date(knowledge.updatedAt).toLocaleDateString()
@@ -313,16 +323,17 @@ export default function KnowledgePage() {
           onClick={() => setIsCreateModalOpen(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            className="bg-[#F4F4FD] rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            style={{ border: "1px solid #E3C5FF" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Create New Knowledge</h3>
+                <h3 className="text-lg font-semibold text-[#2A2A2A]">Create New Knowledge</h3>
                 <button
                   onClick={() => setIsCreateModalOpen(false)}
                   style={{ cursor: "pointer" }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-[#787878] hover:text-[#2A2A2A]"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -339,7 +350,7 @@ export default function KnowledgePage() {
                 <div>
                   <label
                     htmlFor="knowledge-name"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-[#2A2A2A] mb-2"
                   >
                     Knowledge Name
                   </label>
@@ -348,7 +359,8 @@ export default function KnowledgePage() {
                     id="knowledge-name"
                     value={newKnowledgeName}
                     onChange={(e) => setNewKnowledgeName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF]"
+                    style={{ border: "1px solid #E3C5FF" }}
                     placeholder="Enter knowledge base name"
                     required
                   />
@@ -357,7 +369,7 @@ export default function KnowledgePage() {
                 <div>
                   <label
                     htmlFor="knowledge-file"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-[#2A2A2A] mb-2"
                   >
                     Upload File
                   </label>
@@ -366,12 +378,13 @@ export default function KnowledgePage() {
                     id="knowledge-file"
                     accept=".pdf,.txt,.csv"
                     onChange={handleFileChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                    className="w-full px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF] cursor-pointer"
+                    style={{ border: "1px solid #E3C5FF" }}
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">Supported formats: PDF, TXT, CSV</p>
+                  <p className="text-xs text-[#787878] mt-1">Supported formats: PDF, TXT, CSV</p>
                   {newKnowledgeFile && (
-                    <p className="text-sm text-green-600 mt-1">
+                    <p className="text-sm text-[#4318FF] mt-1">
                       Selected: {newKnowledgeFile.name} ({(newKnowledgeFile.size / 1024).toFixed(1)} KB)
                     </p>
                   )}
@@ -383,13 +396,14 @@ export default function KnowledgePage() {
                     variant="outline"
                     onClick={() => setIsCreateModalOpen(false)}
                     disabled={isCreating}
+                    className="border-[#E3C5FF] text-[#2A2A2A] hover:bg-[#E3C5FF] hover:text-[#2A2A2A]"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     disabled={isCreating || !newKnowledgeName.trim() || !newKnowledgeFile}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
                     style={{ cursor: "pointer" }}
                   >
                     {isCreating ? "Creating..." : "Create Knowledge"}

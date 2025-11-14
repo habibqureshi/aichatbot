@@ -63,6 +63,7 @@ export default function CallsPage() {
     { value: "all", label: "All Status" },
     { value: "active", label: "Active" },
     { value: "ended", label: "Ended" },
+    { value: "follow_up_needed", label: "Follow Up Needed" },
   ];
 
   // Debounced search value

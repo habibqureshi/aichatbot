@@ -325,17 +325,13 @@ function AddDoctorPageContent() {
                       type="button"
                       onClick={() => handleDurationChange(duration)}
                       disabled={formData.timeSlots.length > 0}
-                      className={`px-4 py-3 text-sm font-medium rounded-md transition-colors ${
+                      className={`w-[140px] h-[43px] text-sm font-medium rounded-md transition-colors ${
                         formData.duration === duration
-                          ? "bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white"
+                          ? "bg-white text-[#4318FF] border border-[#4318FF]"
                           : formData.timeSlots.length > 0
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "bg-white text-[#2A2A2A]"
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-300"
+                          : "bg-white text-[#787878] border border-[#787878]"
                       }`}
-                      style={{
-                        border:
-                          formData.duration === duration ? "1px solid #4318ff" : "1px solid #E3C5FF",
-                      }}
                     >
                       {duration} minutes
                     </button>
@@ -343,8 +339,8 @@ function AddDoctorPageContent() {
                 </div>
                 {formData.timeSlots.length > 0 && (
                   <div
-                    className="mt-3 p-3 rounded-md"
-                    style={{ backgroundColor: "#F4F4FD", border: "1px solid #E3C5FF" }}
+                    className="mt-3 p-3  rounded-md"
+                    style={{ backgroundColor: "#F4F4FD", border: "1px solid #4318FF" }}
                   >
                     <p className="text-sm" style={{ color: "#2A2A2A" }}>
                       Duration cannot be changed while slots exist.{" "}

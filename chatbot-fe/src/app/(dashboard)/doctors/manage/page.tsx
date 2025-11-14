@@ -241,7 +241,7 @@ function AddDoctorPageContent() {
       <div className="bg-transparent py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Doctor Information Card */}
-          <div className="bg-[#F4F4FD] rounded-lg p-4 shadow-sm">
+          <div className="bg-[#FFFFFF66] rounded-lg p-4 shadow-sm">
             <div
               className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 py-8 px-4 rounded-lg"
               style={{ border: "1px solid #E3C5FF" }}
@@ -250,36 +250,38 @@ function AddDoctorPageContent() {
                 <label htmlFor="name" className="block text-sm font-medium text-[#2A2A2A]">
                   Doctor Name
                 </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm bg-white text-[#2A2A2A]"
-                  style={{ border: "1px solid #E3C5FF", outline: "none" }}
-                  placeholder="Enter doctor's full name"
-                />
+                <div className="max-w-lg">
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    className="form-input"
+                    placeholder="Enter doctor's full name"
+                  />
+                </div>
               </div>
 
               <div>
                 <label htmlFor="phone_number" className="block text-sm font-medium text-[#2A2A2A]">
                   Phone Number
                 </label>
-                <input
-                  type="tel"
-                  id="phone_number"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm bg-white text-[#2A2A2A]"
-                  style={{ border: "1px solid #E3C5FF", outline: "none" }}
-                  placeholder="Enter phone number"
-                />
+                <div className="max-w-lg">
+                  <input
+                    type="tel"
+                    id="phone_number"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleChange}
+                    required
+                    className="form-input"
+                    placeholder="Enter phone number"
+                  />
+                </div>
               </div>
-              <div className="max-w-md">
+              <div className="max-w-lg">
                 {loadingSpecialities ? (
                   <SpecialtySkeleton />
                 ) : (
@@ -287,22 +289,19 @@ function AddDoctorPageContent() {
                     <label htmlFor="specialty_id" className="block text-sm font-medium text-[#2A2A2A]">
                       Specialty
                     </label>
-                    <select
-                      id="specialty_id"
-                      name="specialty_id"
-                      value={formData.specialty_id}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 block w-full px-3 py-2 rounded-md shadow-sm bg-white text-[#2A2A2A]"
-                      style={{ border: "1px solid #E3C5FF", outline: "none" }}
-                    >
-                      <option value={0}>Select Specialty</option>
-                      {specialities.map((specialty) => (
-                        <option key={specialty.id} value={specialty.id}>
-                          {specialty.name}
-                        </option>
-                      ))}
-                    </select>
+                    <SingleSelect
+                      label=""
+                      options={specialities.map((specialty) => ({
+                        id: specialty.id,
+                        label: specialty.name,
+                        value: specialty.id,
+                      }))}
+                      selectedValue={formData.specialty_id}
+                      onChange={(value) =>
+                        setFormData((prev) => ({ ...prev, specialty_id: value as number }))
+                      }
+                      placeholder="Select Specialty"
+                    />
                   </>
                 )}
               </div>
@@ -310,7 +309,7 @@ function AddDoctorPageContent() {
           </div>
 
           {/* Duration Card */}
-          <div className="bg-[#F4F4FD] rounded-lg p-4 shadow-sm space-y-6">
+          <div className="bg-[#FFFFFF66] rounded-lg p-4 shadow-sm space-y-6">
             <div className=" rounded-lg p-6 shadow-sm" style={{ border: "1px solid #E3C5FF" }}>
               <div className="pb-2 mb-4" style={{ borderBottom: "1px solid #E3C5FF" }}>
                 <h3 className="text-lg font-medium text-[#2A2A2A]">Appointment Duration</h3>

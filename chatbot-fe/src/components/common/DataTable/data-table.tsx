@@ -149,7 +149,7 @@ export function DataTable<TData, TValue>({
   const [firstWord, ...rest] = (title ?? "").split(" ");
   const restTitle = rest.join(" ");
   return (
-    <div className="border rounded-lg p-4 px-6" style={{ backgroundColor: "#F3F0FD" }}>
+    <div className="bg-[#FFFFFF80] backdrop-blur-sm border border-[#E3C5FF55] rounded-xl p-4 px-6 shadow-sm">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 gap-3 py-4">
         <div className="flex items-center space-x-2 px-2">
@@ -250,10 +250,13 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="bg-[#F0EEFD] border rounded-sm overflow-hidden" style={{ borderColor: "#AB99FE" }}>
+      <div
+        className="bg-[#F0EEFD] border rounded-sm overflow-hidden "
+        style={{ borderColor: "#AB99FE" }}
+      >
         <div
           className="overflow-auto"
-          style={{ minHeight: "calc(100vh - 450px)", maxHeight: "calc(100vh - 320px)" }}
+          style={{ minHeight: "calc(100vh - 420px)", maxHeight: "calc(100vh - 320px)" }}
         >
           <table className="min-w-[950px] table-auto w-full border-collapse">
             <thead

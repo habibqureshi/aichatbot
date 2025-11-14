@@ -33,9 +33,13 @@ export default function KnowledgePage() {
       const activeKnowledge = response.data.find((k) => k.is_active);
       setActiveKnowledgeId(activeKnowledge?.id || null);
       setSelectedKnowledgeId(activeKnowledge?.id || null);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error fetching knowledge:", error);
-      toast.error("Failed to load knowledge.");
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to load knowledge");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -63,9 +67,13 @@ export default function KnowledgePage() {
       await fetchKnowledge();
 
       toast.success("Active knowledge updated successfully");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error updating active knowledge:", error);
-      toast.error("Failed to update active knowledge");
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to update active knowledge");
+      }
     } finally {
       setIsUpdating(false);
     }
@@ -102,9 +110,13 @@ export default function KnowledgePage() {
       setNewKnowledgeName("");
       setNewKnowledgeFile(null);
       setIsCreateModalOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error creating knowledge:", error);
-      toast.error("Failed to create new knowledge");
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to create new knowledge");
+      }
     } finally {
       setIsCreating(false);
     }

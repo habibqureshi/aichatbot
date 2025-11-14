@@ -62,6 +62,7 @@ export default function CallsPage() {
   const statusOptions = [
     { value: "all", label: "All Status" },
     { value: "active", label: "Active" },
+    { value: "ended", label: "Ended" },
   ];
 
   // Debounced search value
@@ -183,8 +184,6 @@ export default function CallsPage() {
           statusFilter === "all" ? undefined : statusFilter || undefined,
           name
         );
-        // console.log("API Response:", response);
-        // console.log("Conversations data:", response.data);
         setConversations(response.data);
         setTotalPages(response.metadata.total_pages);
         const firstConversation = response.data?.[0];
@@ -203,9 +202,16 @@ export default function CallsPage() {
         } else {
           setSelectedMessages([]);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error fetching conversations:", error);
-        toast.error("Failed to load conversations from server");
+
+        // The error message is already formatted by axios interceptor
+        if (error instanceof Error && error.message) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to load conversations from server");
+        }
+
         setConversations([]);
         setTotalPages(0);
       } finally {

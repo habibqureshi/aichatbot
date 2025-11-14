@@ -183,9 +183,10 @@ export default function CallsPage() {
           statusFilter === "all" ? undefined : statusFilter || undefined,
           name
         );
-        console.log("API Response:", response);
-        console.log("Conversations data:", response.data);
+        // console.log("API Response:", response);
+        // console.log("Conversations data:", response.data);
         setConversations(response.data);
+        setTotalPages(response.metadata.total_pages);
         const firstConversation = response.data?.[0];
         setSelectedConversation(firstConversation || null);
         if (firstConversation) {

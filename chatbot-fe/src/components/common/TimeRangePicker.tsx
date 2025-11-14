@@ -160,13 +160,13 @@ export default function TimeRangePicker({
 
   return (
     <div>
-      {label && <label className="block text-sm font-medium text-gray-700 mb-3">{label}</label>}
+      {label && <label className="block form-label text-base mb-3">{label}</label>}
 
-      <div className="mb-4 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+      <div className="mb-4">
         {/* Duration Selector */}
         {!hideDuration && (
           <div className="mb-4">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Appointment Duration</label>
+            <label className="block form-label text-base mb-1">Appointment Duration</label>
             <div className="relative">
               <button
                 type="button"
@@ -175,7 +175,7 @@ export default function TimeRangePicker({
                   isDurationOpen ? "open" : ""
                 }`}
               >
-                <span className={`flex-1 text-left ${selectedDuration ? "text-[#2A2A2A]" : ""}`}>
+                <span className={`flex-1 text-left ${selectedDuration ? "selected-text" : ""}`}>
                   {DURATION_OPTIONS.find((d) => d.value === selectedDuration)?.label ||
                     "Select duration"}
                 </span>
@@ -197,7 +197,7 @@ export default function TimeRangePicker({
               </button>
 
               {isDurationOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base border border-[#4318FF]">
                   {DURATION_OPTIONS.map((duration) => (
                     <button
                       key={duration.value}
@@ -205,7 +205,7 @@ export default function TimeRangePicker({
                       onClick={() => handleDurationSelect(duration.value)}
                       className={`w-full text-left px-3 py-2 focus:outline-none ${
                         selectedDuration === duration.value
-                          ? "bg-[#FCFCFC] text-[#2A2A2A]"
+                          ? "bg-[#FCFCFC] selected-text"
                           : "hover:bg-gray-100 focus:bg-gray-100"
                       }`}
                     >
@@ -220,8 +220,8 @@ export default function TimeRangePicker({
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           {/* Start */}
-          <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Start Time</label>
+          <div className="max-w-lg flex-1">
+            <label className="block form-label text-base mb-1">Start Time</label>
             <div className="relative">
               <button
                 type="button"
@@ -230,7 +230,7 @@ export default function TimeRangePicker({
                   isStartOpen ? "open" : ""
                 }`}
               >
-                <span className={`flex-1 text-left ${newStartTime ? "text-[#2A2A2A]" : ""}`}>
+                <span className={`flex-1 text-left ${newStartTime ? "selected-text" : ""}`}>
                   {newStartTime ? formatTimeDisplay(newStartTime) : "Select time"}
                 </span>
                 <svg
@@ -251,7 +251,7 @@ export default function TimeRangePicker({
               </button>
 
               {isStartOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base border border-[#4318FF] overflow-auto">
                   {TIME_OPTIONS.map((time) => (
                     <button
                       key={time}
@@ -259,7 +259,7 @@ export default function TimeRangePicker({
                       onClick={() => handleStartTimeSelect(time)}
                       className={`w-full text-left px-3 py-2 focus:outline-none ${
                         time === newStartTime
-                          ? "bg-[#FCFCFC] text-[#2A2A2A]"
+                          ? "bg-[#FCFCFC] selected-text"
                           : "hover:bg-gray-100 focus:bg-gray-100"
                       }`}
                     >
@@ -272,8 +272,8 @@ export default function TimeRangePicker({
           </div>
 
           {/* End */}
-          <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-600 mb-1">End Time</label>
+          <div className="max-w-lg flex-1">
+            <label className="block form-label text-base mb-1">End Time</label>
             <div className="relative">
               <button
                 type="button"
@@ -282,7 +282,7 @@ export default function TimeRangePicker({
                   isEndOpen ? "open" : ""
                 }`}
               >
-                <span className={`flex-1 text-left ${newEndTime ? "text-[#2A2A2A]" : ""}`}>
+                <span className={`flex-1 text-left ${newEndTime ? "selected-text" : ""}`}>
                   {newEndTime ? formatTimeDisplay(newEndTime) : "Select time"}
                 </span>
                 <svg
@@ -303,7 +303,7 @@ export default function TimeRangePicker({
               </button>
 
               {isEndOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base border border-[#4318FF] overflow-auto">
                   {TIME_OPTIONS.map((time) => {
                     const isDisabled = newStartTime ? time <= newStartTime : false;
                     return (
@@ -316,7 +316,7 @@ export default function TimeRangePicker({
                           isDisabled
                             ? "text-gray-400 cursor-not-allowed bg-gray-50"
                             : time === newEndTime
-                            ? "bg-[#FCFCFC] text-[#2A2A2A]"
+                            ? "bg-[#FCFCFC] selected-text"
                             : "hover:bg-gray-100 focus:bg-gray-100 text-gray-900"
                         }`}
                       >
@@ -335,7 +335,7 @@ export default function TimeRangePicker({
               type="button"
               onClick={addOrUpdateSlot}
               disabled={!newStartTime || !newEndTime}
-              className="px-4 py-2 mt-4 bg-transparent text-[#4318FF] border border-[#4318FF] text-sm font-medium rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 mt-4 bg-transparent text-[#4318FF] border border-[#4318FF] text-sm font-medium rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-[138px] h-[43px]"
             >
               {editingSlotId ? "Update Slot" : "Add Slot"}
             </button>
@@ -344,45 +344,7 @@ export default function TimeRangePicker({
       </div>
 
       {/* Pills */}
-      {timeSlots.length > 0 ? (
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Time Slots:</h4>
-          <div className="flex flex-wrap gap-2">
-            {timeSlots.map((slot) => (
-              <div
-                key={slot.id}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-900 border border-blue-100"
-              >
-                <button
-                  type="button"
-                  onClick={() => startEdit(slot)}
-                  className="text-sm text-blue-900 hover:underline focus:outline-none"
-                >
-                  {formatTimeDisplay(slot.startTime)} - {formatTimeDisplay(slot.endTime)}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => removeTimeSlot(slot.id)}
-                  className="text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-full"
-                  aria-label={`Remove ${slot.startTime} to ${slot.endTime}`}
-                >
-                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-gray-500 italic">No time slots added yet</p>
-      )}
+      {timeSlots.length < 1 && <p className="text-sm text-gray-500 italic">No time slots added yet</p>}
 
       {/* Click outside to close dropdowns */}
       {(isStartOpen || isDurationOpen) && (

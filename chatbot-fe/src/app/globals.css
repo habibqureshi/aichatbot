@@ -345,6 +345,20 @@ html {
   color: #2a2a2a;
 }
 
+.selected-text {
+  color: #2a2a2a !important;
+}
+
+.form-label {
+  font-family: Inter;
+  font-weight: 500;
+  font-style: normal;
+  line-height: 100%;
+  letter-spacing: -4%;
+  color: #2a2a2a;
+  margin-bottom: 8px;
+}
+
 /* Global input styling with focus border */
 .form-input {
   height: 51px;

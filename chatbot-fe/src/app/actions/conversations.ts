@@ -47,13 +47,8 @@ export async function getConversationMessages(
   page: number = 1,
   limit: number = 10
 ): Promise<ConversationMessagesResponse> {
-  try {
-    const response = await API.get(ENDPOINTS.CONVERSATIONS.MESSAGES(conversationId, page, limit));
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching conversation messages:", error);
-    throw new Error("Failed to fetch conversation messages");
-  }
+  const response = await API.get(ENDPOINTS.CONVERSATIONS.MESSAGES(conversationId, page, limit));
+  return response.data;
 }
 
 export async function streamConversationRecording(conversationId: number): Promise<ArrayBuffer> {
@@ -69,14 +64,7 @@ export async function getConversationsList(
   status?: string,
   name?: string
 ): Promise<ConversationsResponse> {
-  try {
-    const response = await API.get(
-      ENDPOINTS.CONVERSATIONS.LIST(page, limit, user_timezone, status, name)
-    );
-    console.log("api response", response?.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching conversations list:", error);
-    throw new Error("Failed to fetch conversations list");
-  }
+  const response = await API.get(ENDPOINTS.CONVERSATIONS.LIST(page, limit, user_timezone, status, name));
+  console.log("api response", response?.data);
+  return response.data;
 }

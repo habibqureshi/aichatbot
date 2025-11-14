@@ -88,36 +88,9 @@ export default function CallDetails({ conversation, messages, loading = false }:
     } catch (error: unknown) {
       console.error("Error streaming recording:", error);
 
-      // Handle axios error responses
-      if (error && typeof error === "object" && "response" in error) {
-        const axiosError = error as {
-          response?: { status?: number; data?: ArrayBuffer | { detail?: string } };
-        };
-
-        if (axiosError.response?.status === 400) {
-          let errorMessage = "No recording available";
-
-          if (axiosError.response.data instanceof ArrayBuffer) {
-            try {
-              const decoder = new TextDecoder();
-              const text = decoder.decode(axiosError.response.data);
-              const parsed = JSON.parse(text);
-              errorMessage = parsed.detail || errorMessage;
-            } catch (e) {
-              console.error("Error parsing error response:", e);
-            }
-          } else if (axiosError.response.data && typeof axiosError.response.data === "object") {
-            errorMessage = (axiosError.response.data as { detail?: string }).detail || errorMessage;
-          }
-
-          toast.error(errorMessage);
-        } else if (axiosError.response?.status === 404) {
-          toast.error("Recording not found");
-        } else {
-          toast.error("Failed to load recording. Please try again.");
-        }
-      } else if (error instanceof Error && error.message) {
-        toast.error(`Failed to load recording: ${error.message}`);
+      // The error message is already formatted by axios interceptor
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
       } else {
         toast.error("Failed to load recording. Please try again.");
       }
@@ -133,7 +106,7 @@ export default function CallDetails({ conversation, messages, loading = false }:
   return (
     <aside className="w-full h-fit">
       <div
-        className="bg-white/60 backdrop-blur-sm border border-[#E3C5FF55] rounded-xl p-4 shadow-sm"
+        className="bg-[#FFFFFF80] backdrop-blur-sm border border-[#E3C5FF55] rounded-xl p-4 shadow-sm"
         style={{
           // background: "var(--lighter-purple-bg)",
           minHeight: "calc(100vh - 320px)",

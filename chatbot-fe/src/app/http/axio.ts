@@ -70,6 +70,8 @@ API.interceptors.response.use(
   },
   async (error) => {
     console.log("Interceptors Error:", error);
+
+    // Handle 403 authentication errors
     if (error.response?.status === 403) {
       // Clear cookie on client side
       if (typeof window !== "undefined") {
@@ -78,6 +80,62 @@ API.interceptors.response.use(
         window.location.href = "/auth/login";
       }
     }
+
+    // Parse and format error messages uniformly
+    if (error.response?.data) {
+      const responseData = error.response.data;
+
+      // Handle ArrayBuffer responses (from responseType: "arraybuffer")
+      if (responseData instanceof ArrayBuffer) {
+        try {
+          const decoder = new TextDecoder();
+          const text = decoder.decode(responseData);
+          const parsed = JSON.parse(text);
+
+          // Replace the ArrayBuffer with parsed JSON for easier handling
+          error.response.data = parsed;
+
+          // Format the error message
+          if (parsed.detail) {
+            error.message = parsed.detail;
+          } else if (parsed.details && Array.isArray(parsed.details)) {
+            error.message = parsed.details.map((d: { message?: string }) => d.message).join(", ");
+          } else if (parsed.error) {
+            error.message = parsed.error;
+          }
+        } catch (e) {
+          console.error("Error parsing ArrayBuffer error response:", e);
+        }
+      }
+      // Handle JSON responses
+      else if (typeof responseData === "object") {
+        // Format validation errors (422 or 400)
+        if (error.response?.status === 422 || error.response?.status === 400) {
+          if (
+            responseData.details &&
+            Array.isArray(responseData.details) &&
+            responseData.details.length > 0
+          ) {
+            error.message = responseData.details
+              .map((detail: { message?: string }) => detail.message)
+              .join(", ");
+          } else if (responseData.detail) {
+            error.message = responseData.detail;
+          } else if (responseData.error) {
+            error.message = responseData.error;
+          }
+        }
+        // Handle other error formats
+        else if (responseData.detail) {
+          error.message = responseData.detail;
+        } else if (responseData.error) {
+          error.message = responseData.error;
+        } else if (responseData.message) {
+          error.message = responseData.message;
+        }
+      }
+    }
+
     return Promise.reject(error);
   }
 );

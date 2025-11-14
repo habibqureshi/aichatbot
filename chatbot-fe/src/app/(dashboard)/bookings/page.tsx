@@ -124,15 +124,17 @@ export default function BookingsPage() {
           undefined,
           name
         );
-        console.log("API Response:", response);
-        console.log("Appointments data:", response.data);
         setAppointments(response.data);
         setTotalPages(response.metadata.total_pages);
         setTotalAppointments(response.metadata.total);
         setCurrentPage(response.metadata.page);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error fetching appointments:", error);
-        toast.error("Failed to load appointments from server");
+        if (error instanceof Error && error.message) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to load appointments from server");
+        }
         setAppointments([]);
         setTotalPages(0);
         setTotalAppointments(0);

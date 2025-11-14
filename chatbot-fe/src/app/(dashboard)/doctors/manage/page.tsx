@@ -113,9 +113,13 @@ function AddDoctorPageContent() {
           });
           setLoading(false);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error fetching data:", error);
-        toast.error("Failed to load data");
+        if (error instanceof Error && error.message) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to load data");
+        }
         setLoadingSpecialities(false);
         setLoading(false);
       }
@@ -210,9 +214,13 @@ function AddDoctorPageContent() {
         });
         setSelectedDayForSlot("");
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error saving doctor:", error);
-      toast.error(`Failed to ${isEditMode ? "update" : "create"} doctor`);
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error(`Failed to ${isEditMode ? "update" : "create"} doctor`);
+      }
     } finally {
       setIsSubmitting(false);
     }

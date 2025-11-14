@@ -117,15 +117,17 @@ export default function SpecialitiesPage() {
       try {
         setLoading(true);
         const response = await getSpecialitiesList(page, limit, user_timezone, name);
-        // console.log("API Response:", response);
-        // console.log("Specialities data:", response.data);
         setSpecialities(response.data);
         setTotalPages(response.metadata.total_pages);
         setTotalSpecialities(response.metadata.total);
         setCurrentPage(response.metadata.page);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error fetching specialities:", error);
-        toast.error("Failed to load specialities from server");
+        if (error instanceof Error && error.message) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to load specialities from server");
+        }
         setSpecialities([]);
         setTotalPages(0);
         setTotalSpecialities(0);
@@ -204,9 +206,13 @@ export default function SpecialitiesPage() {
       }
       fetchSpecialities(currentPage, pageSize, debouncedSearchQuery);
       handleModalClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error saving speciality:", error);
-      toast.error(`Failed to ${editingSpeciality ? "update" : "create"} speciality`);
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error(`Failed to ${editingSpeciality ? "update" : "create"} speciality`);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -222,9 +228,13 @@ export default function SpecialitiesPage() {
       fetchSpecialities(currentPage, pageSize, debouncedSearchQuery);
       setDeleteDialogOpen(false);
       setSpecialityToDelete(null);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error deleting speciality:", error);
-      toast.error("Failed to delete speciality");
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to delete speciality");
+      }
     } finally {
       setDeleting(false);
     }

@@ -37,9 +37,13 @@ export default function ConversationPage() {
       // Reverse the messages array to show chronological order (oldest first)
       setMessages(response.data.reverse());
       setTotalMessages(response.metadata.total);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error fetching messages:", error);
-      toast.error("Failed to load messages");
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to load messages");
+      }
       setMessages([]);
       setTotalMessages(0);
     } finally {

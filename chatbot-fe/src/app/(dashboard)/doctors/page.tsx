@@ -118,15 +118,17 @@ export default function DoctorsPage() {
       try {
         setLoading(true);
         const response = await getDoctorsList(page, limit, user_timezone, undefined, name);
-        // console.log("API Response:", response);
-        // console.log("Doctors data:", response.data);
         setDoctors(response.data);
         setTotalPages(response.metadata.total_pages);
         setTotalDoctors(response.metadata.total);
         setCurrentPage(response.metadata.page);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error fetching doctors:", error);
-        toast.error("Failed to load doctors from server");
+        if (error instanceof Error && error.message) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to load doctors from server");
+        }
         setDoctors([]);
         setTotalPages(0);
         setTotalDoctors(0);

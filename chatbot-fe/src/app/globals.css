@@ -356,7 +356,39 @@ html {
   line-height: 100%;
   letter-spacing: -4%;
   color: #2a2a2a;
-  margin-bottom: 8px;
+}
+
+.time-slot-card {
+  background: linear-gradient(90deg, #eeeaff 0%, #ebe8f8 20%, #dad2ff 100%);
+
+  width: 319px;
+  height: 104px;
+  border-radius: 8px;
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.time-slot-day {
+  font-family: Inter;
+  font-weight: 500;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 100%;
+  letter-spacing: -4%;
+  color: #4318ff;
+}
+
+.time-slot-text {
+  font-family: Inter;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: -4%;
+  color: #4318ff;
 }
 
 /* Global input styling with focus border */

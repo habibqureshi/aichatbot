@@ -271,7 +271,7 @@
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;     /* reduced width */
+  width: 4px; /* reduced width */
   height: 4px;
 }
 
@@ -280,17 +280,46 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #f3f0fd;     /* your color */
+  background: #f3f0fd; /* your color */
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d2d0ff;    
+  background: #d2d0ff;
 }
 
 /* Firefox */
 html {
-  scrollbar-width: thin;                     /* thin scrollbar */
-  scrollbar-color: #e5e3fe transparent;      /* thumb + track */
+  scrollbar-width: thin; /* thin scrollbar */
+  scrollbar-color: #e5e3fe transparent; /* thumb + track */
 }
 
+/* Added global CSS classes for search bar and select components */
+.search-bar {
+  background-color: #fcfcfc;
+  font-family: Inter;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: -4%;
+  color: #787878;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  height: 42px;
+}
+
+.select-component {
+  background-color: #fcfcfc;
+  font-family: Inter;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: -4%;
+  color: #787878;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+}

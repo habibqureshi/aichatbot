@@ -7,7 +7,37 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getDoctorsList, Doctor, deleteDoctor } from "@/app/actions/doctors";
 import { toast } from "react-toastify";
+import DoctorCard from "@/components/dashboard/DoctorCard";
 
+const doctorsData = [
+  {
+    name: "Dr. Salman",
+    specialty: "Orthopedics",
+    experience: "12 Years",
+    timings: "Mon–Fri 9 AM – 2 PM",
+    treatments: "Bone Injury, Bone Injury",
+    avatar: "/assets/doctorImage.svg",
+    isActive: true,
+  },
+  {
+    name: "Dr. Ayesha",
+    specialty: "Cardiology",
+    experience: "8 Years",
+    timings: "Mon–Fri 10 AM – 4 PM",
+    treatments: "Heart Checkup, ECG",
+    avatar: "/assets/doctorImage.svg",
+    isActive: false,
+  },
+  {
+    name: "Dr. Hamid",
+    specialty: "Dermatology",
+    experience: "15 Years",
+    timings: "Tue–Sat 11 AM – 3 PM",
+    treatments: "Skin Treatment, Allergy",
+    avatar: "/assets/doctorImage.svg",
+    isActive: true,
+  },
+];
 export default function DoctorsPage() {
   const router = useRouter();
   const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -208,7 +238,20 @@ export default function DoctorsPage() {
           Add Doctor
         </Link>
       </div>
-
+      {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+        {doctorsData.map((doc, index) => (
+          <DoctorCard
+            key={index}
+            name={doc.name}
+            specialty={doc.specialty}
+            experience={doc.experience}
+            timings={doc.timings}
+            treatments={doc.treatments}
+            avatar={doc.avatar}
+            isActive={doc.isActive}
+          />
+        ))}
+      </div> */}
       <DataTable
         columns={columns}
         data={doctors}

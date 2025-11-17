@@ -4,6 +4,37 @@ import { useState, useEffect, useCallback } from "react";
 import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 import { getAppointmentsList, Appointment } from "@/app/actions/appointments";
 import { toast } from "react-toastify";
+import AppointmentCard from "@/components/dashboard/AppointmentCard";
+const dashboardCards = [
+  {
+    title: "Total Bookings",
+    count: 5000,
+    icon: "/assets/total_bookings.svg",
+    gradient: `linear-gradient(to bottom right, #6C1CDA 0%, #721BE1 20%, #4123A3 70%, #4322A5 100%)`,
+    iconColor: "#744DC5",
+  },
+  {
+    title: "Confirmed Bookings",
+    count: 1000,
+    icon: "/assets/confirmed_bookings.svg",
+    gradient: `linear-gradient(to bottom right, #05A65B 0%, #06A55B 20%, #06884B 70%, #068349 100%)`,
+    iconColor: "#05A65B",
+  },
+  {
+    title: "Pending Bookings",
+    count: 2500,
+    icon: "/assets/pending_bookings.svg",
+    gradient: `linear-gradient(to bottom right, #1A5ADB 0%, #1A5ADA 20%, #0E41A7 70%, #0D3FA2 100%)`,
+    iconColor: "#1A5ADB",
+  },
+  {
+    title: "Cancellations",
+    count: 1500,
+    icon: "/assets/cancelled_bookings.svg",
+    gradient: `linear-gradient(to bottom right, #DC1B1E 0%, #D81A1E 20%, #A81113 70%, #A00F11 100%)`,
+    iconColor: "#DC1B1E",
+  },
+];
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusStyles: Record<string, { bg: string; text: string }> = {
@@ -55,6 +86,7 @@ const columns: ExtendedColumnDef<Appointment>[] = [
     accessorKey: "doctor.name",
     header: "Doctor",
     width: "150px",
+
     cell: ({ row }) => <div className="text-gray-900">{row.original.doctor?.name || "N/A"}</div>,
   },
   {
@@ -166,11 +198,23 @@ export default function BookingsPage() {
     <div className="p-2 sm:p-4 lg:p-6">
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Bookings</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
-            Manage appointment bookings and schedules ({totalAppointments} total)
+          <h1 className="text-2xl  sm:text-2xl font-semibold text-[#000000]">Appoinments</h1>
+          <p className="text-md font-inter font-normal sm:text-base text-[#787878] mt-1">
+            Manage all patient bookings handled by the AI system.
           </p>
         </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        {dashboardCards.map((card, index) => (
+          <AppointmentCard
+            key={index}
+            title={card.title}
+            count={card.count}
+            icon={card.icon}
+            gradient={card.gradient}
+            iconColor={card.iconColor}
+          />
+        ))}
       </div>
       <DataTable
         columns={columns}

@@ -21,6 +21,12 @@ const navigation = [
     iconActive: "/assets/sideBarIcons/call_active.svg",
     iconInactive: "/assets/sideBarIcons/call_inactive.svg",
   },
+  {
+    name: "Bookings",
+    href: "/bookings",
+    iconActive: "/assets/sideBarIcons/booking_active.svg",
+    iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
+  },
   // {
   //   name: "Train",
   //   href: "/train",
@@ -42,12 +48,6 @@ const navigation = [
     href: "/knowledge",
     iconActive: "/assets/sideBarIcons/knowledge_active.svg",
     iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
-  },
-  {
-    name: "Bookings",
-    href: "/bookings",
-    iconActive: "/assets/sideBarIcons/booking_active.svg",
-    iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
   },
 ];
 

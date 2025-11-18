@@ -11,7 +11,7 @@ import DoctorCard from "@/components/dashboard/DoctorCard";
 
 const doctorsData = [
   {
-    name: "Dr. Salman",
+    name: "Dr. Salman Ahmed",
     specialty: "Orthopedics",
     experience: "12 Years",
     timings: "Mon–Fri 9 AM – 2 PM",
@@ -20,7 +20,7 @@ const doctorsData = [
     isActive: true,
   },
   {
-    name: "Dr. Ayesha",
+    name: "Dr. Umair Khan",
     specialty: "Cardiology",
     experience: "8 Years",
     timings: "Mon–Fri 10 AM – 4 PM",
@@ -29,7 +29,7 @@ const doctorsData = [
     isActive: false,
   },
   {
-    name: "Dr. Hamid",
+    name: "Dr. Hamid Ali",
     specialty: "Dermatology",
     experience: "15 Years",
     timings: "Tue–Sat 11 AM – 3 PM",
@@ -238,7 +238,7 @@ export default function DoctorsPage() {
           Add Doctor
         </Link>
       </div>
-      {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
         {doctorsData.map((doc, index) => (
           <DoctorCard
             key={index}
@@ -251,7 +251,7 @@ export default function DoctorsPage() {
             isActive={doc.isActive}
           />
         ))}
-      </div> */}
+      </div>
       <DataTable
         columns={columns}
         data={doctors}

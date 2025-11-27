@@ -36,7 +36,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       startTransition(() => {
         setMessages((prev) => {
           return prev.map((msg) => {
-            let temp =
+            const temp =
               msg.id === messageIdRef.current && msg.role === "assistant"
                 ? { ...msg, content: bufferRef.current }
                 : msg;
@@ -84,11 +84,11 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       }, 100);
       const eventSource = new EventSource(url);
       let conversationId;
-      let messageId = uuidv4();
+      const messageId = uuidv4();
       messageIdRef.current = messageId;
       eventSource.onmessage = (event) => {
         try {
-          isLoading ? setIsLoading(false) : null;
+          if (isLoading) setIsLoading(false);
           const parsed = JSON.parse(event.data);
           if (parsed && typeof parsed === "object" && parsed.id) {
             conversationId = parsed.id;
@@ -116,7 +116,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
             // bufferRef.current += parsed["chunk"].replace(/^"(.*)"$/, "$1"); // just append to buffer
           }
           console.log(parsed["chunk"].replace(/^"(.*)"$/, "$1"));
-        } catch (e) {
+        } catch {
           const errorMessage: ChatMessage = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
@@ -127,7 +127,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
           setMessages((prev) => [...prev, errorMessage]);
         }
 
-        eventSource.onerror = (err) => {
+        eventSource.onerror = () => {
           eventSource.close();
           if (flushInterval.current) {
             clearInterval(flushInterval.current);
@@ -137,7 +137,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
         };
         return;
       };
-    } catch (error) {
+    } catch {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -154,6 +154,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   // Fix: Message should accept props, not the message object directly.
   type MessageProps = ChatMessage;
 
+  // eslint-disable-next-line react/display-name
   const Message = React.memo((props: MessageProps) => {
     return (
       <div

@@ -65,17 +65,17 @@ async def lifespan(app: FastAPI):
     global compiled_graph, my_checkpointer, checkpointer_conn
 
     try:
-        checkpointer_conn = await asyncmy.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            user=DB_USER,
-            password=DB_PASS,
-            db=DB,
-            autocommit=True,
-        )
+        # checkpointer_conn = await asyncmy.connect(
+        #     host=DB_HOST,
+        #     port=DB_PORT,
+        #     user=DB_USER,
+        #     password=DB_PASS,
+        #     db=DB,
+        #     autocommit=True,
+        # )
 
-        my_checkpointer = AsyncMySaver(conn=checkpointer_conn)
-        await my_checkpointer.setup()
+        # my_checkpointer = AsyncMySaver(conn=checkpointer_conn)
+        # await my_checkpointer.setup()
         print("LangGraph and MySQL Checkpointer initialized successfully.")
         yield
     except Exception as e:

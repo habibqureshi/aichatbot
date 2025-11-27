@@ -1,8 +1,18 @@
 import uuid
 import chromadb
-from configs import CHROMA_DB_HOST, CHROMA_DB_PORT
+from configs import CHROMA_DB_HOST, CHROMA_DB_PORT, CHROMA_DB_TOKEN
+from chromadb.config import Settings
 
-chroma_client = chromadb.HttpClient(host=CHROMA_DB_HOST, port=int(CHROMA_DB_PORT))
+chroma_client = chromadb.HttpClient(
+    host=CHROMA_DB_HOST,
+    port=int(CHROMA_DB_PORT),
+    ssl=int(CHROMA_DB_PORT) == 443,
+    settings=Settings(
+        chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+        chroma_client_auth_credentials=CHROMA_DB_TOKEN,
+        anonymized_telemetry=False,
+    ),
+)
 INDEX_NAME = "SaaSRAG"
 collection = chroma_client.get_or_create_collection(name=INDEX_NAME)
 print("connected to chromadb")

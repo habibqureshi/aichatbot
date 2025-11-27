@@ -1,32 +1,33 @@
-"use client"
+"use client";
 
-import { useState } from 'react'
-import { uploadTrainingFile } from '@/app/actions/chat'
+import { useState } from "react";
+import { uploadTrainingFile } from "@/app/actions/chat";
 
 export default function TrainPage() {
-  const [file, setFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!file) {
-      setMessage('Please select a file.')
-      return
+      setMessage("Please select a file.");
+      return;
     }
-    setIsUploading(true)
-    setMessage(null)
+    setIsUploading(true);
+    setMessage(null);
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      await uploadTrainingFile(formData)
-      setMessage( 'Uploaded successfully')
+      const formData = new FormData();
+      formData.append("file", file);
+      await uploadTrainingFile(formData);
+      setMessage("Uploaded successfully");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setMessage(err?.message || 'Upload failed')
+      setMessage(err?.message || "Upload failed");
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   return (
     <div className="p-4">
@@ -43,15 +44,11 @@ export default function TrainPage() {
             disabled={isUploading || !file}
             className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
           >
-            {isUploading ? 'Uploading...' : 'Upload & Train'}
+            {isUploading ? "Uploading..." : "Upload & Train"}
           </button>
         </div>
       </form>
-      {message && (
-        <p className="mt-4 text-sm text-gray-700">{message}</p>
-      )}
+      {message && <p className="mt-4 text-sm text-gray-700">{message}</p>}
     </div>
-  )
+  );
 }
-
-

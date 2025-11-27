@@ -1,9 +1,23 @@
-from src.configs import CHROMA_DB_HOST, CHROMA_DB_PORT, CHROMA_INDEX_NAME
+from src.configs import (
+    CHROMA_DB_HOST,
+    CHROMA_DB_PORT,
+    CHROMA_INDEX_NAME,
+    CHROMA_DB_TOKEN,
+)
 from chromadb import HttpClient
 from fastmcp import FastMCP
 from chromadb.config import Settings
 
-client = HttpClient(host=CHROMA_DB_HOST, port=CHROMA_DB_PORT, settings=Settings())
+client = HttpClient(
+    host=CHROMA_DB_HOST,
+    port=int(CHROMA_DB_PORT),
+    ssl=int(CHROMA_DB_PORT) == 443,
+    settings=Settings(
+        chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+        chroma_client_auth_credentials=CHROMA_DB_TOKEN,
+        anonymized_telemetry=False,
+    ),
+)
 collection = client.get_or_create_collection(name=CHROMA_INDEX_NAME)
 
 

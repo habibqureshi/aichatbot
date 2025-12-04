@@ -160,27 +160,33 @@ export default function TimeRangePicker({
 
   return (
     <div>
-      {label && <label className="block form-label text-base mb-3">{label}</label>}
+      {label && <label className="block text-sm font-medium text-gray-900 mb-3">{label}</label>}
 
       <div className="mb-4">
         {/* Duration Selector */}
         {!hideDuration && (
           <div className="mb-4">
-            <label className="block form-label text-base mb-1">Appointment Duration</label>
+            <label className="block text-sm font-medium text-gray-900 mb-2">Appointment Duration</label>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsDurationOpen((v) => !v)}
-                className={`select-component w-full flex items-center justify-between ${
-                  isDurationOpen ? "open" : ""
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm bg-white text-gray-900 flex items-center justify-between transition-colors ${
+                  isDurationOpen
+                    ? "border-blue-500 ring-2 ring-blue-500"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
               >
-                <span className={`flex-1 text-left ${selectedDuration ? "selected-text" : ""}`}>
+                <span
+                  className={`flex-1 text-left text-sm ${
+                    selectedDuration ? "text-gray-900" : "text-gray-500"
+                  }`}
+                >
                   {DURATION_OPTIONS.find((d) => d.value === selectedDuration)?.label ||
                     "Select duration"}
                 </span>
                 <svg
-                  className={`h-4 w-4 text-gray-400 transform transition-transform ${
+                  className={`h-5 w-5 text-gray-400 transform transition-transform flex-shrink-0 ml-2 ${
                     isDurationOpen ? "rotate-180" : ""
                   }`}
                   fill="none"
@@ -197,16 +203,16 @@ export default function TimeRangePicker({
               </button>
 
               {isDurationOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base border border-brand-blue">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-lg py-1 text-base border border-gray-200 custom-scrollbar">
                   {DURATION_OPTIONS.map((duration) => (
                     <button
                       key={duration.value}
                       type="button"
                       onClick={() => handleDurationSelect(duration.value)}
-                      className={`w-full text-left px-3 py-2 focus:outline-none ${
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors focus:outline-none ${
                         selectedDuration === duration.value
-                          ? "bg-white selected-text"
-                          : "hover:bg-gray-100 focus:bg-gray-100"
+                          ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white font-medium"
+                          : "text-gray-900 hover:bg-gray-100"
                       }`}
                     >
                       {duration.label}
@@ -218,23 +224,29 @@ export default function TimeRangePicker({
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
           {/* Start */}
-          <div className="max-w-lg flex-1">
-            <label className="block form-label text-base mb-1">Start Time</label>
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-medium text-gray-900 mb-2">Start Time</label>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsStartOpen((v) => !v)}
-                className={`select-component w-full flex items-center justify-between ${
-                  isStartOpen ? "open" : ""
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm bg-white text-gray-900 flex items-center justify-between transition-colors ${
+                  isStartOpen
+                    ? "border-blue-500 ring-2 ring-blue-500"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
               >
-                <span className={`flex-1 text-left ${newStartTime ? "selected-text" : ""}`}>
+                <span
+                  className={`flex-1 text-left text-sm ${
+                    newStartTime ? "text-gray-900" : "text-gray-500"
+                  }`}
+                >
                   {newStartTime ? formatTimeDisplay(newStartTime) : "Select time"}
                 </span>
                 <svg
-                  className={`h-4 w-4 text-gray-400 transform transition-transform ${
+                  className={`h-5 w-5 text-gray-400 transform transition-transform flex-shrink-0 ml-2 ${
                     isStartOpen ? "rotate-180" : ""
                   }`}
                   fill="none"
@@ -251,16 +263,16 @@ export default function TimeRangePicker({
               </button>
 
               {isStartOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base border border-brand-blue overflow-auto">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-lg py-1 text-base border border-gray-200 overflow-auto custom-scrollbar">
                   {TIME_OPTIONS.map((time) => (
                     <button
                       key={time}
                       type="button"
                       onClick={() => handleStartTimeSelect(time)}
-                      className={`w-full text-left px-3 py-2 focus:outline-none ${
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors focus:outline-none ${
                         time === newStartTime
-                          ? "bg-white selected-text"
-                          : "hover:bg-gray-100 focus:bg-gray-100"
+                          ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white font-medium"
+                          : "text-gray-900 hover:bg-gray-100"
                       }`}
                     >
                       {formatTimeDisplay(time)}
@@ -272,21 +284,27 @@ export default function TimeRangePicker({
           </div>
 
           {/* End */}
-          <div className="max-w-lg flex-1">
-            <label className="block form-label text-base mb-1">End Time</label>
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-medium text-gray-900 mb-2">End Time</label>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsEndOpen((v) => !v)}
-                className={`select-component w-full flex items-center justify-between ${
-                  isEndOpen ? "open" : ""
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm bg-white text-gray-900 flex items-center justify-between transition-colors ${
+                  isEndOpen
+                    ? "border-blue-500 ring-2 ring-blue-500"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
               >
-                <span className={`flex-1 text-left ${newEndTime ? "selected-text" : ""}`}>
+                <span
+                  className={`flex-1 text-left text-sm ${
+                    newEndTime ? "text-gray-900" : "text-gray-500"
+                  }`}
+                >
                   {newEndTime ? formatTimeDisplay(newEndTime) : "Select time"}
                 </span>
                 <svg
-                  className={`h-4 w-4 text-gray-400 transform transition-transform ${
+                  className={`h-5 w-5 text-gray-400 transform transition-transform flex-shrink-0 ml-2 ${
                     isEndOpen ? "rotate-180" : ""
                   }`}
                   fill="none"
@@ -303,7 +321,7 @@ export default function TimeRangePicker({
               </button>
 
               {isEndOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base border border-brand-blue overflow-auto">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-lg py-1 text-base border border-gray-200 overflow-auto custom-scrollbar">
                   {TIME_OPTIONS.map((time) => {
                     const isDisabled = newStartTime ? time <= newStartTime : false;
                     return (
@@ -312,12 +330,12 @@ export default function TimeRangePicker({
                         type="button"
                         onClick={() => !isDisabled && handleEndTimeSelect(time)}
                         disabled={isDisabled}
-                        className={`w-full text-left px-3 py-2 focus:outline-none ${
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors focus:outline-none ${
                           isDisabled
                             ? "text-gray-400 cursor-not-allowed bg-gray-50"
                             : time === newEndTime
-                            ? "bg-white selected-text"
-                            : "hover:bg-gray-100 focus:bg-gray-100 text-gray-900"
+                            ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white font-medium"
+                            : "text-gray-900 hover:bg-gray-100"
                         }`}
                       >
                         {formatTimeDisplay(time)}
@@ -330,12 +348,12 @@ export default function TimeRangePicker({
           </div>
 
           {/* Add / Update */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 w-full sm:w-auto">
             <button
               type="button"
               onClick={addOrUpdateSlot}
               disabled={!newStartTime || !newEndTime}
-              className="px-4 py-2 mt-4 bg-transparent text-brand-blue border border-brand-blue text-sm font-medium rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-[138px] h-[43px]"
+              className="btn-primary-gradient w-full sm:w-auto px-6 py-3"
             >
               {editingSlotId ? "Update Slot" : "Add Slot"}
             </button>
@@ -347,11 +365,12 @@ export default function TimeRangePicker({
       {timeSlots.length < 1 && <p className="text-sm text-gray-500 italic">No time slots added yet</p>}
 
       {/* Click outside to close dropdowns */}
-      {(isStartOpen || isDurationOpen) && (
+      {(isStartOpen || isEndOpen || isDurationOpen) && (
         <div
           className="fixed inset-0 z-0"
           onClick={() => {
             setIsStartOpen(false);
+            setIsEndOpen(false);
             setIsDurationOpen(false);
           }}
         />

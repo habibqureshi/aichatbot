@@ -241,7 +241,7 @@ function AddDoctorPageContent() {
       <div className="bg-transparent py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Doctor Information Card */}
-          <div className="bg-[#FFFFFF66] rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
             <div
               className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 py-8 px-4 rounded-lg"
               style={{ border: "1px solid #E3C5FF" }}
@@ -309,7 +309,7 @@ function AddDoctorPageContent() {
           </div>
 
           {/* Duration Card */}
-          <div className="bg-[#FFFFFF66] rounded-lg p-4 shadow-sm space-y-6">
+          <div className="bg-white rounded-lg p-4 shadow-sm space-y-6">
             <div className=" rounded-lg p-6 shadow-sm" style={{ border: "1px solid #E3C5FF" }}>
               <div className="pb-2 mb-4">
                 <p className="form-label text-xl">Appointment Duration</p>
@@ -327,7 +327,7 @@ function AddDoctorPageContent() {
                       disabled={formData.timeSlots.length > 0}
                       className={`w-[140px] h-[43px] text-sm font-medium rounded-md transition-colors ${
                         formData.duration === duration
-                          ? "bg-white text-[#4318FF] border border-[#4318FF]"
+                          ? "bg-white text-brand-blue border border-brand-blue"
                           : formData.timeSlots.length > 0
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-300"
                           : "bg-white text-[#787878] border border-[#787878]"
@@ -404,7 +404,7 @@ function AddDoctorPageContent() {
                           <button
                             type="button"
                             onClick={() => removeTimeSlot(slot.id)}
-                            className="absolute top-3 right-3 text-[#4318FF] hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full"
+                            className="absolute top-3 right-3 text-brand-blue hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full"
                             aria-label={`Remove slot for ${dayLabel}`}
                           >
                             <svg
@@ -450,7 +450,7 @@ function AddDoctorPageContent() {
               <button
                 type="submit"
                 disabled={isSubmitting || !isFormValid()}
-                className="inline-flex items-center px-6 py-3 text-white text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 bg-gradient-to-r from-[#9882F7] to-[#4318FF]"
+                className="btn-primary-gradient"
                 style={{
                   borderColor: isSubmitting || !isFormValid() ? "#9CA3AF" : "#4318ff",
                 }}

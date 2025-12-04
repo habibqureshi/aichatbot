@@ -197,7 +197,7 @@ export default function TimeRangePicker({
               </button>
 
               {isDurationOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base border border-[#4318FF]">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base border border-brand-blue">
                   {DURATION_OPTIONS.map((duration) => (
                     <button
                       key={duration.value}
@@ -205,7 +205,7 @@ export default function TimeRangePicker({
                       onClick={() => handleDurationSelect(duration.value)}
                       className={`w-full text-left px-3 py-2 focus:outline-none ${
                         selectedDuration === duration.value
-                          ? "bg-[#FCFCFC] selected-text"
+                          ? "bg-white selected-text"
                           : "hover:bg-gray-100 focus:bg-gray-100"
                       }`}
                     >
@@ -251,7 +251,7 @@ export default function TimeRangePicker({
               </button>
 
               {isStartOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base border border-[#4318FF] overflow-auto">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base border border-brand-blue overflow-auto">
                   {TIME_OPTIONS.map((time) => (
                     <button
                       key={time}
@@ -259,7 +259,7 @@ export default function TimeRangePicker({
                       onClick={() => handleStartTimeSelect(time)}
                       className={`w-full text-left px-3 py-2 focus:outline-none ${
                         time === newStartTime
-                          ? "bg-[#FCFCFC] selected-text"
+                          ? "bg-white selected-text"
                           : "hover:bg-gray-100 focus:bg-gray-100"
                       }`}
                     >
@@ -303,7 +303,7 @@ export default function TimeRangePicker({
               </button>
 
               {isEndOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base border border-[#4318FF] overflow-auto">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base border border-brand-blue overflow-auto">
                   {TIME_OPTIONS.map((time) => {
                     const isDisabled = newStartTime ? time <= newStartTime : false;
                     return (
@@ -316,7 +316,7 @@ export default function TimeRangePicker({
                           isDisabled
                             ? "text-gray-400 cursor-not-allowed bg-gray-50"
                             : time === newEndTime
-                            ? "bg-[#FCFCFC] selected-text"
+                            ? "bg-white selected-text"
                             : "hover:bg-gray-100 focus:bg-gray-100 text-gray-900"
                         }`}
                       >
@@ -335,7 +335,7 @@ export default function TimeRangePicker({
               type="button"
               onClick={addOrUpdateSlot}
               disabled={!newStartTime || !newEndTime}
-              className="px-4 py-2 mt-4 bg-transparent text-[#4318FF] border border-[#4318FF] text-sm font-medium rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-[138px] h-[43px]"
+              className="px-4 py-2 mt-4 bg-transparent text-brand-blue border border-brand-blue text-sm font-medium rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-[138px] h-[43px]"
             >
               {editingSlotId ? "Update Slot" : "Add Slot"}
             </button>

@@ -49,6 +49,12 @@ const navigation = [
     iconActive: "/assets/sideBarIcons/knowledge_active.svg",
     iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
   },
+  // {
+  //   name: "Tables",
+  //   href: "/tables",
+  //   iconActive: "/assets/sideBarIcons/booking_active.svg", // Using booking icon as placeholder
+  //   iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
+  // },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {

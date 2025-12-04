@@ -1,14 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { DataTable, ExtendedColumnDef, ActionsMenu } from "@/components/common/DataTable";
+import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 import CallDetails from "@/components/dashboard/CallDetails";
-import {
-  getConversationsList,
-  Conversation,
-  Message,
-  getConversationMessages,
-} from "@/app/actions/conversations";
+import { getConversationsList, Conversation } from "@/app/actions/conversations";
 import { toast } from "react-toastify";
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -47,8 +42,6 @@ const calculateDuration = (startedAt: string, endedAt: string | null): string =>
 
 export default function CallsPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [selectedMessages, setSelectedMessages] = useState<Message[]>([]);
-  const [messagesLoading, setMessagesLoading] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [loading, setLoading] = useState(true);
@@ -189,20 +182,6 @@ export default function CallsPage() {
         setTotalPages(response.metadata.total_pages);
         const firstConversation = response.data?.[0];
         setSelectedConversation(firstConversation || null);
-        if (firstConversation) {
-          try {
-            setMessagesLoading(true);
-            const messagesResponse = await getConversationMessages(firstConversation.id);
-            setSelectedMessages(messagesResponse.data.reverse());
-          } catch (error) {
-            console.error("Error fetching messages for first conversation:", error);
-            setSelectedMessages([]);
-          } finally {
-            setMessagesLoading(false);
-          }
-        } else {
-          setSelectedMessages([]);
-        }
       } catch (error: unknown) {
         console.error("Error fetching conversations:", error);
 
@@ -242,17 +221,6 @@ export default function CallsPage() {
 
   const handleRowClick = async (conversation: Conversation) => {
     setSelectedConversation(conversation);
-    try {
-      setMessagesLoading(true);
-      const messagesResponse = await getConversationMessages(conversation.id);
-      console.log("message response", messagesResponse?.data);
-      setSelectedMessages(messagesResponse.data);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      setSelectedMessages([]);
-    } finally {
-      setMessagesLoading(false);
-    }
   };
 
   const handleSearchChange = (value: string) => {
@@ -292,11 +260,7 @@ export default function CallsPage() {
         </div>
 
         <div className="col-span-1 lg:col-span-4">
-          <CallDetails
-            conversation={selectedConversation}
-            messages={selectedMessages}
-            loading={messagesLoading}
-          />
+          <CallDetails conversation={selectedConversation} />
         </div>
       </div>
     </div>

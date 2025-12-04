@@ -69,6 +69,8 @@ interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void;
   // Row tooltip text
   rowTooltipText?: string;
+  // Selected row ID for highlighting
+  selectedRowId?: string | number;
 }
 
 export function DataTable<TData, TValue>({
@@ -104,6 +106,7 @@ export function DataTable<TData, TValue>({
   onExternalPageSizeChange,
   onRowClick,
   rowTooltipText,
+  selectedRowId,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -314,8 +317,11 @@ export function DataTable<TData, TValue>({
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className={`bg-[#FFFFFF80] hover:bg-[linear-gradient(to_right,_#F0EEFD_0%,_#D9D6FE_100%)] border-b ${
-                      onRowClick ? "cursor-pointer" : ""
-                    }`}
+                      selectedRowId !== undefined &&
+                      (row.original as { id: string | number }).id === selectedRowId
+                        ? "bg-[linear-gradient(to_right,_#E0D7FF_0%,_#C4B5FD_100%)]"
+                        : ""
+                    } ${onRowClick ? "cursor-pointer" : ""}`}
                     style={{ borderColor: "#E2DAFB" }}
                     onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                     title={onRowClick && rowTooltipText ? rowTooltipText : undefined}

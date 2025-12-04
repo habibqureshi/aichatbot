@@ -212,7 +212,6 @@ export default function CallDetails({
       // console.log("Fetching recording for conversation:", conversation.id);
       const streamData = await streamConversationRecording(conversation.id);
 
-
       // Convert ArrayBuffer to blob URL for audio playback
       const audioBlob = new Blob([streamData], { type: "audio/mpeg" });
       const audioUrl = URL.createObjectURL(audioBlob);
@@ -254,7 +253,7 @@ export default function CallDetails({
         >
           <h3 className="calldetails-title">Call Details</h3>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <span className="text-xs text-gray-500 opacity-100  transition-opacity duration-200">
               {isDetailsOpen ? "Hide" : "View"}
             </span>
             <svg

@@ -255,6 +255,7 @@ export default function CallsPage() {
               onExternalPageSizeChange={handlePageSizeChange}
               onRowClick={handleRowClick}
               rowTooltipText="Click to view conversation details"
+              selectedRowId={selectedConversation?.id}
             />
           </div>
         </div>

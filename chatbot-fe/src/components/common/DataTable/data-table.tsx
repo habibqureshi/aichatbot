@@ -270,7 +270,7 @@ export function DataTable<TData, TValue>({
       >
         <div
           className="overflow-auto"
-          style={{ minHeight: "calc(100vh - 420px)", maxHeight: "calc(100vh - 320px)" }}
+          style={{ minHeight: "calc(100vh - 310px)", maxHeight: "calc(100vh - 320px)" }}
         >
           <table className="min-w-[950px] table-auto w-full border-collapse">
             <thead

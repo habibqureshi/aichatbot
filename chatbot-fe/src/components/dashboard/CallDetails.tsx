@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import { Conversation, Message, streamConversationRecording } from "@/app/actions/conversations";
+import {
+  Conversation,
+  Message,
+  streamConversationRecording,
+  getConversationMessages,
+} from "@/app/actions/conversations";
 import { toast } from "react-toastify";
 
 type Props = {
   conversation?: Conversation | null;
-  messages?: Message[];
+  messages?: Message[]; // Not used - we fetch messages internally
   loading?: boolean;
 };
 const StatusBadge = ({ status }: { status: string }) => {
@@ -31,27 +36,158 @@ const StatusBadge = ({ status }: { status: string }) => {
     </span>
   );
 };
-export default function CallDetails({ conversation, messages, loading = false }: Props) {
+export default function CallDetails({
+  conversation,
+  messages: initialMessages = [],
+  loading: initialLoading = false,
+}: Props) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  // Reset audio when conversation changes
-  useEffect(() => {
-    // Store current audioSrc to cleanup
-    const currentAudioSrc = audioSrc;
+  // Pagination state
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(initialLoading);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-    // Cleanup previous audio
-    if (currentAudioSrc && currentAudioSrc.startsWith("blob:")) {
-      URL.revokeObjectURL(currentAudioSrc);
+  // Refs for scroll handling
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isLoadingRef = useRef(false);
+  const previousScrollHeightRef = useRef(0);
+
+  // Load initial messages
+  const loadInitialMessages = useCallback(async () => {
+    if (!conversation?.id) return;
+
+    try {
+      setLoading(true);
+      const response = await getConversationMessages(conversation.id, 1, 10);
+
+      // Messages come from API, display them in chronological order (oldest first)
+      setMessages(response.data.reverse());
+      setCurrentPage(1);
+      setTotalPages(response.metadata.total_pages);
+      setHasMoreMessages(response.metadata.page < response.metadata.total_pages);
+      setIsInitialLoad(true);
+    } catch (error) {
+      console.error("Error loading initial messages:", error);
+      setMessages([]);
+      setHasMoreMessages(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [conversation?.id]);
+
+  // Load more (older) messages
+  const loadMoreMessages = useCallback(async () => {
+    if (!conversation?.id) {
+      // console.log("Load more prevented: No conversation ID");
+      return;
     }
 
-    // Reset audio state when conversation changes
-    setAudioSrc(null);
-    setIsPlaying(false);
-    setIsStreaming(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversation?.id]);
+    try {
+      setLoadingMore(true);
+      const nextPage = currentPage + 1;
+      // console.log(`Loading page ${nextPage} of ${totalPages}`);
+
+      // Save current scroll position
+      const container = messagesContainerRef.current;
+      if (container) {
+        previousScrollHeightRef.current = container.scrollHeight;
+      }
+
+      const response = await getConversationMessages(conversation.id, nextPage, 10);
+      // console.log(`Loaded ${response.data.length} messages from page ${nextPage}`);
+
+      // Prepend older messages (reversed so oldest are at the top)
+      setMessages((prev) => [...response.data.reverse(), ...prev]);
+      setCurrentPage(nextPage);
+      setHasMoreMessages(nextPage < response.metadata.total_pages);
+
+      // Restore scroll position after new messages are added
+      setTimeout(() => {
+        if (container && previousScrollHeightRef.current) {
+          const newScrollHeight = container.scrollHeight;
+          const scrollDiff = newScrollHeight - previousScrollHeightRef.current;
+          container.scrollTop = scrollDiff;
+          // console.log("Scroll restored:", { scrollDiff, newScrollTop: container.scrollTop });
+        }
+        isLoadingRef.current = false;
+      }, 50);
+    } catch (error) {
+      console.error("Error loading more messages:", error);
+      setHasMoreMessages(false);
+      isLoadingRef.current = false;
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [conversation?.id, currentPage, totalPages]);
+
+  // Reset pagination when conversation changes
+  useEffect(() => {
+    if (conversation?.id) {
+      setMessages([]);
+      setCurrentPage(1);
+      setHasMoreMessages(true);
+      setLoading(true);
+      setIsInitialLoad(true);
+      isLoadingRef.current = false;
+
+      // Load initial messages
+      loadInitialMessages();
+    }
+  }, [conversation?.id, loadInitialMessages]);
+
+  // Scroll to bottom on initial load
+  useEffect(() => {
+    if (isInitialLoad && messages.length > 0 && messagesContainerRef.current) {
+      // Use setTimeout to ensure DOM is updated
+      setTimeout(() => {
+        const container = messagesContainerRef.current;
+        if (container) {
+          // Scroll the container to the bottom
+          container.scrollTop = container.scrollHeight;
+        }
+        setIsInitialLoad(false);
+      }, 100);
+    }
+  }, [messages, isInitialLoad]);
+
+  // Handle scroll for pagination (load older messages)
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const scrollTop = container.scrollTop;
+
+    // Prevent multiple simultaneous loads - check BEFORE setting the flag
+    if (isLoadingRef.current || loadingMore || !hasMoreMessages || currentPage >= totalPages) {
+      return;
+    }
+
+    // Load more when user scrolls near the top (within 100px)
+    if (scrollTop < 100) {
+      isLoadingRef.current = true;
+      loadMoreMessages();
+    }
+  }, [hasMoreMessages, loadingMore, currentPage, totalPages, loadMoreMessages]);
+
+  // Add scroll listener
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    container.addEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [handleScroll]);
 
   // Cleanup blob URLs to prevent memory leaks on unmount
   useEffect(() => {
@@ -73,10 +209,9 @@ export default function CallDetails({ conversation, messages, loading = false }:
 
     try {
       setIsStreaming(true);
-      console.log("Fetching recording for conversation:", conversation.id);
+      // console.log("Fetching recording for conversation:", conversation.id);
       const streamData = await streamConversationRecording(conversation.id);
 
-      console.log("Stream data received, size:", streamData.byteLength);
 
       // Convert ArrayBuffer to blob URL for audio playback
       const audioBlob = new Blob([streamData], { type: "audio/mpeg" });
@@ -113,23 +248,51 @@ export default function CallDetails({ conversation, messages, loading = false }:
           maxHeight: "calc(100vh -220px)",
         }}
       >
-        <h3 className="calldetails-title mb-6">Call Details</h3>
+        <div
+          className="flex items-center justify-between cursor-pointer mb-6 group"
+          onClick={() => setIsDetailsOpen(!isDetailsOpen)}
+        >
+          <h3 className="calldetails-title">Call Details</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              {isDetailsOpen ? "Hide" : "View"}
+            </span>
+            <svg
+              className={`w-5 h-5 transition-transform duration-200 ${
+                isDetailsOpen ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
         <div className="bg-[#E6E4FB] h-[0.5px] my-4" />
         <div className="space-y-5">
-          <div>
-            <div className="calldetails-label mb-1">Caller</div>
-            <div className="calldetails-value">{caller}</div>
-          </div>
+          <div
+            className={`transition-all duration-500 ease-in-out origin-top ${
+              isDetailsOpen ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 h-0 overflow-hidden"
+            }`}
+          >
+            <div className="space-y-5">
+              <div>
+                <div className="calldetails-label mb-1">Caller</div>
+                <div className="calldetails-value">{caller}</div>
+              </div>
 
-          <div>
-            <div className="calldetails-label mb-1">Phone no</div>
-            <div className="calldetails-value">{phone}</div>
-          </div>
+              <div>
+                <div className="calldetails-label mb-1">Phone no</div>
+                <div className="calldetails-value">{phone}</div>
+              </div>
 
-          <div>
-            <div className="calldetails-label mb-2">Status</div>
-            <div className="mt-2 inline-block">
-              <StatusBadge status={status} />
+              <div>
+                <div className="calldetails-label mb-2">Status</div>
+                <div className="mt-2 inline-block">
+                  <StatusBadge status={status} />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -141,8 +304,23 @@ export default function CallDetails({ conversation, messages, loading = false }:
           </div>
           <div className="bg-[#E6E4FB] rounded-lg p-4">
             <div className="calldetails-section-title mb-3">Transcript Preview</div>
-            <div className="min-h-[100px] max-h-[200px] overflow-y-auto">
+            <div ref={messagesContainerRef} className="min-h-[200px] max-h-[400px] overflow-y-auto">
               <div className="space-y-3">
+                {loadingMore && (
+                  <div className="flex justify-center py-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
                 {loading ? (
                   // Skeleton loader for messages
                   <>
@@ -189,6 +367,7 @@ export default function CallDetails({ conversation, messages, loading = false }:
                     </div>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
             </div>
           </div>

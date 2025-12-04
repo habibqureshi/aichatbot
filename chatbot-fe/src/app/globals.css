@@ -76,7 +76,7 @@
 
   /* Border and input */
   --border: 249 100% 95%;
-  --input: 249 100% 95%;
+  --input: 0 0% 100%;
   --ring: 250 91% 75%;
 
   --radius: 0.5rem;
@@ -411,7 +411,7 @@ html {
   padding-left: 12px;
   padding-right: 12px;
   border: 0;
-  background-color: #ffffff80;
+  background-color: hsl(var(--input) / 0.5);
   color: #787878;
   font-family: Inter;
   font-weight: 400;

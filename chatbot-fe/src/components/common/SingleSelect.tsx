@@ -28,18 +28,20 @@ export default function SingleSelect({
 
   return (
     <div className="relative">
-      {label && <label className="block form-label text-base mb-2">{label}</label>}
+      {label && <label className="block text-sm font-medium text-gray-900 mb-2">{label}</label>}
       <div className="mt-1 relative" onClick={() => setIsOpen(!isOpen)}>
         <div
-          className={`select-component w-full cursor-pointer flex items-center justify-between ${
-            isOpen ? "open" : ""
+          className={`w-full px-4 py-3 border rounded-lg shadow-sm bg-white text-gray-900 cursor-pointer flex items-center justify-between transition-colors ${
+            isOpen ? "border-blue-500 ring-2 ring-blue-500" : "border-gray-300 hover:border-gray-400"
           }`}
         >
-          <span className={`flex-1 text-left ${selectedOption ? "selected-text" : ""}`}>
+          <span
+            className={`flex-1 text-left text-sm ${selectedOption ? "text-gray-900" : "text-gray-500"}`}
+          >
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           <svg
-            className={`h-5 w-5 text-gray-400 transform transition-transform ${
+            className={`h-5 w-5 text-gray-400 transform transition-transform flex-shrink-0 ml-2 ${
               isOpen ? "rotate-180" : ""
             }`}
             fill="currentColor"
@@ -54,22 +56,30 @@ export default function SingleSelect({
         </div>
 
         {isOpen && (
-          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none border border-brand-blue">
+          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none border border-gray-200 custom-scrollbar">
             {options.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-gray-500 text-center">{emptyMessage}</div>
+              <div className="px-4 py-3 text-sm text-gray-500 text-center">{emptyMessage}</div>
             ) : (
               options.map((option) => (
                 <div
                   key={option.id}
-                  className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 ${
-                    selectedValue === option.value ? "bg-white selected-text" : ""
+                  className={`cursor-pointer select-none relative py-2.5 px-4 transition-colors ${
+                    selectedValue === option.value
+                      ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white"
+                      : "text-gray-900 hover:bg-gray-100"
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSelect(option.value);
                   }}
                 >
-                  <span className="block font-normal truncate">{option.label}</span>
+                  <span
+                    className={`block truncate text-sm ${
+                      selectedValue === option.value ? "font-medium" : "font-normal"
+                    }`}
+                  >
+                    {option.label}
+                  </span>
                 </div>
               ))
             )}

@@ -288,7 +288,7 @@ function AddDoctorPageContent() {
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 {loadingSpecialities ? (
                   <SpecialtySkeleton />
                 ) : (
@@ -395,7 +395,7 @@ function AddDoctorPageContent() {
               </div>
 
               <div className="space-y-4">
-                <div>
+                <div className="max-w-2xl">
                   <label className="block text-sm font-medium text-gray-900 mb-2">
                     Select Day for Slot Creation
                   </label>

@@ -137,5 +137,6 @@ export const ENDPOINTS = {
     LIST: (page: number = 1, limit: number = 10) => `/api/v1/rag/?page=${page}&limit=${limit}`,
     CREATE: "/api/v1/rag/upload-file",
     UPDATE_ACTIVE: (knowledgeId: number) => `/api/v1/rag/activate/${knowledgeId}`,
+    DELETE: (knowledgeId: number) => `/api/v1/rag/${knowledgeId}`,
   },
 };

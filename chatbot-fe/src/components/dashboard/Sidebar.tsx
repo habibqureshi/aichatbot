@@ -3,6 +3,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useInstallationType } from "@/app/hooks/useInstallationType";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ const navigation = [
     href: "/doctors",
     iconActive: "/assets/sideBarIcons/doctor_active.svg",
     iconInactive: "/assets/sideBarIcons/doctor_inactive.svg",
+    showOnlyFor: "clinic", // Only show for clinic
   },
   // {
   //   name: "Specialities",
@@ -49,16 +51,18 @@ const navigation = [
     iconActive: "/assets/sideBarIcons/knowledge_active.svg",
     iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
   },
-  // {
-  //   name: "Tables",
-  //   href: "/tables",
-  //   iconActive: "/assets/sideBarIcons/booking_active.svg", // Using booking icon as placeholder
-  //   iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
-  // },
+  {
+    name: "Tables",
+    href: "/tables",
+    iconActive: "/assets/sideBarIcons/booking_active.svg", // Using booking icon as placeholder
+    iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
+    showOnlyFor: ["restaurant", "cafe"], // Show for restaurant and cafe
+  },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { installationType, isLoading } = useInstallationType();
 
   const handleLinkClick = () => {
     // Close sidebar on mobile when clicking a link
@@ -66,6 +70,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       onClose();
     }
   };
+
+  // Filter navigation based on installation type
+  const filteredNavigation = navigation.filter((item) => {
+    if (isLoading) return true; // Show all items while loading
+    if (!item.showOnlyFor) return true; // Always show if no restriction
+
+    if (Array.isArray(item.showOnlyFor)) {
+      return item.showOnlyFor.includes(installationType);
+    }
+
+    return item.showOnlyFor === installationType;
+  });
 
   return (
     <>
@@ -101,7 +117,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6">
           <div className="space-y-2">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link

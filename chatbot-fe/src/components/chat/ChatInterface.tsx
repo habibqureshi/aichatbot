@@ -1,4 +1,5 @@
 "use client";
+"use client";
 
 import React, { useState, useRef, useEffect, startTransition, useMemo } from "react";
 import { ChatMessage } from "@/app/actions/chat";
@@ -7,8 +8,16 @@ import { ENDPOINTS } from "@/app/http/endpoints";
 
 interface ChatInterfaceProps {
   conversationId?: string;
+  conversationId?: string;
 }
 
+export default function ChatInterface({}: ChatInterfaceProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [aiConversationId, setAiConversationId] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 export default function ChatInterface({}: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -22,6 +31,8 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   const flushInterval = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -40,6 +51,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       });
     }
   };
+  };
 
   useEffect(() => {
     return () => {
@@ -50,14 +62,24 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+    scrollToBottom();
+  }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim() || isLoading) return;
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
+      role: "user",
       content: inputValue.trim(),
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue("");
+    setIsLoading(true);
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
@@ -70,10 +92,16 @@ export default function ChatInterface({}: ChatInterfaceProps) {
         ENDPOINTS.AI.SEND_MESSAGE +
         "?query=" +
         encodeURIComponent(userMessage.content);
+      let url =
+        ENDPOINTS.BASE_URL +
+        ENDPOINTS.AI.SEND_MESSAGE +
+        "?query=" +
+        encodeURIComponent(userMessage.content);
       if (aiConversationId && aiConversationId.trim() !== "") {
         url += "&id=" + encodeURIComponent(aiConversationId);
       }
       flushInterval.current = setInterval(() => {
+        updateMessageState();
         updateMessageState();
       }, 100);
       const eventSource = new EventSource(url);
@@ -87,13 +115,20 @@ export default function ChatInterface({}: ChatInterfaceProps) {
           if (parsed && typeof parsed === "object" && parsed.id) {
             conversationId = parsed.id;
             setAiConversationId(conversationId);
+            conversationId = parsed.id;
+            setAiConversationId(conversationId);
             const assistantMessage: ChatMessage = {
               id: messageId,
+              role: "assistant",
               role: "assistant",
               content: "",
               timestamp: new Date(),
             };
+              timestamp: new Date(),
+            };
 
+            setMessages((prev) => [...prev, assistantMessage]);
+            bufferRef.current = "";
             setMessages((prev) => [...prev, assistantMessage]);
             bufferRef.current = "";
             return;
@@ -109,6 +144,12 @@ export default function ChatInterface({}: ChatInterfaceProps) {
           };
           bufferRef.current = "";
           setMessages((prev) => [...prev, errorMessage]);
+            role: "assistant",
+            content: "Sorry, I encountered an error. Please try again.",
+            timestamp: new Date(),
+          };
+          bufferRef.current = "";
+          setMessages((prev) => [...prev, errorMessage]);
         }
 
         eventSource.onerror = () => {
@@ -116,6 +157,8 @@ export default function ChatInterface({}: ChatInterfaceProps) {
           if (flushInterval.current) {
             clearInterval(flushInterval.current);
           }
+          updateMessageState();
+          setIsLoading(false);
           updateMessageState();
           setIsLoading(false);
         };
@@ -130,9 +173,17 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       };
       bufferRef.current = "";
       setMessages((prev) => [...prev, errorMessage]);
+        role: "assistant",
+        content: "Sorry, I encountered an error. Please try again.",
+        timestamp: new Date(),
+      };
+      bufferRef.current = "";
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setIsLoading(false);
     }
+  };
   };
 
   // Fix: Message should accept props, not the message object directly.
@@ -189,18 +240,28 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
     }
+  };
   };
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
+    const textarea = textareaRef.current;
     if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = Math.min(textarea.scrollHeight, 200) + "px";
       textarea.style.height = "auto";
       textarea.style.height = Math.min(textarea.scrollHeight, 200) + "px";
     }
   };
+  };
 
   useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputValue]);
     adjustTextareaHeight();
   }, [inputValue]);
 
@@ -224,10 +285,26 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                     strokeWidth={2}
                     d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                   />
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">How can I help you today?</h2>
-              <p className="text-gray-500">Start a conversation by typing your message below.</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                How can I help you today?
+              </h2>
+              <p className="text-gray-500">
+                Start a conversation by typing your message below.
+              </p>
             </div>
           </div>
         ) : (
@@ -253,6 +330,14 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                   <div className="bg-gray-100 rounded-2xl px-4 py-3">
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
                       <div
                         className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
                         style={{ animationDelay: "0.1s" }}
@@ -287,6 +372,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                   className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={1}
                   style={{ minHeight: "48px", maxHeight: "200px" }}
+                  style={{ minHeight: "48px", maxHeight: "200px" }}
                   disabled={isLoading}
                   autoFocus
                 />
@@ -313,5 +399,6 @@ export default function ChatInterface({}: ChatInterfaceProps) {
         </div>
       </div>
     </div>
+  );
   );
 }

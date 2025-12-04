@@ -13,6 +13,7 @@ from langchain_mcp_adapters.tools import (
     convert_mcp_tool_to_langchain_tool,
 )
 from aimodels import llm
+from graph.appointmnet_graph import create_appointment_graph
 
 # Load environment variables as early as possible
 load_dotenv()
@@ -82,12 +83,25 @@ async def lifespan(app: FastAPI):
         raise
 
 
-async def get_graph() -> StateGraph:
+async def get_graph(call_id: str, patient_number: str) -> StateGraph:
+    global my_checkpointer
+    mcp_client = MCPClient()
+    success = await mcp_client.connect(
+        url=MCP_URL, headers={"x-call-id": call_id, "x-patient-no": patient_number}
+    )
+    if not success:
+        raise ConnectionError("Error during setup. Contact administrator!")
+    graph = await create_appointment_graph(mcp_client)
+    # compiled_graph = graph.compile(checkpointer=my_checkpointer)
+    return graph
+
+
+async def get_chat_graph():
     global my_checkpointer
     mcp_client = MCPClient()
     success = await mcp_client.connect(url=MCP_URL, headers={})
     if not success:
         raise ConnectionError("Error during setup. Contact administrator!")
-    graph = await create_chatbot_graph(mcp_client)
-    compiled_graph = graph.compile(checkpointer=my_checkpointer)
-    return compiled_graph
+    graph = await create_chatbot_graph(mcp_client=mcp_client)
+    graph = graph.compile(checkpointer=my_checkpointer)
+    return graph

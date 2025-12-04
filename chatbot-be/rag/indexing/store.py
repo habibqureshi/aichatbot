@@ -8,13 +8,13 @@ collection = chroma_client.get_or_create_collection(name=INDEX_NAME)
 print("connected to chromadb")
 
 
-def add_to_store(documents):
-    collection.add(
+def add_to_store(documents, index_name):
+    knowledge_collection = chroma_client.get_or_create_collection(name=index_name)
+    knowledge_collection.add(
         ids=[str(uuid.uuid4()) for _ in range(len(documents))],
         documents=[doc.page_content for doc in documents],
         metadatas=[doc.metadata for doc in documents],
     )
-    return collection
 
 
 def query_collection(query, k=2):

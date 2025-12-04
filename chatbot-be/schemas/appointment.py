@@ -1,0 +1,49 @@
+from __future__ import annotations
+
+from datetime import date, time, datetime
+from typing import ClassVar
+
+from pydantic import BaseModel, ConfigDict
+
+from schemas.common import TimezoneMixin
+from schemas.doctor import DoctorBase
+from schemas.patient import Patient
+
+
+class AppointmentBase(BaseModel):
+    patient_id: int
+    doctor_id: int
+    appointment_date: date
+    start_time: time
+    end_time: time
+    status: str | None = None
+    notes: str | None = None
+    call_sid: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class Appointment(TimezoneMixin, AppointmentBase):
+    id: int
+    created_at: datetime
+    patient: Patient | None = None
+    doctor: DoctorBase | None = None
+
+    _timezone_fields: ClassVar[list[str]] = ["appointment_date", "created_at"]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AppointmentCreate(AppointmentBase):
+    pass
+
+
+class AppointmentUpdate(BaseModel):
+    patient_id: int | None = None
+    doctor_id: int | None = None
+    appointment_date: datetime | None = None
+    status: str | None = None
+    notes: str | None = None
+    call_sid: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)

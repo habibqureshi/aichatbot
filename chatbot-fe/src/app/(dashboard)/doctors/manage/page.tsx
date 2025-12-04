@@ -19,7 +19,7 @@ interface TimeSlot {
 
 interface DoctorData {
   name: string;
-  specialty_id: number;
+  specialty: string;
   phone_number: string;
   availabilities: Array<{
     start_time: string;
@@ -49,7 +49,7 @@ function AddDoctorPageContent() {
 
   const [formData, setFormData] = useState<DoctorData>({
     name: "",
-    specialty_id: 0,
+    specialty: "",
     phone_number: "",
     availabilities: [],
     duration: 30,
@@ -65,7 +65,7 @@ function AddDoctorPageContent() {
     return (
       formData.name.trim() !== "" &&
       formData.phone_number.trim() !== "" &&
-      formData.specialty_id > 0 &&
+      formData.specialty.trim() !== "" &&
       formData.timeSlots.length > 0
     );
   };
@@ -105,7 +105,7 @@ function AddDoctorPageContent() {
           // Populate form with doctor data
           setFormData({
             name: doctorResponse.name,
-            specialty_id: doctorResponse.specialty.id,
+            specialty: doctorResponse.specialty,
             phone_number: doctorResponse.phone_number,
             availabilities: doctorResponse.availabilities,
             duration: doctorResponse.duration,
@@ -183,7 +183,7 @@ function AddDoctorPageContent() {
 
       const doctorData = {
         name: formData.name,
-        specialty_id: formData.specialty_id,
+        specialty: formData.specialty,
         phone_number: formData.phone_number,
         availabilities,
         duration: formData.duration,
@@ -206,7 +206,7 @@ function AddDoctorPageContent() {
       if (!isEditMode) {
         setFormData({
           name: "",
-          specialty_id: 0,
+          specialty: "",
           phone_number: "",
           availabilities: [],
           duration: 30,
@@ -304,11 +304,11 @@ function AddDoctorPageContent() {
                       options={specialities.map((specialty) => ({
                         id: specialty.id,
                         label: specialty.name,
-                        value: specialty.id,
+                        value: specialty.name,
                       }))}
-                      selectedValue={formData.specialty_id}
+                      selectedValue={formData.specialty}
                       onChange={(value) =>
-                        setFormData((prev) => ({ ...prev, specialty_id: value as number }))
+                        setFormData((prev) => ({ ...prev, specialty: value as string }))
                       }
                       placeholder="Select Specialty"
                     />
@@ -515,7 +515,7 @@ function AddDoctorPageContent() {
                       <ul className="text-sm space-y-1 ml-4 list-disc text-amber-800">
                         {formData.name.trim() === "" && <li>Doctor Name is required</li>}
                         {formData.phone_number.trim() === "" && <li>Phone Number is required</li>}
-                        {formData.specialty_id === 0 && <li>Specialty must be selected</li>}
+                        {formData.specialty.trim() === "" && <li>Specialty must be selected</li>}
                         {formData.timeSlots.length === 0 && (
                           <li>At least one time slot must be created</li>
                         )}

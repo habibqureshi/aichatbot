@@ -4,10 +4,7 @@ import { ENDPOINTS } from "@/app/http/endpoints";
 export interface Doctor {
   id: number;
   name: string;
-  specialty: {
-    id: number;
-    name: string;
-  };
+  specialty: string;
   phone_number: string;
   created_at: string;
   duration: number;
@@ -31,7 +28,7 @@ export interface DoctorsResponse {
 export async function createDoctor(
   doctorData: {
     name: string;
-    specialty_id: number;
+    specialty: string;
     phone_number: string;
     availabilities: Array<{
       start_time: string;
@@ -66,7 +63,7 @@ export async function updateDoctor(
   doctorId: number,
   doctorData: {
     name: string;
-    specialty_id: number;
+    specialty: string;
     phone_number: string;
     availabilities: Array<{
       start_time: string;

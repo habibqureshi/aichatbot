@@ -38,11 +38,11 @@ const navigation = [
     iconActive: "/assets/sideBarIcons/doctor_active.svg",
     iconInactive: "/assets/sideBarIcons/doctor_inactive.svg",
   },
-  {
-    name: "Specialities",
-    href: "/specialities",
-    icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-  },
+  // {
+  //   name: "Specialities",
+  //   href: "/specialities",
+  //   icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+  // },
   {
     name: "Knowledge",
     href: "/knowledge",
@@ -116,36 +116,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   key={item.name}
                   href={item.href}
                   onClick={handleLinkClick}
-                  className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px]
-                                    ${
-                                      isActive
-                                        ? "bg-gradient-to-r from-[#EEEAFF] to-[#DAD2FF]"
-                                        : "bg-[#FCFCFC33] hover:bg-gradient-to-r hover:from-[#EEEAFF] hover:to-[#DAD2FF]"
-                                    }`}
+                  className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px] ${
+                    isActive
+                      ? "bg-gradient-to-r from-[#EEEAFF] to-[#DAD2FF]"
+                      : "bg-[#FCFCFC33] hover:bg-gradient-to-r hover:from-[#EEEAFF] hover:to-[#DAD2FF]"
+                  }`}
                   style={{
                     color: isActive ? "#751AE5" : "#787878",
                   }}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  {item.iconActive ? (
-                    <Image
-                      src={isActive ? item.iconActive : item.iconInactive}
-                      alt={`${item.name} icon`}
-                      width={24}
-                      height={24}
-                      className="mr-3"
-                    />
-                  ) : (
-                    <svg
-                      className="mr-3 h-5 w-5 transition-colors"
-                      style={{ color: isActive ? "#603CFF" : "#666666" }}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                    </svg>
-                  )}
+                  <Image
+                    src={isActive ? item.iconActive : item.iconInactive}
+                    alt={`${item.name} icon`}
+                    width={24}
+                    height={24}
+                    className="mr-3"
+                  />
+
                   {item.name}
                 </Link>
               );

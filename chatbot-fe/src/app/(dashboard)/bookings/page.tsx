@@ -4,37 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 import { getAppointmentsList, Appointment } from "@/app/actions/appointments";
 import { toast } from "react-toastify";
-import AppointmentCard from "@/components/dashboard/AppointmentCard";
-const dashboardCards = [
-  {
-    title: "Total Bookings",
-    count: 5000,
-    icon: "/assets/total_bookings.svg",
-    gradient: `linear-gradient(to bottom right, #6C1CDA 0%, #721BE1 20%, #4123A3 70%, #4322A5 100%)`,
-    iconColor: "#744DC5",
-  },
-  {
-    title: "Confirmed Bookings",
-    count: 1000,
-    icon: "/assets/confirmed_bookings.svg",
-    gradient: `linear-gradient(to bottom right, #05A65B 0%, #06A55B 20%, #06884B 70%, #068349 100%)`,
-    iconColor: "#05A65B",
-  },
-  {
-    title: "Pending Bookings",
-    count: 2500,
-    icon: "/assets/pending_bookings.svg",
-    gradient: `linear-gradient(to bottom right, #1A5ADB 0%, #1A5ADA 20%, #0E41A7 70%, #0D3FA2 100%)`,
-    iconColor: "#1A5ADB",
-  },
-  {
-    title: "Cancellations",
-    count: 1500,
-    icon: "/assets/cancelled_bookings.svg",
-    gradient: `linear-gradient(to bottom right, #DC1B1E 0%, #D81A1E 20%, #A81113 70%, #A00F11 100%)`,
-    iconColor: "#DC1B1E",
-  },
-];
+
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusStyles: Record<string, { bg: string; text: string }> = {
@@ -204,18 +174,7 @@ export default function BookingsPage() {
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        {dashboardCards.map((card, index) => (
-          <AppointmentCard
-            key={index}
-            title={card.title}
-            count={card.count}
-            icon={card.icon}
-            gradient={card.gradient}
-            iconColor={card.iconColor}
-          />
-        ))}
-      </div>
+
       <DataTable
         columns={columns}
         data={appointments}

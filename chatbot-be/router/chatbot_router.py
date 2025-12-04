@@ -1,13 +1,16 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, Header, Query
-from logging import Logger
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from langchain_core.messages import HumanMessage, AIMessageChunk, SystemMessage
+from langchain_core.messages import (
+    HumanMessage,
+    AIMessageChunk,
+    SystemMessage,
+)
 import json
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 from uuid import uuid4 as uuid
-from langgraph.graph import StateGraph
-from graph.bot_graph import get_graph
+from graph.bot_graph import get_chat_graph
 from graph_state import ChatState
 
 router = APIRouter(
@@ -19,12 +22,12 @@ router = APIRouter(
 @router.get("/chat")
 async def chat(
     query: str,
-    id: Optional[str] = "",
-    graph: StateGraph = Depends(get_graph),
+    id: Optional[str] = None,
+    graph: CompiledStateGraph = Depends(get_chat_graph),
 ):
 
-
     print(f"Query: {query}, ID: {id}")
+
     async def message_stream():
         threadId = id
         print("dumpring")
@@ -33,7 +36,6 @@ async def chat(
         command = ChatState(
             userInput=query,
             messages=[HumanMessage(content=query)],
-
         )
         if threadId:
             config = {
@@ -41,9 +43,7 @@ async def chat(
                     "thread_id": threadId,
                 },
             }
-            command = Command(
-                resume=query
-            )
+            command = Command(resume=query)
             yield f"data: {json.dumps({"id": threadId})}\n\n".encode("utf-8")
         else:
             threadId = str(uuid())
@@ -54,7 +54,7 @@ async def chat(
             }
             # yield json.dumps({"id": return_id})
             yield f"data: {json.dumps({"id": threadId})}\n\n".encode("utf-8")
-        print(config,command)
+        print(config, command)
         # print(await list(graph.get_state_history(config)))
         async for chunk in graph.astream(
             command,
@@ -73,12 +73,16 @@ async def chat(
                                 and updates.metadata.get("out") is True
                             ):
                                 # yield json.dumps({"data": updates.content})
-                                yield f"data: {json.dumps({"threadId": threadId,"chunk":updates.content})}\n\n".encode("utf-8")
+                                yield f"data: {json.dumps({"threadId": threadId,"chunk":updates.content})}\n\n".encode(
+                                    "utf-8"
+                                )
 
                     case "messages":
                         values = chunk[2][0]
                         if isinstance(values, AIMessageChunk) and values.content:
                             # yield json.dumps({"data": values.content})
-                            yield f"data: {json.dumps({"threadId": threadId,"chunk":values.content})}\n\n".encode("utf-8")
+                            yield f"data: {json.dumps({"threadId": threadId,"chunk":values.content})}\n\n".encode(
+                                "utf-8"
+                            )
 
     return StreamingResponse(message_stream(), media_type="text/event-stream")

@@ -54,9 +54,8 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
               </svg>
             )}
           </button>
-          <h1 className="logo-text" style={{ color: "#4318FF" }}>
-            MediCall AI
-          </h1>
+
+          <Image src="/assets/LOGO.svg" alt="Logo" width={200} height={100} className="object-contain" />
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
           <button className="p-2 rounded-full hover:bg-[#E3C5FF55] transition-colors">

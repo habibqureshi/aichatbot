@@ -36,7 +36,7 @@ export default function DoctorsPage() {
       cell: ({ row }) => (
         <div>
           <div className="font-medium text-gray-900">{row.original.name || ""}</div>
-          <div className="text-sm text-gray-500">{row.original?.specialty?.name || "N/A"}</div>
+          <div className="text-sm text-gray-500">{row.original?.specialty || "N/A"}</div>
         </div>
       ),
     },
@@ -50,7 +50,7 @@ export default function DoctorsPage() {
       accessorKey: "specialty.name",
       header: "Specialty",
       width: "150px",
-      cell: ({ row }) => <div>{row.original?.specialty?.name || "N/A"}</div>,
+      cell: ({ row }) => <div>{row.original?.specialty || "N/A"}</div>,
     },
     {
       accessorKey: "created_at",

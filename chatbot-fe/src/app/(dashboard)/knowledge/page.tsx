@@ -301,7 +301,7 @@ export default function KnowledgePage() {
               borderColor: "#F0EEFF",
             }}
           >
-            <div className="mb-4">
+            <div className="mb-8">
               <h2 className="text-lg font-semibold text-gray-900">Menu Topics</h2>
               <p className="text-sm text-gray-600 mt-1">Configure available conversation topics</p>
             </div>
@@ -337,7 +337,7 @@ export default function KnowledgePage() {
               </div>
 
               {/* Add New Topic */}
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-gray-200 pt-8">
                 <div className="flex gap-2">
                   <input
                     type="text"

@@ -51,6 +51,7 @@ export default {
         "brand-blue": "#4318FF",
         "brand-dark": "#23272E",
         "brand-light": "#64748B",
+        "brand-light2": "#F6F7F9",
         "brand-gray": "#2A2A2A",
         "brand-card": "#F5F3FF",
       },

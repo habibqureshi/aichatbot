@@ -195,7 +195,7 @@ export function DataTable<TData, TValue>({
                   else table.getColumn(searchKey)?.setFilterValue(event.target.value);
                 }}
                 className="h-[42px] w-full rounded-[8px] pl-10 pr-3 border ring-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-muted-foreground placeholder:text-muted-foreground text-[14px] font-normal leading-none tracking-[-0.04em] transition-colors hover:bg-brand-card/20"
-                style={{ backgroundColor: "#FFFFFF", borderColor: "#F0EEFF" }}
+                style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E3FF" }}
               />
             </div>
           )}
@@ -214,22 +214,21 @@ export function DataTable<TData, TValue>({
                 <SelectTrigger
                   className="h-[42px] w-full rounded-[8px] pl-10 pr-6 border shadow-none ring-0 focus:ring-0 focus:ring-offset-0 text-muted-foreground placeholder:text-muted-foreground text-[14px] font-normal leading-none tracking-[-0.04em] transition-colors"
                   style={{
-                    borderColor: "#F0EEFF",
+                    borderColor: "#E8E3FF",
                   }}
-               
                 >
                   <SelectValue placeholder={statusPlaceholder} />
                 </SelectTrigger>
 
                 <SelectContent
                   className="border"
-                  style={{ borderColor: "#F0EEFF", backgroundColor: "#FFFFFF" }}
+                  style={{ borderColor: "#E8E3FF", backgroundColor: "#FFFFFF" }}
                 >
                   {statusOptions.map((option) => (
                     <SelectItem
                       key={option.value}
                       value={option.value}
-                      className="hover:bg-[#F0EEFF] focus:bg-brand-card/60 cursor-pointer"
+                      className="hover:bg-[#F7F5FF] focus:bg-brand-card/60 cursor-pointer"
                     >
                       {option.label}
                     </SelectItem>
@@ -273,13 +272,13 @@ export function DataTable<TData, TValue>({
             >
               <SelectTrigger
                 className="w-full sm:w-[180px] bg-brand-white rounded-md h-10 hover:bg-brand-card/40 border"
-                style={{ borderColor: "#F0EEFF" }}
+                style={{ borderColor: "#E8E3FF" }}
               >
                 <SelectValue placeholder="Sort by: Newest" />
               </SelectTrigger>
               <SelectContent
                 className="border"
-                style={{ borderColor: "#F0EEFF", backgroundColor: "#FFFFFF" }}
+                style={{ borderColor: "#E8E3FF", backgroundColor: "#FFFFFF" }}
               >
                 <SelectItem
                   value="newest"
@@ -317,12 +316,16 @@ export function DataTable<TData, TValue>({
             <thead
               className="sticky top-0 z-20"
               style={{
-                background: "linear-gradient(to right, #F0EEFF 0%, #E8E3FF 100%)",
-                // borderBottom: "1px solid #F0EEFF",
+                background: "linear-gradient(to right, #F0EEFD 0%, #D9D6FE 100%)",
+                borderBottom: "1px solid #E8E3FF",
               }}
             >
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} style={{ background: "transparent" }}>
+                <TableRow
+                  key={headerGroup.id}
+                  className="border-b"
+                  style={{ background: "transparent", borderColor: "#E8E3FF" }}
+                >
                   {headerGroup.headers.map((header) => {
                     const columnDef = header.column.columnDef as ExtendedColumnDef<TData, TValue>;
                     const widthStyle = columnDef.width ? { width: columnDef.width } : {};
@@ -331,7 +334,7 @@ export function DataTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className="font-medium text-xs sm:text-sm text-brand-gray py-3 px-4 first:pl-6 last:pr-6 border-0"
+                        className="font-medium text-xs sm:text-sm text-brand-dark py-3 px-4 first:pl-6 last:pr-6 border-0"
                         style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
                       >
                         {header.isPlaceholder
@@ -359,10 +362,10 @@ export function DataTable<TData, TValue>({
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      className={`bg-brand-white hover:bg-gradient-to-r hover:from-[#F0EEFF] hover:to-[#E8E3FF] transition-colors duration-150 ${
-                        isSelected ? "bg-gradient-to-r from-[#F5F0FF] to-[#F0EEFF]" : ""
+                      className={`bg-brand-white hover:bg-gradient-to-r hover:from-[#F7F5FF] hover:to-[#F4F2FF] transition-colors duration-150 ${
+                        isSelected ? "bg-gradient-to-r from-[#F6F4FF] to-[#F4F1FF]" : ""
                       } ${onRowClick ? "cursor-pointer" : ""}`}
-                      style={{ borderBottom: "1px solid #F5F3FF" }}
+                      style={{ borderBottom: "1px solid #F3F0FF" }}
                       onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                       title={onRowClick && rowTooltipText ? rowTooltipText : undefined}
                     >
@@ -381,7 +384,9 @@ export function DataTable<TData, TValue>({
                         return (
                           <TableCell
                             key={cell.id}
-                            className={`text-xs sm:text-sm text-muted-foreground py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0 ${
+                            className={`text-xs sm:text-sm ${
+                              isSelected ? "text-brand-dark" : "text-muted-foreground"
+                            } py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0 ${
                               isSimpleTextCell ? "font-medium break-words whitespace-pre-wrap" : ""
                             }`}
                             style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
@@ -424,7 +429,7 @@ export function DataTable<TData, TValue>({
       {enablePagination && (
         <div
           className="flex flex-row sm:flex-row items-center justify-between space-y-2 sm:space-y-0 space-x-0 sm:space-x-2 py-2 px-4 sm:px-6 border-t"
-          style={{ borderColor: "#F0EEFF" }}
+          style={{ borderColor: "#E8E3FF" }}
         >
           <div className="flex items-center space-x-1 sm:space-x-2 mt-3 sm:mt-0">
             <p className="text-sm font-medium text-brand-light">Rows per page</p>
@@ -442,14 +447,14 @@ export function DataTable<TData, TValue>({
             >
               <SelectTrigger
                 className="h-8 w-[70px] bg-brand-white hover:bg-brand-card/40"
-                style={{ borderColor: "#F0EEFF" }}
+                style={{ borderColor: "#E8E3FF" }}
               >
                 <SelectValue placeholder={currentPageSize} />
               </SelectTrigger>
               <SelectContent
                 side="top"
                 className="border"
-                style={{ borderColor: "#F0EEFF", backgroundColor: "#FFFFFF" }}
+                style={{ borderColor: "#E8E3FF", backgroundColor: "#FFFFFF" }}
               >
                 {pageSizeOptions.map((pageSize) => (
                   <SelectItem
@@ -472,7 +477,7 @@ export function DataTable<TData, TValue>({
               <Button
                 variant="outline"
                 className="hidden lg:flex h-8 w-8 p-0 bg-brand-white hover:bg-brand-card/40 text-brand-gray"
-                style={{ borderColor: "#F0EEFF" }}
+                style={{ borderColor: "#E8E3FF" }}
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange(0);
@@ -488,7 +493,7 @@ export function DataTable<TData, TValue>({
               <Button
                 variant="outline"
                 className="h-8 w-8 p-0 bg-brand-white hover:bg-brand-card/40 text-brand-gray"
-                style={{ borderColor: "#F0EEFF" }}
+                style={{ borderColor: "#E8E3FF" }}
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange(currentPageIndex - 1);
@@ -525,7 +530,7 @@ export function DataTable<TData, TValue>({
                             ? "bg-gradient-to-r from-brand-purple to-brand-blue text-brand-white hover:from-brand-purple/90 hover:to-brand-blue/90"
                             : "bg-brand-white hover:bg-brand-card/40 text-brand-gray"
                         }`}
-                        style={page !== pageIndex ? { borderColor: "#F0EEFF" } : {}}
+                        style={page !== pageIndex ? { borderColor: "#E8E3FF" } : {}}
                         onClick={() => {
                           if (onExternalPageChange) {
                             onExternalPageChange(page);
@@ -545,7 +550,7 @@ export function DataTable<TData, TValue>({
               <Button
                 variant="outline"
                 className="h-8 w-8 p-0 bg-brand-white hover:bg-brand-card/40 text-brand-gray"
-                style={{ borderColor: "#F0EEFF" }}
+                style={{ borderColor: "#E8E3FF" }}
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange(currentPageIndex + 1);

@@ -233,7 +233,7 @@ function AddDoctorPageContent() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold text-[#2A2A2A]">
+        <h1 className="text-xl font-semibold text-gray-900">
           {isEditMode ? "Edit Doctor Profile" : "Add Doctor Profile"}
         </h1>
       </div>
@@ -241,11 +241,8 @@ function AddDoctorPageContent() {
       <div className="bg-transparent py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Doctor Information Card */}
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 py-8 px-4 rounded-lg"
-              style={{ border: "1px solid #E3C5FF" }}
-            >
+          <div className=" rounded-lg p-4 shadow-sm">
+            <div className="bg-[#F5F3FF] grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 py-8 px-4 rounded-lg border border-purple-200">
               <div>
                 <label htmlFor="name" className="block form-label text-base">
                   Doctor Name
@@ -309,11 +306,11 @@ function AddDoctorPageContent() {
           </div>
 
           {/* Duration Card */}
-          <div className="bg-white rounded-lg p-4 shadow-sm space-y-6">
-            <div className=" rounded-lg p-6 shadow-sm" style={{ border: "1px solid #E3C5FF" }}>
+          <div className="bg-card rounded-lg p-4 shadow-sm space-y-6">
+           <div className="bg-[#F5F3FF] rounded-lg p-6 shadow-sm border border-purple-200">
               <div className="pb-2 mb-4">
                 <p className="form-label text-xl">Appointment Duration</p>
-                <p className="text-sm text-[#787878]">Select the duration for each appointment</p>
+                <p className="text-sm text-gray-500">Select the duration for each appointment</p>
               </div>
 
               <div className="max-w-md">
@@ -327,10 +324,10 @@ function AddDoctorPageContent() {
                       disabled={formData.timeSlots.length > 0}
                       className={`w-[140px] h-[43px] text-sm font-medium rounded-md transition-colors ${
                         formData.duration === duration
-                          ? "bg-white text-brand-blue border border-brand-blue"
+                          ? "bg-white text-purple-700 border border-purple-700"
                           : formData.timeSlots.length > 0
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-300"
-                          : "bg-white text-[#787878] border border-[#787878]"
+                          : "bg-white text-gray-500 border border-gray-500"
                       }`}
                     >
                       {duration} minutes
@@ -338,17 +335,13 @@ function AddDoctorPageContent() {
                   ))}
                 </div>
                 {formData.timeSlots.length > 0 && (
-                  <div
-                    className="mt-3 p-3  rounded-md"
-                    style={{ backgroundColor: "#F4F4FD", border: "1px solid #4318FF" }}
-                  >
-                    <p className="text-sm" style={{ color: "#2A2A2A" }}>
+                  <div className="mt-3 p-3 bg-purple-50 rounded-md border border-purple-700">
+                    <p className="text-sm text-gray-900">
                       Duration cannot be changed while slots exist.{" "}
                       <button
                         type="button"
                         onClick={() => setFormData((prev) => ({ ...prev, timeSlots: [] }))}
-                        className="underline font-medium"
-                        style={{ color: "#4318FF" }}
+                        className="underline font-medium text-purple-700"
                       >
                         Clear all slots
                       </button>{" "}
@@ -360,10 +353,11 @@ function AddDoctorPageContent() {
             </div>
 
             {/* Time Slots Card */}
-            <div className="rounded-lg p-6 shadow-sm" style={{ border: "1px solid #E3C5FF" }}>
+            <div className="bg-card rounded-lg  shadow-sm">
+               <div className="bg-[#F5F3FF] rounded-lg p-6 shadow-sm border border-purple-200">
               <div className="pb-2 mb-4">
                 <p className="form-label text-xl">Time Slots</p>
-                <p className="text-sm text-[#787878]">Set the available time slots for appointments</p>
+                <p className="text-sm text-gray-500">Set the available time slots for appointments</p>
               </div>
 
               <div className="space-y-4">
@@ -404,7 +398,7 @@ function AddDoctorPageContent() {
                           <button
                             type="button"
                             onClick={() => removeTimeSlot(slot.id)}
-                            className="absolute top-3 right-3 text-brand-blue hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full"
+                            className="absolute top-3 right-3 text-purple-700 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full"
                             aria-label={`Remove slot for ${dayLabel}`}
                           >
                             <svg
@@ -427,19 +421,16 @@ function AddDoctorPageContent() {
                   </div>
                 </div>
               )}
-            </div>
+            </div></div>
           </div>
           <div className="flex justify-end">
             <div className="flex flex-col items-end gap-3 w-full">
               {!isFormValid() && (
-                <div
-                  className="w-full rounded-lg p-4 shadow-sm"
-                  style={{ backgroundColor: "#F4F4FD", border: "1px solid #E3C5FF" }}
-                >
-                  <p className="text-sm font-semibold mb-2" style={{ color: "#2A2A2A" }}>
+                <div className="w-full rounded-lg p-4 shadow-sm bg-purple-50 border border-purple-200">
+                  <p className="text-sm font-semibold mb-2 text-gray-900">
                     Please complete all required fields:
                   </p>
-                  <ul className="text-sm space-y-1 ml-4 list-disc" style={{ color: "#4318FF" }}>
+                  <ul className="text-sm space-y-1 ml-4 list-disc text-purple-700">
                     {formData.name.trim() === "" && <li>Doctor Name is required</li>}
                     {formData.phone_number.trim() === "" && <li>Phone Number is required</li>}
                     {formData.specialty_id === 0 && <li>Specialty must be selected</li>}
@@ -452,7 +443,7 @@ function AddDoctorPageContent() {
                 disabled={isSubmitting || !isFormValid()}
                 className="btn-primary-gradient"
                 style={{
-                  borderColor: isSubmitting || !isFormValid() ? "#9CA3AF" : "#4318ff",
+                  borderColor: isSubmitting || !isFormValid() ? "#9CA3AF" : "#7c3aed",
                 }}
               >
                 {isSubmitting ? (

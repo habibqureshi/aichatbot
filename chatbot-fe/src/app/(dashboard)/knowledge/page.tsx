@@ -1,38 +1,37 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getKnowledgeList, updateActiveKnowledge, createKnowledge } from "@/app/actions/knowledge";
+import { getKnowledgeList, createKnowledge, deleteKnowledge } from "@/app/actions/knowledge";
 import { Knowledge } from "@/app/types/knowledge";
 import { Button } from "@/components/ui/button";
-import SingleSelect from "@/components/common/SingleSelect";
 import { toast } from "react-toastify";
+
 export default function KnowledgePage() {
-  const [knowledgeList, setKnowledgeList] = useState<Knowledge[]>([]);
-  const [activeKnowledgeId, setActiveKnowledgeId] = useState<number | null>(null);
-  const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<number | null>(null);
+  const [existingFiles, setExistingFiles] = useState<Knowledge[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newKnowledgeName, setNewKnowledgeName] = useState("");
-  const [newKnowledgeFile, setNewKnowledgeFile] = useState<File | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const [totalPages, setTotalPages] = useState(0);
-  // const [totalItems, setTotalItems] = useState(0);
+
+  // New states for the revamped page
+  const [greetingMessage, setGreetingMessage] = useState("");
+  const [isTraining, setIsTraining] = useState(false);
+  const [menuTabs, setMenuTabs] = useState<string[]>([
+    "appointment book",
+    "cancel",
+    "reschedule",
+    "general inquiry",
+  ]);
+  const [selectedTab, setSelectedTab] = useState<string>("");
+  const [newTabName, setNewTabName] = useState("");
+  const [isAddingTab, setIsAddingTab] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<Knowledge | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchKnowledge = useCallback(async (page: number = 1, limit: number = 10) => {
     try {
       setIsLoading(true);
       const response = await getKnowledgeList(page, limit);
-      setKnowledgeList(response.data);
-      // setTotalItems(response.metadata.total);
-      // setTotalPages(response.metadata.total_pages);
-      // setCurrentPage(response.metadata.page);
-
-      // Find the active knowledge from the list
-      const activeKnowledge = response.data.find((k) => k.is_active);
-      setActiveKnowledgeId(activeKnowledge?.id || null);
-      setSelectedKnowledgeId(activeKnowledge?.id || null);
+      setExistingFiles(response.data);
     } catch (error: unknown) {
       console.error("Error fetching knowledge:", error);
       if (error instanceof Error && error.message) {
@@ -45,114 +44,145 @@ export default function KnowledgePage() {
     }
   }, []);
 
-  // useEffect(() => {
-  //   fetchKnowledge();
-  // }, [fetchKnowledge]);
-
   useEffect(() => {
     fetchKnowledge();
   }, [fetchKnowledge]);
 
-  const handleUpdateActiveKnowledge = async () => {
-    if (!selectedKnowledgeId || selectedKnowledgeId === activeKnowledgeId) {
-      toast.info("This knowledge is already active");
+  const handleTrainAI = async () => {
+    if (!greetingMessage.trim()) {
+      toast.error("Please enter a greeting message");
       return;
     }
 
     try {
-      setIsUpdating(true);
-      await updateActiveKnowledge(selectedKnowledgeId);
-
-      // Refresh the knowledge list to get updated active status from backend
-      await fetchKnowledge();
-
-      toast.success("Active knowledge updated successfully");
+      setIsTraining(true);
+      // TODO: Implement the train AI API call
+      // await trainAI({ greeting: greetingMessage.trim() });
+      toast.success("AI training started successfully!");
+      setGreetingMessage("");
     } catch (error: unknown) {
-      console.error("Error updating active knowledge:", error);
-      if (error instanceof Error && error.message) {
-        toast.error(error.message);
-      } else {
-        toast.error("Failed to update active knowledge");
-      }
+      console.error("Error training AI:", error);
+      toast.error("Failed to train AI");
     } finally {
-      setIsUpdating(false);
+      setIsTraining(false);
     }
   };
 
-  const handleCreateKnowledge = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newKnowledgeName.trim()) {
-      toast.error("Please enter a knowledge name");
-      return;
+  const handleSelectTab = async (tabName: string) => {
+    try {
+      setSelectedTab(tabName);
+      // TODO: Implement the select tab API call
+      // await selectTab({ name: tabName });
+      toast.success(`Selected tab: ${tabName}`);
+    } catch (error: unknown) {
+      console.error("Error selecting tab:", error);
+      toast.error("Failed to select tab");
     }
-    if (!newKnowledgeFile) {
-      toast.error("Please select a file to upload");
+  };
+
+  const handleAddNewTab = async () => {
+    if (!newTabName.trim()) {
+      toast.error("Please enter a tab name");
       return;
     }
 
     try {
-      setIsCreating(true);
-
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append("name", newKnowledgeName.trim());
-      formData.append("file", newKnowledgeFile);
-
-      // Upload file to backend
-      await createKnowledge(formData);
-
-      // Refresh the knowledge list to get the updated data from backend
-      await fetchKnowledge();
-
-      toast.success("New knowledge uploaded and created successfully!");
-
-      // Reset form
-      setNewKnowledgeName("");
-      setNewKnowledgeFile(null);
-      setIsCreateModalOpen(false);
+      setIsAddingTab(true);
+      // TODO: Implement the add tab API call
+      // await addTab({ name: newTabName.trim() });
+      setMenuTabs([...menuTabs, newTabName.trim()]);
+      toast.success(`New tab "${newTabName.trim()}" added successfully!`);
+      setNewTabName("");
     } catch (error: unknown) {
-      console.error("Error creating knowledge:", error);
-      if (error instanceof Error && error.message) {
-        toast.error(error.message);
-      } else {
-        toast.error("Failed to create new knowledge");
-      }
+      console.error("Error adding tab:", error);
+      toast.error("Failed to add new tab");
     } finally {
-      setIsCreating(false);
+      setIsAddingTab(false);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
+  const handleFileUpload = async () => {
+    if (uploadedFiles.length === 0) {
+      toast.error("Please select files to upload");
+      return;
+    }
 
-    if (file) {
-      // Validate file type
-      const allowedTypes = ["text/csv", "text/plain", "application/pdf"];
-      const allowedExtensions = [".csv", ".txt", ".pdf"];
+    try {
+      setIsUploading(true);
 
-      const fileType = file.type;
-      const fileName = file.name.toLowerCase();
-      const hasAllowedExtension = allowedExtensions.some((ext) => fileName.endsWith(ext));
+      // Upload each file
+      for (const file of uploadedFiles) {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      if (!allowedTypes.includes(fileType) && !hasAllowedExtension) {
-        toast.error("Please select a valid file type: PDF, TXT, or CSV only");
-        e.target.value = ""; // Clear the input
-        return;
+        await createKnowledge(formData);
       }
-    }
 
-    setNewKnowledgeFile(file);
+      toast.success(`${uploadedFiles.length} file(s) uploaded successfully!`);
+      setUploadedFiles([]);
+      // Refresh the file list
+      await fetchKnowledge();
+    } catch (error: unknown) {
+      console.error("Error uploading files:", error);
+      toast.error("Failed to upload files");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const selectedKnowledge = knowledgeList.find((k) => k.id === selectedKnowledgeId);
+  const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+
+    // Validate file types
+    const allowedExtensions = [".txt", ".pdf", ".csv"];
+    const invalidFiles = files.filter((file) => {
+      const extension = file.name.toLowerCase().substring(file.name.lastIndexOf("."));
+      return !allowedExtensions.includes(extension);
+    });
+
+    if (invalidFiles.length > 0) {
+      toast.error("Only .txt, .pdf, and .csv files are allowed.");
+      // Clear the input
+      e.target.value = "";
+      return;
+    }
+
+    setUploadedFiles(files);
+  };
+
+  const handleDeleteFile = (file: Knowledge) => {
+    setFileToDelete(file);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteFile = async () => {
+    if (!fileToDelete) return;
+
+    try {
+      await deleteKnowledge(fileToDelete.id);
+      toast.success(`File "${fileToDelete.name || fileToDelete.blob_name}" deleted successfully!`);
+      setShowDeleteModal(false);
+      setFileToDelete(null);
+      // Refresh the file list
+      await fetchKnowledge();
+    } catch (error: unknown) {
+      console.error("Error deleting file:", error);
+      toast.error("Failed to delete file");
+    }
+  };
+
+  const cancelDeleteFile = () => {
+    setShowDeleteModal(false);
+    setFileToDelete(null);
+  };
 
   if (isLoading) {
     return (
       <div className="p-2 sm:p-4 lg:p-6">
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-[#2A2A2A]">Current Knowledge</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#2A2A2A]">Knowledge Management</h1>
           <p className="text-sm sm:text-base text-[#787878] mt-1">
-            View and manage the system&apos;s current knowledge base
+            Train AI, manage menus, and upload knowledge files
           </p>
         </div>
         <div className="bg-[#F4F4FD] rounded-lg shadow p-6" style={{ border: "1px solid #E3C5FF" }}>
@@ -169,259 +199,263 @@ export default function KnowledgePage() {
   return (
     <div className="p-2 sm:p-4 lg:p-6">
       <div className="mb-4 sm:mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#2A2A2A]">Current Knowledge</h1>
-            <p className="text-sm sm:text-base text-[#787878] mt-1">
-              View and manage the system&apos;s current knowledge base for AI agent instructions
-            </p>
-          </div>
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
-          >
-            Create New Knowledge
-          </Button>
-        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#2A2A2A]">Knowledge Management</h1>
+        <p className="text-sm sm:text-base text-[#787878] mt-1">
+          Train AI, manage menus, and upload knowledge files
+        </p>
       </div>
 
       <div className="space-y-6">
-        {/* Knowledge Selection */}
+        {/* Train AI Section */}
         <div
           className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
           style={{ border: "1px solid #E3C5FF" }}
         >
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-[#2A2A2A] flex items-center gap-2">
-              Select Active Knowledge
-              {activeKnowledgeId && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white">
-                  Active: {knowledgeList.find((k) => k.id === activeKnowledgeId)?.name}
-                </span>
-              )}
-            </h2>
+            <h2 className="text-lg font-semibold text-[#2A2A2A]">Train AI</h2>
+            <p className="text-sm text-[#787878] mt-1">Enter a greeting message to train the AI agent</p>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="greeting-message"
+                className="block text-sm font-medium text-[#2A2A2A] mb-2"
+              >
+                Greeting Message
+              </label>
+              <textarea
+                id="greeting-message"
+                value={greetingMessage}
+                onChange={(e) => setGreetingMessage(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF] resize-none"
+                style={{ border: "1px solid #E3C5FF" }}
+                placeholder="Enter your greeting message here..."
+                rows={4}
+                required
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={handleTrainAI}
+                disabled={isTraining || !greetingMessage.trim()}
+                className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
+              >
+                {isTraining ? "Training..." : "Train AI"}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Menu Tabs Section */}
+        <div
+          className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
+          style={{ border: "1px solid #E3C5FF" }}
+        >
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-[#2A2A2A]">Menu Management</h2>
             <p className="text-sm text-[#787878] mt-1">
-              Choose which knowledge base the AI agent should use for processing calls and providing
-              responses
+              Select existing tabs or add new ones for the AI menu system
             </p>
           </div>
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <SingleSelect
-                  label="Knowledge Base"
-                  options={knowledgeList.map((knowledge) => ({
-                    id: knowledge.id,
-                    label: knowledge.name,
-                    value: knowledge.id,
-                  }))}
-                  selectedValue={selectedKnowledgeId}
-                  onChange={(value) =>
-                    setSelectedKnowledgeId(typeof value === "string" ? parseInt(value) : value)
-                  }
-                  placeholder="Select a knowledge base"
-                  emptyMessage="No knowledge bases available"
-                />
+            {/* Existing Tabs */}
+            <div>
+              <h3 className="text-sm font-medium text-[#2A2A2A] mb-2">Available Tabs</h3>
+              <div className="flex flex-wrap gap-2">
+                {menuTabs.map((tab, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSelectTab(tab)}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      selectedTab === tab
+                        ? "bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white"
+                        : "bg-white border border-[#E3C5FF] text-[#2A2A2A] hover:border-[#9882F7]"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
               </div>
-              <div className="flex items-end">
+            </div>
+
+            {/* Add New Tab */}
+            <div className="border-t pt-4" style={{ borderColor: "#E3C5FF" }}>
+              <h3 className="text-sm font-medium text-[#2A2A2A] mb-2">Add New Tab</h3>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTabName}
+                  onChange={(e) => setNewTabName(e.target.value)}
+                  className="flex-1 px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF]"
+                  style={{ border: "1px solid #E3C5FF" }}
+                  placeholder="Enter new tab name"
+                />
                 <Button
-                  onClick={handleUpdateActiveKnowledge}
-                  disabled={isUpdating || selectedKnowledgeId === activeKnowledgeId}
-                  className="w-full sm:w-auto bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
+                  onClick={handleAddNewTab}
+                  disabled={isAddingTab || !newTabName.trim()}
+                  className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
                 >
-                  {isUpdating ? "Updating..." : "Update Active Knowledge"}
+                  {isAddingTab ? "Adding..." : "Add Tab"}
                 </Button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Knowledge Details */}
-        {selectedKnowledge && (
-          <div
-            className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
-            style={{ border: "1px solid #E3C5FF" }}
-          >
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-[#2A2A2A] flex items-center gap-2">
-                {selectedKnowledge.name}
-                {selectedKnowledge.id === activeKnowledgeId && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white">
-                    Currently Active
-                  </span>
-                )}
-              </h2>
-              <p className="text-sm text-[#787878] mt-1">Blob: {selectedKnowledge.blob_name}</p>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium text-[#2A2A2A] mb-2">File Information</h4>
-                <div className="bg-white rounded-lg p-4" style={{ border: "1px solid #E3C5FF" }}>
-                  <p className="text-sm text-[#2A2A2A]">
-                    <span className="font-medium">Blob Name:</span> {selectedKnowledge.blob_name}
-                  </p>
-                  <p className="text-sm text-[#787878] mt-1">
-                    <span className="font-medium">Status:</span>{" "}
-                    {selectedKnowledge.is_active ? "Active" : "Inactive"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4 text-sm text-[#787878]">
-                <div>
-                  <span className="font-medium">Created:</span>{" "}
-                  {new Date(selectedKnowledge.created_at).toLocaleDateString()}
-                </div>
-                <div>
-                  <span className="font-medium">Last Updated:</span>{" "}
-                  {selectedKnowledge.updatedAt
-                    ? new Date(selectedKnowledge.updatedAt).toLocaleDateString()
-                    : new Date(selectedKnowledge.created_at).toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Knowledge List Overview */}
+        {/* File Upload and Management Section */}
         <div
           className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
           style={{ border: "1px solid #E3C5FF" }}
         >
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-[#2A2A2A]">All Knowledge Bases</h2>
+            <h2 className="text-lg font-semibold text-[#2A2A2A]">File Management</h2>
             <p className="text-sm text-[#787878] mt-1">
-              Overview of all available knowledge bases in the system
+              Upload new knowledge files and manage existing ones
             </p>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {knowledgeList.map((knowledge) => (
-              <div
-                key={knowledge.id}
-                className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                  knowledge.id === activeKnowledgeId
-                    ? "bg-gradient-to-r from-[#EEEAFF] to-[#DAD2FF] border-[#4318FF]"
-                    : knowledge.id === selectedKnowledgeId
-                    ? "bg-white border-[#9882F7]"
-                    : "bg-white border-[#E3C5FF] hover:border-[#9882F7]"
-                }`}
-                style={{ border: "1px solid" }}
-                onClick={() => setSelectedKnowledgeId(knowledge.id)}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-sm text-[#2A2A2A]">{knowledge.name}</h4>
-                  {knowledge.id === activeKnowledgeId && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white">
-                      Active
-                    </span>
-                  )}
+          <div className="space-y-6">
+            {/* File Upload */}
+            <div>
+              <h3 className="text-sm font-medium text-[#2A2A2A] mb-2">Upload Files</h3>
+              <div className="space-y-4">
+                <div>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.txt,.csv"
+                    onChange={handleFileSelection}
+                    className="w-full px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF] cursor-pointer"
+                    style={{ border: "1px solid #E3C5FF" }}
+                  />
+                  <p className="text-xs text-[#787878] mt-1">Supported formats: PDF, TXT, CSV</p>
                 </div>
-                <p className="text-xs text-[#787878] line-clamp-2">{knowledge.blob_name}</p>
-                <p className="text-xs text-[#787878] mt-2">
-                  Updated:{" "}
-                  {knowledge.updatedAt
-                    ? new Date(knowledge.updatedAt).toLocaleDateString()
-                    : new Date(knowledge.created_at).toLocaleDateString()}
-                </p>
+                {uploadedFiles.length > 0 && (
+                  <div className="bg-white rounded-lg p-4" style={{ border: "1px solid #E3C5FF" }}>
+                    <h4 className="text-sm font-medium text-[#2A2A2A] mb-2">Selected Files:</h4>
+                    <ul className="space-y-1">
+                      {uploadedFiles.map((file, index) => (
+                        <li key={index} className="text-sm text-[#787878]">
+                          {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleFileUpload}
+                    disabled={isUploading || uploadedFiles.length === 0}
+                    className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
+                  >
+                    {isUploading ? "Uploading..." : "Upload Files"}
+                  </Button>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Existing Files */}
+            {existingFiles.length > 0 && (
+              <div className="border-t pt-6" style={{ borderColor: "#E3C5FF" }}>
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-[#2A2A2A]">Existing Files</h3>
+                </div>
+                <ul className="space-y-3 max-h-96 overflow-auto">
+                  {existingFiles.map((file) => (
+                    <li
+                      key={file.id}
+                      className="flex items-center justify-between p-4 bg-white rounded-lg border hover:border-[#9882F7] transition-colors"
+                      style={{ borderColor: "#E3C5FF" }}
+                    >
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm text-[#2A2A2A] mb-1">
+                          {file.name || file.blob_name}
+                        </h4>
+                        <p className="text-xs text-[#787878]">
+                          Updated: {new Date(file.updatedAt || file.created_at).toLocaleDateString()}
+                          {file.is_active && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white">
+                              Active
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteFile(file)}
+                        className="ml-4 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                        title="Delete file"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Create Knowledge Modal */}
-      {isCreateModalOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setIsCreateModalOpen(false)}
-        >
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && fileToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div
-            className="bg-[#F4F4FD] rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            className="bg-[#F4F4FD] rounded-lg shadow-xl max-w-md w-full"
             style={{ border: "1px solid #E3C5FF" }}
-            onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-[#2A2A2A]">Create New Knowledge</h3>
-                <button
-                  onClick={() => setIsCreateModalOpen(false)}
-                  style={{ cursor: "pointer" }}
-                  className="text-[#787878] hover:text-[#2A2A2A]"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
                     />
                   </svg>
-                </button>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-[#2A2A2A]">Delete File</h3>
+                  <p className="text-sm text-[#787878] mt-1">
+                    Are you sure you want to delete this file? This action cannot be undone.
+                  </p>
+                </div>
               </div>
 
-              <form onSubmit={handleCreateKnowledge} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="knowledge-name"
-                    className="block text-sm font-medium text-[#2A2A2A] mb-2"
-                  >
-                    Knowledge Name
-                  </label>
-                  <input
-                    type="text"
-                    id="knowledge-name"
-                    value={newKnowledgeName}
-                    onChange={(e) => setNewKnowledgeName(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF]"
-                    style={{ border: "1px solid #E3C5FF" }}
-                    placeholder="Enter knowledge base name"
-                    required
-                  />
-                </div>
+              <div className="bg-white rounded-lg p-4 mb-6" style={{ border: "1px solid #E3C5FF" }}>
+                <h4 className="font-medium text-sm text-[#2A2A2A] mb-1">
+                  {fileToDelete.name || fileToDelete.blob_name}
+                </h4>
+                <p className="text-xs text-[#787878]">
+                  Updated:{" "}
+                  {new Date(fileToDelete.updatedAt || fileToDelete.created_at).toLocaleDateString()}
+                </p>
+              </div>
 
-                <div>
-                  <label
-                    htmlFor="knowledge-file"
-                    className="block text-sm font-medium text-[#2A2A2A] mb-2"
-                  >
-                    Upload File
-                  </label>
-                  <input
-                    type="file"
-                    id="knowledge-file"
-                    accept=".pdf,.txt,.csv"
-                    onChange={handleFileChange}
-                    className="w-full px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF] cursor-pointer"
-                    style={{ border: "1px solid #E3C5FF" }}
-                    required
-                  />
-                  <p className="text-xs text-[#787878] mt-1">Supported formats: PDF, TXT, CSV</p>
-                  {newKnowledgeFile && (
-                    <p className="text-sm text-[#4318FF] mt-1">
-                      Selected: {newKnowledgeFile.name} ({(newKnowledgeFile.size / 1024).toFixed(1)} KB)
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsCreateModalOpen(false)}
-                    disabled={isCreating}
-                    className="border-[#E3C5FF] text-[#2A2A2A] hover:bg-[#E3C5FF] hover:text-[#2A2A2A]"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isCreating || !newKnowledgeName.trim() || !newKnowledgeFile}
-                    className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
-                    style={{ cursor: "pointer" }}
-                  >
-                    {isCreating ? "Creating..." : "Create Knowledge"}
-                  </Button>
-                </div>
-              </form>
+              <div className="flex justify-end gap-3">
+                <Button
+                  onClick={cancelDeleteFile}
+                  variant="outline"
+                  className="border-[#E3C5FF] text-[#2A2A2A] hover:bg-[#E3C5FF] hover:text-[#2A2A2A]"
+                >
+                  Cancel
+                </Button>
+                <Button onClick={confirmDeleteFile} className="bg-red-600 hover:bg-red-700 text-white">
+                  Delete File
+                </Button>
+              </div>
             </div>
           </div>
         </div>

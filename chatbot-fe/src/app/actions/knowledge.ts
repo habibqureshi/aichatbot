@@ -30,12 +30,12 @@ export async function createKnowledge(formData: FormData): Promise<string> {
   }
 }
 
-export async function updateActiveKnowledge(knowledgeId: number): Promise<string> {
+export async function deleteKnowledge(knowledgeId: number): Promise<string> {
   try {
-    const response = await API.patch(ENDPOINTS.KNOWLEDGE.UPDATE_ACTIVE(knowledgeId));
+    const response = await API.delete(ENDPOINTS.KNOWLEDGE.DELETE(knowledgeId));
     return response.data;
   } catch (error) {
-    console.error("Error updating active knowledge:", error);
-    throw new Error("Failed to update active knowledge");
+    console.error("Error deleting knowledge:", error);
+    throw new Error("Failed to delete knowledge");
   }
 }

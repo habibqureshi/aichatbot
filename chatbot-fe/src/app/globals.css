@@ -409,25 +409,24 @@ html {
   width: 100%;
   border-radius: 8px;
   padding: 0 12px;
-  background-color: #FFFFFF;  /* Full white for clarity */
-  border: 1px solid #E5E5E5;  /* Soft gray border */
-  color: #2A2A2A;             /* Dark readable text */
+  background-color: #ffffff; /* Full white for clarity */
+  border: 1px solid #e5e5e5; /* Soft gray border */
+  color: #2a2a2a; /* Dark readable text */
   font-family: Inter, sans-serif;
   font-size: 16px;
   transition: all 0.2s ease;
 }
 
 .form-input:focus {
-  background-color: #FCFCFC;
-  border: 1px solid #4318FF;  /* Brand purple */
-  box-shadow: 0 0 0 2px rgb(67 24 255 / 12%);  /* Soft glow */
+  background-color: #fcfcfc;
+  border: 1px solid #4318ff; /* Brand purple */
+  box-shadow: 0 0 0 2px rgb(67 24 255 / 12%); /* Soft glow */
   outline: none;
 }
 
 .form-input::placeholder {
-  color: #9E9E9E;   /* Softer placeholder */
+  color: #9e9e9e; /* Softer placeholder */
 }
-
 
 /* Global button styling */
 .btn-primary-gradient {
@@ -462,4 +461,29 @@ html {
   cursor: not-allowed;
   background: #9ca3af;
   transform: none;
+}
+
+/* Custom Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #8b5cf6, #3b82f6);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #7c3aed, #2563eb);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #8b5cf6 #f1f1f1;
 }

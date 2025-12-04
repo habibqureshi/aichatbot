@@ -408,30 +408,26 @@ html {
   height: 51px;
   width: 100%;
   border-radius: 8px;
-  padding-left: 12px;
-  padding-right: 12px;
-  border: 0;
-  background-color: hsl(var(--input) / 0.5);
-  color: #787878;
-  font-family: Inter;
-  font-weight: 400;
-  font-style: normal;
+  padding: 0 12px;
+  background-color: #FFFFFF;  /* Full white for clarity */
+  border: 1px solid #E5E5E5;  /* Soft gray border */
+  color: #2A2A2A;             /* Dark readable text */
+  font-family: Inter, sans-serif;
   font-size: 16px;
-  line-height: 100%;
-  letter-spacing: -4%;
   transition: all 0.2s ease;
 }
 
 .form-input:focus {
-  background-color: #fcfcfc;
-  color: #2a2a2a;
-  border: 1px solid #4318ff;
+  background-color: #FCFCFC;
+  border: 1px solid #4318FF;  /* Brand purple */
+  box-shadow: 0 0 0 2px rgb(67 24 255 / 12%);  /* Soft glow */
   outline: none;
 }
 
 .form-input::placeholder {
-  color: #787878;
+  color: #9E9E9E;   /* Softer placeholder */
 }
+
 
 /* Global button styling */
 .btn-primary-gradient {

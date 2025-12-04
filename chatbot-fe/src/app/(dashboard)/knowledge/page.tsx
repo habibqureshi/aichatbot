@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getKnowledgeList, createKnowledge, deleteKnowledge } from "@/app/actions/knowledge";
+import { getAppSettingByKey, updateAppSetting } from "@/app/actions/app-settings";
 import { Knowledge } from "@/app/types/knowledge";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
@@ -10,9 +11,12 @@ export default function KnowledgePage() {
   const [existingFiles, setExistingFiles] = useState<Knowledge[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // New states for the revamped page
+  // States for greeting
   const [greetingMessage, setGreetingMessage] = useState("");
+  const [greetingSettingId, setGreetingSettingId] = useState<number | null>(null);
   const [isTraining, setIsTraining] = useState(false);
+
+  // States for menu (UI only - not connected to API yet)
   const [menuTabs, setMenuTabs] = useState<string[]>([
     "appointment book",
     "cancel",
@@ -21,6 +25,8 @@ export default function KnowledgePage() {
   ]);
   const [newTabName, setNewTabName] = useState("");
   const [isAddingTab, setIsAddingTab] = useState(false);
+
+  // States for file upload
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<Knowledge | null>(null);
@@ -43,9 +49,26 @@ export default function KnowledgePage() {
     }
   }, []);
 
+  const fetchAppSettings = useCallback(async () => {
+    try {
+      // Fetch greeting
+      const greetingData = await getAppSettingByKey("GREETING");
+      setGreetingMessage(greetingData.value);
+      setGreetingSettingId(greetingData.id);
+    } catch (error: unknown) {
+      console.error("Error fetching app settings:", error);
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to load app settings");
+      }
+    }
+  }, []);
+
   useEffect(() => {
     fetchKnowledge();
-  }, [fetchKnowledge]);
+    fetchAppSettings();
+  }, [fetchKnowledge, fetchAppSettings]);
 
   const handleTrainAI = async () => {
     if (!greetingMessage.trim()) {
@@ -53,15 +76,25 @@ export default function KnowledgePage() {
       return;
     }
 
+    if (!greetingSettingId) {
+      toast.error("Greeting setting not initialized");
+      return;
+    }
+
     try {
       setIsTraining(true);
-      // TODO: Implement the train AI API call
-      // await trainAI({ greeting: greetingMessage.trim() });
-      toast.success("AI training started successfully!");
-      setGreetingMessage("");
+      await updateAppSetting(greetingSettingId, {
+        key: "GREETING",
+        value: greetingMessage.trim(),
+      });
+      toast.success("AI greeting updated successfully!");
     } catch (error: unknown) {
       console.error("Error training AI:", error);
-      toast.error("Failed to train AI");
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to update AI greeting");
+      }
     } finally {
       setIsTraining(false);
     }
@@ -75,8 +108,7 @@ export default function KnowledgePage() {
 
     try {
       setIsAddingTab(true);
-      // TODO: Implement the add tab API call
-      // await addTab({ name: newTabName.trim() });
+      // TODO: Connect to API later
       setMenuTabs([...menuTabs, newTabName.trim()]);
       toast.success(`New tab "${newTabName.trim()}" added successfully!`);
       setNewTabName("");
@@ -246,7 +278,7 @@ export default function KnowledgePage() {
               </div>
 
               {/* Chat Preview */}
-              {greetingMessage && (
+              {/* {greetingMessage && (
                 <div className="bg-gradient-to-br from-[#8B5CF6] to-[#3B82F6] rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center">
@@ -259,7 +291,7 @@ export default function KnowledgePage() {
                     </div>
                   </div>
                 </div>
-              )}
+              )} */}
 
               <div className="flex justify-end">
                 <Button
@@ -295,7 +327,7 @@ export default function KnowledgePage() {
 
           {/* 2. Menu Topics Section */}
           <div
-            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[350px] flex flex-col"
+            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[430px] flex flex-col"
             style={{
               background: "#FFFFFF",
               borderColor: "#F0EEFF",
@@ -408,7 +440,7 @@ export default function KnowledgePage() {
                           {file.name || file.blob_name}
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
-                          {file.is_active ? (
+                          {/* {file.is_active ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                               ✓ Active
                             </span>
@@ -416,7 +448,7 @@ export default function KnowledgePage() {
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                               In-active
                             </span>
-                          )}
+                          )} */}
                           <span className="text-xs text-gray-500">
                             {new Date(file.updatedAt || file.created_at).toLocaleDateString()}
                           </span>
@@ -465,7 +497,7 @@ export default function KnowledgePage() {
 
           {/* 4. File Upload Section */}
           <div
-            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[350px] flex flex-col"
+            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[430px] flex flex-col"
             style={{
               background: "#FFFFFF",
               borderColor: "#F0EEFF",

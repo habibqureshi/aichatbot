@@ -139,4 +139,8 @@ export const ENDPOINTS = {
     UPDATE_ACTIVE: (knowledgeId: number) => `/api/v1/rag/activate/${knowledgeId}`,
     DELETE: (knowledgeId: number) => `/api/v1/rag/${knowledgeId}`,
   },
+  APP_SETTINGS: {
+    GET_BY_KEY: (key: string) => `/api/v1/app-settings/key/${key}`,
+    UPDATE: (settingId: number) => `/api/v1/app-settings/${settingId}`,
+  },
 };

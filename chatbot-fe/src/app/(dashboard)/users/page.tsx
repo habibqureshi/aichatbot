@@ -10,7 +10,7 @@ export default function UsersPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Users</h1>
-        <button className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white px-4 py-2 rounded hover:opacity-90 transition-all">
+        <button className="bg-gradient-to-r from-brand-purple to-brand-blue text-white px-4 py-2 rounded hover:opacity-90 transition-all">
           Add User
         </button>
       </div>

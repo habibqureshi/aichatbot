@@ -180,16 +180,22 @@ export default function KnowledgePage() {
     return (
       <div className="p-2 sm:p-4 lg:p-6">
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-[#2A2A2A]">Knowledge Management</h1>
-          <p className="text-sm sm:text-base text-[#787878] mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Knowledge Management</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
             Train AI, manage menus, and upload knowledge files
           </p>
         </div>
-        <div className="bg-[#F4F4FD] rounded-lg shadow p-6" style={{ border: "1px solid #E3C5FF" }}>
+        <div
+          className="backdrop-blur-sm border rounded-xl p-6 shadow-sm"
+          style={{
+            background: "#FFFFFF",
+            borderColor: "#F0EEFF",
+          }}
+        >
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-[#E3C5FF] rounded w-1/4"></div>
-            <div className="h-10 bg-white rounded" style={{ border: "1px solid #E3C5FF" }}></div>
-            <div className="h-32 bg-white rounded" style={{ border: "1px solid #E3C5FF" }}></div>
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-10 bg-gray-100 rounded"></div>
+            <div className="h-32 bg-gray-100 rounded"></div>
           </div>
         </div>
       </div>
@@ -199,8 +205,8 @@ export default function KnowledgePage() {
   return (
     <div className="p-2 sm:p-4 lg:p-6">
       <div className="mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#2A2A2A]">Knowledge Management</h1>
-        <p className="text-sm sm:text-base text-[#787878] mt-1">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Knowledge Management</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">
           Train AI, manage menus, and upload knowledge files
         </p>
       </div>
@@ -208,27 +214,26 @@ export default function KnowledgePage() {
       <div className="space-y-6">
         {/* Train AI Section */}
         <div
-          className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
-          style={{ border: "1px solid #E3C5FF" }}
+          className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm"
+          style={{
+            background: "#FFFFFF",
+            borderColor: "#F0EEFF",
+          }}
         >
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-[#2A2A2A]">Train AI</h2>
-            <p className="text-sm text-[#787878] mt-1">Enter a greeting message to train the AI agent</p>
+            <h2 className="text-lg font-semibold text-gray-900">Train AI</h2>
+            <p className="text-sm text-gray-600 mt-1">Enter a greeting message to train the AI agent</p>
           </div>
           <div className="space-y-4">
             <div>
-              <label
-                htmlFor="greeting-message"
-                className="block text-sm font-medium text-[#2A2A2A] mb-2"
-              >
+              <label htmlFor="greeting-message" className="block text-sm font-medium text-gray-900 mb-2">
                 Greeting Message
               </label>
               <textarea
                 id="greeting-message"
                 value={greetingMessage}
                 onChange={(e) => setGreetingMessage(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF] resize-none"
-                style={{ border: "1px solid #E3C5FF" }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 placeholder="Enter your greeting message here..."
                 rows={4}
                 required
@@ -238,7 +243,7 @@ export default function KnowledgePage() {
               <Button
                 onClick={handleTrainAI}
                 disabled={isTraining || !greetingMessage.trim()}
-                className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
+                className="btn-primary-gradient"
               >
                 {isTraining ? "Training..." : "Train AI"}
               </Button>
@@ -248,19 +253,22 @@ export default function KnowledgePage() {
 
         {/* Menu Tabs Section */}
         <div
-          className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
-          style={{ border: "1px solid #E3C5FF" }}
+          className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm"
+          style={{
+            background: "#FFFFFF",
+            borderColor: "#F0EEFF",
+          }}
         >
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-[#2A2A2A]">Menu Management</h2>
-            <p className="text-sm text-[#787878] mt-1">
+            <h2 className="text-lg font-semibold text-gray-900">Menu Management</h2>
+            <p className="text-sm text-gray-600 mt-1">
               Select existing tabs or add new ones for the AI menu system
             </p>
           </div>
           <div className="space-y-4">
             {/* Existing Tabs */}
             <div>
-              <h3 className="text-sm font-medium text-[#2A2A2A] mb-2">Available Tabs</h3>
+              <h3 className="text-sm font-medium text-gray-900 mb-2">Available Tabs</h3>
               <div className="flex flex-wrap gap-2">
                 {menuTabs.map((tab, index) => (
                   <button
@@ -268,8 +276,8 @@ export default function KnowledgePage() {
                     onClick={() => handleSelectTab(tab)}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       selectedTab === tab
-                        ? "bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white"
-                        : "bg-white border border-[#E3C5FF] text-[#2A2A2A] hover:border-[#9882F7]"
+                        ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white"
+                        : "bg-white border border-gray-300 text-gray-700 hover:border-[#8B5CF6]"
                     }`}
                   >
                     {tab}
@@ -279,21 +287,20 @@ export default function KnowledgePage() {
             </div>
 
             {/* Add New Tab */}
-            <div className="border-t pt-4" style={{ borderColor: "#E3C5FF" }}>
-              <h3 className="text-sm font-medium text-[#2A2A2A] mb-2">Add New Tab</h3>
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">Add New Tab</h3>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={newTabName}
                   onChange={(e) => setNewTabName(e.target.value)}
-                  className="flex-1 px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF]"
-                  style={{ border: "1px solid #E3C5FF" }}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter new tab name"
                 />
                 <Button
                   onClick={handleAddNewTab}
                   disabled={isAddingTab || !newTabName.trim()}
-                  className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
+                  className="btn-primary-gradient"
                 >
                   {isAddingTab ? "Adding..." : "Add Tab"}
                 </Button>
@@ -304,19 +311,22 @@ export default function KnowledgePage() {
 
         {/* File Upload and Management Section */}
         <div
-          className="bg-[#F4F4FD] rounded-lg shadow p-4 sm:p-6"
-          style={{ border: "1px solid #E3C5FF" }}
+          className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm"
+          style={{
+            background: "#FFFFFF",
+            borderColor: "#F0EEFF",
+          }}
         >
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-[#2A2A2A]">File Management</h2>
-            <p className="text-sm text-[#787878] mt-1">
+            <h2 className="text-lg font-semibold text-gray-900">File Management</h2>
+            <p className="text-sm text-gray-600 mt-1">
               Upload new knowledge files and manage existing ones
             </p>
           </div>
           <div className="space-y-6">
             {/* File Upload */}
             <div>
-              <h3 className="text-sm font-medium text-[#2A2A2A] mb-2">Upload Files</h3>
+              <h3 className="text-sm font-medium text-gray-900 mb-2">Upload Files</h3>
               <div className="space-y-4">
                 <div>
                   <input
@@ -324,17 +334,16 @@ export default function KnowledgePage() {
                     multiple
                     accept=".pdf,.txt,.csv"
                     onChange={handleFileSelection}
-                    className="w-full px-3 py-2 border rounded-md shadow-sm bg-white text-[#2A2A2A] focus:outline-none focus:ring-[#4318FF] focus:border-[#4318FF] cursor-pointer"
-                    style={{ border: "1px solid #E3C5FF" }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   />
-                  <p className="text-xs text-[#787878] mt-1">Supported formats: PDF, TXT, CSV</p>
+                  <p className="text-xs text-gray-500 mt-1">Supported formats: PDF, TXT, CSV</p>
                 </div>
                 {uploadedFiles.length > 0 && (
-                  <div className="bg-white rounded-lg p-4" style={{ border: "1px solid #E3C5FF" }}>
-                    <h4 className="text-sm font-medium text-[#2A2A2A] mb-2">Selected Files:</h4>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Selected Files:</h4>
                     <ul className="space-y-1">
                       {uploadedFiles.map((file, index) => (
-                        <li key={index} className="text-sm text-[#787878]">
+                        <li key={index} className="text-sm text-gray-600">
                           {file.name} ({(file.size / 1024).toFixed(1)} KB)
                         </li>
                       ))}
@@ -345,7 +354,7 @@ export default function KnowledgePage() {
                   <Button
                     onClick={handleFileUpload}
                     disabled={isUploading || uploadedFiles.length === 0}
-                    className="bg-gradient-to-r from-[#9882F7] to-[#4318FF] hover:from-[#8872E7] hover:to-[#3518EF] text-white"
+                    className="btn-primary-gradient"
                   >
                     {isUploading ? "Uploading..." : "Upload Files"}
                   </Button>
@@ -355,25 +364,24 @@ export default function KnowledgePage() {
 
             {/* Existing Files */}
             {existingFiles.length > 0 && (
-              <div className="border-t pt-6" style={{ borderColor: "#E3C5FF" }}>
+              <div className="border-t border-gray-200 pt-6">
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-[#2A2A2A]">Existing Files</h3>
+                  <h3 className="text-sm font-medium text-gray-900">Existing Files</h3>
                 </div>
                 <ul className="space-y-3 max-h-96 overflow-auto">
                   {existingFiles.map((file) => (
                     <li
                       key={file.id}
-                      className="flex items-center justify-between p-4 bg-white rounded-lg border hover:border-[#9882F7] transition-colors"
-                      style={{ borderColor: "#E3C5FF" }}
+                      className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-[#8B5CF6] transition-colors"
                     >
                       <div className="flex-1">
-                        <h4 className="font-medium text-sm text-[#2A2A2A] mb-1">
+                        <h4 className="font-medium text-sm text-gray-900 mb-1">
                           {file.name || file.blob_name}
                         </h4>
-                        <p className="text-xs text-[#787878]">
+                        <p className="text-xs text-gray-500">
                           Updated: {new Date(file.updatedAt || file.created_at).toLocaleDateString()}
                           {file.is_active && (
-                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white">
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white">
                               Active
                             </span>
                           )}
@@ -406,8 +414,11 @@ export default function KnowledgePage() {
       {showDeleteModal && fileToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div
-            className="bg-[#F4F4FD] rounded-lg shadow-xl max-w-md w-full"
-            style={{ border: "1px solid #E3C5FF" }}
+            className="backdrop-blur-sm border rounded-xl shadow-xl max-w-md w-full"
+            style={{
+              background: "#FFFFFF",
+              borderColor: "#F0EEFF",
+            }}
           >
             <div className="p-6">
               <div className="flex items-center mb-4">
@@ -427,18 +438,18 @@ export default function KnowledgePage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-semibold text-[#2A2A2A]">Delete File</h3>
-                  <p className="text-sm text-[#787878] mt-1">
+                  <h3 className="text-lg font-semibold text-gray-900">Delete File</h3>
+                  <p className="text-sm text-gray-600 mt-1">
                     Are you sure you want to delete this file? This action cannot be undone.
                   </p>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg p-4 mb-6" style={{ border: "1px solid #E3C5FF" }}>
-                <h4 className="font-medium text-sm text-[#2A2A2A] mb-1">
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+                <h4 className="font-medium text-sm text-gray-900 mb-1">
                   {fileToDelete.name || fileToDelete.blob_name}
                 </h4>
-                <p className="text-xs text-[#787878]">
+                <p className="text-xs text-gray-500">
                   Updated:{" "}
                   {new Date(fileToDelete.updatedAt || fileToDelete.created_at).toLocaleDateString()}
                 </p>
@@ -448,7 +459,7 @@ export default function KnowledgePage() {
                 <Button
                   onClick={cancelDeleteFile}
                   variant="outline"
-                  className="border-[#E3C5FF] text-[#2A2A2A] hover:bg-[#E3C5FF] hover:text-[#2A2A2A]"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </Button>

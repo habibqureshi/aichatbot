@@ -155,11 +155,14 @@ export function DataTable<TData, TValue>({
   // const [firstWord, ...rest] = (title ?? "").split(" ");
   // const restTitle = rest.join(" ");
   return (
-    <div className="bg-[#FFFFFF80] backdrop-blur-sm border border-[#E3C5FF55] rounded-xl p-4 px-6 shadow-sm">
+    <div
+      className="bg-brand-white border rounded-xl p-4 px-6 shadow-sm"
+      style={{ borderColor: "#F0EEFF" }}
+    >
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 mt-1">
         <div className="flex items-center space-x-2 px-2">
-          <h2 className="text-xl font-semibold tracking-tight text-[#343434] font-inter">{title}</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-brand-dark font-inter">{title}</h2>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto px-2 sm:px-0">
           {/* Loading Spinner */}
@@ -173,11 +176,11 @@ export function DataTable<TData, TValue>({
           {showSearch && searchKey && (enableFiltering || onExternalSearchChange) && (
             <div className="relative w-full sm:max-w-sm">
               <Image
-                height={28}
-                width={28}
+                height={16}
+                width={16}
                 src="/assets/images/search_icon.svg"
                 alt="search"
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70"
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70 z-10"
               />
 
               <Input
@@ -191,7 +194,8 @@ export function DataTable<TData, TValue>({
                   if (onExternalSearchChange) onExternalSearchChange(event.target.value);
                   else table.getColumn(searchKey)?.setFilterValue(event.target.value);
                 }}
-                className="h-[42px] w-full rounded-[8px] bg-[#FCFCFC] pl-10 pr-3 border-none ring-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-[#787878] placeholder:text-[#787878] text-[14px] font-normal leading-none tracking-[-0.04em]"
+                className="h-[42px] w-full rounded-[8px] pl-10 pr-3 border ring-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-muted-foreground placeholder:text-muted-foreground text-[14px] font-normal leading-none tracking-[-0.04em] transition-colors hover:bg-brand-card/20"
+                style={{ backgroundColor: "#FFFFFF", borderColor: "#F0EEFF" }}
               />
             </div>
           )}
@@ -200,20 +204,33 @@ export function DataTable<TData, TValue>({
           {onExternalStatusChange && statusOptions && (
             <div className="relative w-full sm:max-w-sm min-w-[180px]">
               <Image
-                height={28}
-                width={28}
+                height={16}
+                width={16}
                 src="/assets/images/filter_icon.svg"
                 alt="filter"
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70"
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70 z-10"
               />
               <Select value={externalStatusValue ?? ""} onValueChange={onExternalStatusChange}>
-                <SelectTrigger className="h-[42px] w-full rounded-[8px] bg-[#FCFCFC] pl-10 pr-6 border-none shadow-none ring-0 focus:ring-0 focus:ring-offset-0  text-[#787878] placeholder:text-[#787878]  text-[14px] font-normal leading-none tracking-[-0.04em]">
+                <SelectTrigger
+                  className="h-[42px] w-full rounded-[8px] pl-10 pr-6 border shadow-none ring-0 focus:ring-0 focus:ring-offset-0 text-muted-foreground placeholder:text-muted-foreground text-[14px] font-normal leading-none tracking-[-0.04em] transition-colors"
+                  style={{
+                    borderColor: "#F0EEFF",
+                  }}
+               
+                >
                   <SelectValue placeholder={statusPlaceholder} />
                 </SelectTrigger>
 
-                <SelectContent>
+                <SelectContent
+                  className="border"
+                  style={{ borderColor: "#F0EEFF", backgroundColor: "#FFFFFF" }}
+                >
                   {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="hover:bg-[#F0EEFF] focus:bg-brand-card/60 cursor-pointer"
+                    >
                       {option.label}
                     </SelectItem>
                   ))}
@@ -254,12 +271,28 @@ export function DataTable<TData, TValue>({
                 }
               }}
             >
-              <SelectTrigger className="w-full sm:w-[180px] border-[#E3C5FF] bg-white rounded-md h-10">
+              <SelectTrigger
+                className="w-full sm:w-[180px] bg-brand-white rounded-md h-10 hover:bg-brand-card/40 border"
+                style={{ borderColor: "#F0EEFF" }}
+              >
                 <SelectValue placeholder="Sort by: Newest" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="oldest">Oldest</SelectItem>
+              <SelectContent
+                className="border"
+                style={{ borderColor: "#F0EEFF", backgroundColor: "#FFFFFF" }}
+              >
+                <SelectItem
+                  value="newest"
+                  className="hover:bg-brand-card/40 focus:bg-brand-card/60 cursor-pointer"
+                >
+                  Newest
+                </SelectItem>
+                <SelectItem
+                  value="oldest"
+                  className="hover:bg-brand-card/40 focus:bg-brand-card/60 cursor-pointer"
+                >
+                  Oldest
+                </SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -268,18 +301,24 @@ export function DataTable<TData, TValue>({
 
       {/* Table */}
       <div
-        className="bg-[#F0EEFD] border rounded-sm overflow-hidden "
-        style={{ borderColor: "#AB99FE" }}
+        className="bg-brand-card border rounded-sm overflow-hidden"
+        style={{ borderColor: "#E8E3FF" }}
       >
         <div
-          className="overflow-auto"
-          style={{ minHeight: "calc(100vh - 310px)", maxHeight: "calc(100vh - 320px)" }}
+          className="overflow-auto table-scroll"
+          style={{
+            minHeight: "calc(100vh - 310px)",
+            maxHeight: "calc(100vh - 320px)",
+            scrollbarWidth: "thin",
+            scrollbarColor: "#E8E3FF #F5F3FF",
+          }}
         >
           <table className="min-w-[950px] table-auto w-full border-collapse">
             <thead
               className="sticky top-0 z-20"
               style={{
-                background: "linear-gradient(to right, #F0EEFD 0%, #D9D6FE 100%)",
+                background: "linear-gradient(to right, #F0EEFF 0%, #E8E3FF 100%)",
+                // borderBottom: "1px solid #F0EEFF",
               }}
             >
               {table.getHeaderGroups().map((headerGroup) => (
@@ -292,7 +331,7 @@ export function DataTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className="font-medium text-xs sm:text-sm text-[#2A2A2A] py-3 px-4 first:pl-6 last:pr-6 border-0"
+                        className="font-medium text-xs sm:text-sm text-brand-gray py-3 px-4 first:pl-6 last:pr-6 border-0"
                         style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
                       >
                         {header.isPlaceholder
@@ -312,57 +351,59 @@ export function DataTable<TData, TValue>({
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className={`bg-[#FFFFFF80] hover:bg-[linear-gradient(to_right,_#F0EEFD_0%,_#D9D6FE_100%)] border-b ${
-                      selectedRowId !== undefined &&
-                      (row.original as { id: string | number }).id === selectedRowId
-                        ? "bg-[linear-gradient(to_right,_#E0D7FF_0%,_#C4B5FD_100%)]"
-                        : ""
-                    } ${onRowClick ? "cursor-pointer" : ""}`}
-                    style={{ borderColor: "#E2DAFB" }}
-                    onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                    title={onRowClick && rowTooltipText ? rowTooltipText : undefined}
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      const columnDef = cell.column.columnDef as ExtendedColumnDef<TData, TValue>;
-                      const widthStyle = columnDef.width ? { width: columnDef.width } : {};
-                      const minWidthStyle = columnDef.minWidth ? { minWidth: columnDef.minWidth } : {};
-                      const maxWidthStyle = columnDef.maxWidth ? { maxWidth: columnDef.maxWidth } : {};
+                table.getRowModel().rows.map((row) => {
+                  const isSelected =
+                    selectedRowId !== undefined &&
+                    (row.original as { id: string | number }).id === selectedRowId;
+                  return (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className={`bg-brand-white hover:bg-gradient-to-r hover:from-[#F0EEFF] hover:to-[#E8E3FF] transition-colors duration-150 ${
+                        isSelected ? "bg-gradient-to-r from-[#F5F0FF] to-[#F0EEFF]" : ""
+                      } ${onRowClick ? "cursor-pointer" : ""}`}
+                      style={{ borderBottom: "1px solid #F5F3FF" }}
+                      onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                      title={onRowClick && rowTooltipText ? rowTooltipText : undefined}
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const columnDef = cell.column.columnDef as ExtendedColumnDef<TData, TValue>;
+                        const widthStyle = columnDef.width ? { width: columnDef.width } : {};
+                        const minWidthStyle = columnDef.minWidth ? { minWidth: columnDef.minWidth } : {};
+                        const maxWidthStyle = columnDef.maxWidth ? { maxWidth: columnDef.maxWidth } : {};
 
-                      // Check if this is a simple text cell (has accessorKey and no custom cell renderer)
-                      const isSimpleTextCell = "accessorKey" in columnDef && !columnDef.cell;
+                        // Check if this is a simple text cell (has accessorKey and no custom cell renderer)
+                        const isSimpleTextCell = "accessorKey" in columnDef && !columnDef.cell;
 
-                      // Check if this is an actions column
-                      const isActionsColumn = cell.column.id === "actions";
+                        // Check if this is an actions column
+                        const isActionsColumn = cell.column.id === "actions";
 
-                      return (
-                        <TableCell
-                          key={cell.id}
-                          className={`text-xs sm:text-sm text-muted-foreground py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0 ${
-                            isSimpleTextCell ? "font-medium break-words whitespace-pre-wrap" : ""
-                          }`}
-                          style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
-                          onClick={(e) => {
-                            // Prevent row selection when clicking on actions column
-                            if (isActionsColumn) {
-                              e.stopPropagation();
-                            }
-                          }}
-                        >
-                          {isSimpleTextCell
-                            ? flexRender(
-                                cell.column.columnDef.cell || (({ getValue }) => getValue()),
-                                cell.getContext()
-                              )
-                            : flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            className={`text-xs sm:text-sm text-muted-foreground py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0 ${
+                              isSimpleTextCell ? "font-medium break-words whitespace-pre-wrap" : ""
+                            }`}
+                            style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
+                            onClick={(e) => {
+                              // Prevent row selection when clicking on actions column
+                              if (isActionsColumn) {
+                                e.stopPropagation();
+                              }
+                            }}
+                          >
+                            {isSimpleTextCell
+                              ? flexRender(
+                                  cell.column.columnDef.cell || (({ getValue }) => getValue()),
+                                  cell.getContext()
+                                )
+                              : flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell
@@ -383,10 +424,10 @@ export function DataTable<TData, TValue>({
       {enablePagination && (
         <div
           className="flex flex-row sm:flex-row items-center justify-between space-y-2 sm:space-y-0 space-x-0 sm:space-x-2 py-2 px-4 sm:px-6 border-t"
-          style={{ borderColor: "#E3C5FF" }}
+          style={{ borderColor: "#F0EEFF" }}
         >
           <div className="flex items-center space-x-1 sm:space-x-2 mt-3 sm:mt-0">
-            <p className="text-sm font-medium text-[#787878]">Rows per page</p>
+            <p className="text-sm font-medium text-brand-light">Rows per page</p>
             <Select
               value={`${currentPageSize}`}
               onValueChange={(value) => {
@@ -399,12 +440,23 @@ export function DataTable<TData, TValue>({
                 }
               }}
             >
-              <SelectTrigger className="h-8 w-[70px] border-[#E3C5FF] bg-white hover:bg-[#F9F6FD]">
+              <SelectTrigger
+                className="h-8 w-[70px] bg-brand-white hover:bg-brand-card/40"
+                style={{ borderColor: "#F0EEFF" }}
+              >
                 <SelectValue placeholder={currentPageSize} />
               </SelectTrigger>
-              <SelectContent side="top">
+              <SelectContent
+                side="top"
+                className="border"
+                style={{ borderColor: "#F0EEFF", backgroundColor: "#FFFFFF" }}
+              >
                 {pageSizeOptions.map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                  <SelectItem
+                    key={pageSize}
+                    value={`${pageSize}`}
+                    className="hover:bg-brand-card/40 focus:bg-brand-card/60 cursor-pointer"
+                  >
                     {pageSize}
                   </SelectItem>
                 ))}
@@ -413,13 +465,14 @@ export function DataTable<TData, TValue>({
           </div>
 
           <div className="flex flex-row sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 lg:space-x-8">
-            <div className="flex w-full sm:w-[100px] items-center justify-center text-sm font-medium text-[#787878] mt-3 sm:mt-0">
+            <div className="flex w-full sm:w-[100px] items-center justify-center text-sm font-medium text-brand-light mt-3 sm:mt-0">
               Page {currentPageIndex + 1} of {totalPages || table.getPageCount()}
             </div>
             <div className="flex items-center space-x-1">
               <Button
                 variant="outline"
-                className="hidden lg:flex h-8 w-8 p-0 border-[#E3C5FF] bg-white hover:bg-[#F9F6FD] text-[#2A2A2A]"
+                className="hidden lg:flex h-8 w-8 p-0 bg-brand-white hover:bg-brand-card/40 text-brand-gray"
+                style={{ borderColor: "#F0EEFF" }}
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange(0);
@@ -434,7 +487,8 @@ export function DataTable<TData, TValue>({
               </Button>
               <Button
                 variant="outline"
-                className="h-8 w-8 p-0 border-[#E3C5FF] bg-white hover:bg-[#F9F6FD] text-[#2A2A2A]"
+                className="h-8 w-8 p-0 bg-brand-white hover:bg-brand-card/40 text-brand-gray"
+                style={{ borderColor: "#F0EEFF" }}
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange(currentPageIndex - 1);
@@ -468,9 +522,10 @@ export function DataTable<TData, TValue>({
                         variant={page === pageIndex ? "default" : "outline"}
                         className={`h-8 w-8 p-0 font-medium text-[14px] ${
                           page === pageIndex
-                            ? "bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white hover:from-[#8872E7] hover:to-[#3518EF] border-[#4318FF]"
-                            : "border-[#E3C5FF] bg-white text-[#2A2A2A] hover:bg-[#F9F6FD]"
+                            ? "bg-gradient-to-r from-brand-purple to-brand-blue text-brand-white hover:from-brand-purple/90 hover:to-brand-blue/90"
+                            : "bg-brand-white hover:bg-brand-card/40 text-brand-gray"
                         }`}
+                        style={page !== pageIndex ? { borderColor: "#F0EEFF" } : {}}
                         onClick={() => {
                           if (onExternalPageChange) {
                             onExternalPageChange(page);
@@ -489,7 +544,8 @@ export function DataTable<TData, TValue>({
 
               <Button
                 variant="outline"
-                className="h-8 w-8 p-0 border-[#E3C5FF] bg-white hover:bg-[#F9F6FD] text-[#2A2A2A]"
+                className="h-8 w-8 p-0 bg-brand-white hover:bg-brand-card/40 text-brand-gray"
+                style={{ borderColor: "#F0EEFF" }}
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange(currentPageIndex + 1);
@@ -504,7 +560,8 @@ export function DataTable<TData, TValue>({
               </Button>
               <Button
                 variant="outline"
-                className="hidden lg:flex h-8 w-8 p-0 border-[#E3C5FF] bg-white hover:bg-[#F9F6FD] text-[#2A2A2A]"
+                className="hidden lg:flex h-8 w-8 p-0 bg-brand-white hover:bg-brand-card/40 text-brand-gray"
+                style={{ borderColor: "#F0EEFF" }}
                 onClick={() => {
                   if (onExternalPageChange) {
                     onExternalPageChange((totalPages || table.getPageCount()) - 1);

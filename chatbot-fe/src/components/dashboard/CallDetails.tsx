@@ -240,9 +240,10 @@ export default function CallDetails({
   return (
     <aside className="w-full h-fit">
       <div
-        className="bg-[#FFFFFF80] backdrop-blur-sm border border-[#E3C5FF55] rounded-xl p-4 shadow-sm"
+        className="backdrop-blur-sm border rounded-xl p-4 shadow-sm"
         style={{
-          // background: "var(--lighter-purple-bg)",
+          background: "#FFFFFF",
+          borderColor: "#F0EEFF",
           minHeight: "calc(100vh - 320px)",
           maxHeight: "calc(100vh -220px)",
         }}
@@ -268,7 +269,7 @@ export default function CallDetails({
             </svg>
           </div>
         </div>
-        <div className="bg-[#E6E4FB] h-[0.5px] my-4" />
+        <div className="h-[0.5px] my-4" style={{ background: "#E8E3FF" }} />
         <div className="space-y-5">
           <div
             className={`transition-all duration-500 ease-in-out origin-top ${
@@ -295,13 +296,16 @@ export default function CallDetails({
             </div>
           </div>
 
-          <div className="bg-[#E6E4FB] rounded-lg p-4">
+          <div className="rounded-lg p-4" style={{ background: "#F5F3FF" }}>
             <div className="calldetails-section-title mb-2">Summary</div>
-            <div className=" rounded-lg border p-3 min-h-[70px]">
+            <div
+              className="rounded-lg border p-3 min-h-[70px]"
+              style={{ background: "#FFFFFF", borderColor: "#E8E3FF" }}
+            >
               <p className="calldetails-summary-text">{summary}</p>
             </div>
           </div>
-          <div className="bg-[#E6E4FB] rounded-lg p-4">
+          <div className="rounded-lg p-4" style={{ background: "#F5F3FF" }}>
             <div className="calldetails-section-title mb-3">Transcript Preview</div>
             <div ref={messagesContainerRef} className="min-h-[200px] max-h-[400px] overflow-y-auto">
               <div className="space-y-3">
@@ -324,16 +328,28 @@ export default function CallDetails({
                   // Skeleton loader for messages
                   <>
                     <div className="flex justify-start">
-                      <div className="h-12 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
+                      <div
+                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                        style={{ background: "#E8E3FF" }}
+                      ></div>
                     </div>
                     <div className="flex justify-end">
-                      <div className="h-12 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
+                      <div
+                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                        style={{ background: "#E8E3FF" }}
+                      ></div>
                     </div>
                     <div className="flex justify-start">
-                      <div className="h-12 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
+                      <div
+                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                        style={{ background: "#E8E3FF" }}
+                      ></div>
                     </div>
                     <div className="flex justify-end">
-                      <div className="h-12 bg-gray-200 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"></div>
+                      <div
+                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                        style={{ background: "#E8E3FF" }}
+                      ></div>
                     </div>
                   </>
                 ) : messages && messages.length > 0 ? (
@@ -344,10 +360,13 @@ export default function CallDetails({
                     >
                       <div
                         className={`text-sm p-3 rounded-lg max-w-xs lg:max-w-[255px] ${
-                          message.role === "user"
-                            ? "bg-gradient-to-r from-[#EEEAFF] to-[#DAD2FF] text-[#4318FF]"
-                            : "bg-white text-gray-700 border"
+                          message.role === "user" ? "text-brand-blue" : "text-gray-700 border"
                         }`}
+                        style={
+                          message.role === "user"
+                            ? { background: "linear-gradient(to right, #F0EEFF, #E8E3FF)" }
+                            : { background: "#FFFFFF", borderColor: "#E8E3FF" }
+                        }
                       >
                         <p
                           className={
@@ -361,7 +380,7 @@ export default function CallDetails({
                   ))
                 ) : (
                   <div className="flex justify-center">
-                    <div className="p-3 rounded-lg bg-gray-100 text-gray-500">
+                    <div className="p-3 rounded-lg text-gray-500" style={{ background: "#F5F3FF" }}>
                       <p>No chat transcript available</p>
                     </div>
                   </div>
@@ -375,7 +394,21 @@ export default function CallDetails({
             <button
               onClick={handlePlayRecording}
               disabled={isStreaming || !conversation?.id}
-              className="w-full bg-gradient-to-r from-[#9882F7] to-[#4318FF] text-white py-3 rounded-lg shadow-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`btn-primary-gradient w-full ${
+                isStreaming || !conversation?.id ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              onMouseEnter={(e) => {
+                if (!isStreaming && conversation?.id) {
+                  e.currentTarget.style.background = "linear-gradient(to right, #7C3AED, #2563EB)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isStreaming && conversation?.id) {
+                  e.currentTarget.style.background = "linear-gradient(to right, #8B5CF6, #3B82F6)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }
+              }}
             >
               <Image
                 width={20}

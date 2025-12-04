@@ -68,32 +68,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 lg:top-20 left-0 z-40 w-64 border-r border-[#A491FE]
+        className={`fixed top-0 lg:top-20 left-0 z-40 w-64 border-r border-gray-200 bg-white
               flex flex-col transform transition-transform duration-300 ease-in-out 
               h-screen lg:h-[calc(100vh-5rem)]
               ${isOpen ? "translate-x-0" : "-translate-x-full"} 
               lg:translate-x-0`}
-        // style={{
-        //   background: "linear-gradient(to bottom,#F7F6FB  0%, #e6e2fa 30%, #e6e2fa 100%)",
-        // }}
-        style={{
-          background: `linear-gradient(
-      to bottom,
-      #EEEDFB 0%,    /* top very light (white-pinkish) */
-      #ECEAFC 15%,   /* subtle purple mix */
-      #EAE8FC 50%,   /* middle soft lavender */
-      #E8E6FC 85%,   /* subtle purple mix again */
-      #F7F6FB 100%   /* bottom very light */
-    )`,
-        }}
       >
         {/* Header - Only show close button on mobile */}
-        <div className="flex items-center justify-end p-4 border-b border-[#E3C5FF55] lg:hidden">
+        <div className="flex items-center justify-end p-4 border-b border-gray-200 lg:hidden">
           {/* Close button for mobile */}
           <button
             onClick={onClose}
-            className="p-2 rounded-md hover:bg-[#E3C5FF55] transition-colors"
-            style={{ color: "#751AE5" }}
+            className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-600"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -117,13 +103,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={handleLinkClick}
                   className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px] ${
-                    isActive
-                      ? "bg-gradient-to-r from-[#EEEAFF] to-[#DAD2FF]"
-                      : "bg-[#FCFCFC33] hover:bg-gradient-to-r hover:from-[#EEEAFF] hover:to-[#DAD2FF]"
+                    isActive ? "bg-purple-50 text-brand-blue" : "text-gray-600 hover:bg-gray-50"
                   }`}
-                  style={{
-                    color: isActive ? "#751AE5" : "#787878",
-                  }}
                   aria-current={isActive ? "page" : undefined}
                 >
                   <Image
@@ -142,11 +123,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* Bottom Section */}
-        {/* <div className="border-t border-[#E3C5FF55] p-4">
+        {/* <div className="border-t border-purple-200/30 p-4">
           <Link
             href="/settings"
             onClick={handleLinkClick}
-            className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all hover:bg-[#E3C5FF55]
+            className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all hover:bg-purple-100/30
                         ${
                           pathname === "/settings" ? "bg-gradient-to-r from-[#F1E6FF] to-[#E3C5FF]" : ""
                         }`}

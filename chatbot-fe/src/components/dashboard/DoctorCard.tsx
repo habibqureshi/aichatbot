@@ -20,12 +20,12 @@ export default function DoctorCard({
   isActive = true,
 }: DoctorCardProps) {
   return (
-    <div className="w-full m-h-[317px] bg-[#FFFFFF66] rounded-xl flex flex-col justify-between shadow-md">
+    <div className="w-full m-h-[317px] bg-white/40 rounded-xl flex flex-col justify-between shadow-md">
       {/* Top Section: Avatar + Name + Specialty + Active */}
       <div className="flex items-start justify-between px-8 pt-8">
         <div className="flex flex-col gap-3">
           {/* Avatar */}
-          <div className="w-23 h-23 rounded-full bg-[#D9D9D9] overflow-hidden">
+          <div className="w-23 h-23 rounded-full bg-gray-300 overflow-hidden">
             <Image src={avatar} alt={name} width={93} height={93} className="object-cover" />
           </div>
 
@@ -38,7 +38,7 @@ export default function DoctorCard({
         </div>
         {/* Active Badge */}
         {isActive && (
-          <div className="bg-[#06A35A] text-white text-[12px] font-inter font-normal px-2 py-1 rounded-[8px] w-14 h-6 flex items-center justify-center">
+          <div className="bg-green-600 text-white text-[12px] font-inter font-normal px-2 py-1 rounded-[8px] w-14 h-6 flex items-center justify-center">
             Active
           </div>
         )}
@@ -53,7 +53,7 @@ export default function DoctorCard({
           <span>📅</span> {timings}
         </p>
       </div>
-      <div className="h-[1px] w-full bg-[#D1C8FE] my-3" />
+      <div className="h-[1px] w-full bg-purple-200 my-3" />
       {/* Bottom Section: Treatments */}
       <div className="text-[16px] font-inter font-normal text-[#666666] px-8 pb-4">{treatments}</div>
     </div>

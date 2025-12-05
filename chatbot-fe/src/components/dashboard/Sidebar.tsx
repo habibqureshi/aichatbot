@@ -28,6 +28,7 @@ const navigation = [
     iconActive: "/assets/sideBarIcons/booking_active.svg",
     iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
   },
+
   // {
   //   name: "Train",
   //   href: "/train",
@@ -38,7 +39,14 @@ const navigation = [
     href: "/doctors",
     iconActive: "/assets/sideBarIcons/doctor_active.svg",
     iconInactive: "/assets/sideBarIcons/doctor_inactive.svg",
-    showOnlyFor: "clinic", 
+    showOnlyFor: "clinic",
+  },
+  {
+    name: "Tables",
+    href: "/tables",
+    iconActive: "/assets/sideBarIcons/booking_active.svg", // Using booking icon as placeholder
+    iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
+    showOnlyFor: ["restaurant", ],
   },
   // {
   //   name: "Specialities",
@@ -51,12 +59,14 @@ const navigation = [
     iconActive: "/assets/sideBarIcons/knowledge_active.svg",
     iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
   },
+
   {
-    name: "Tables",
-    href: "/tables",
-    iconActive: "/assets/sideBarIcons/booking_active.svg", // Using booking icon as placeholder
-    iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
-    showOnlyFor: ["restaurant", "cafe"], 
+    name: "Restaurant Settings",
+    href: "/restaurant-settings",
+    iconActive: "/assets/sideBarIcons/knowledge_active.svg", // Using knowledge icon as placeholder
+    iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
+    showOnlyFor: ["restaurant", ],
+    // showOnlyFor: ["restaurant", "clinic"],
   },
 ];
 

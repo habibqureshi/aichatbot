@@ -16,15 +16,19 @@ export default function KnowledgePage() {
   const [greetingSettingId, setGreetingSettingId] = useState<number | null>(null);
   const [isTraining, setIsTraining] = useState(false);
 
-  // States for menu (UI only - not connected to API yet)
+  // States for menu
   const [menuTabs, setMenuTabs] = useState<string[]>([
     "appointment book",
     "cancel",
     "reschedule",
     "general inquiry",
   ]);
+  const [menuSettingId, setMenuSettingId] = useState<number | null>(null);
   const [newTabName, setNewTabName] = useState("");
   const [isAddingTab, setIsAddingTab] = useState(false);
+
+  // Default tabs that cannot be deleted
+  const defaultTabs = ["appointment book", "cancel", "reschedule", "general inquiry"];
 
   // States for file upload
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -55,6 +59,23 @@ export default function KnowledgePage() {
       const greetingData = await getAppSettingByKey("GREETING");
       setGreetingMessage(greetingData.value);
       setGreetingSettingId(greetingData.id);
+
+      // Fetch menu
+      const menuData = await getAppSettingByKey("MENU");
+      setMenuSettingId(menuData.id);
+
+      // Parse menu items if value exists
+      if (menuData.value && menuData.value.trim()) {
+        try {
+          const parsedMenu = JSON.parse(menuData.value);
+          if (Array.isArray(parsedMenu)) {
+            setMenuTabs(parsedMenu);
+          }
+        } catch (parseError) {
+          console.error("Error parsing menu data:", parseError);
+          // Keep default menu tabs if parsing fails
+        }
+      }
     } catch (error: unknown) {
       console.error("Error fetching app settings:", error);
       if (error instanceof Error && error.message) {
@@ -106,17 +127,66 @@ export default function KnowledgePage() {
       return;
     }
 
+    // Check for duplicate tab names
+    if (menuTabs.includes(newTabName.trim())) {
+      toast.error("This topic already exists");
+      return;
+    }
+
+    if (!menuSettingId) {
+      toast.error("Menu setting not initialized");
+      return;
+    }
+
     try {
       setIsAddingTab(true);
-      // TODO: Connect to API later
-      setMenuTabs([...menuTabs, newTabName.trim()]);
+      const updatedMenuTabs = [...menuTabs, newTabName.trim()];
+
+      await updateAppSetting(menuSettingId, {
+        key: "MENU",
+        value: JSON.stringify(updatedMenuTabs),
+      });
+
+      setMenuTabs(updatedMenuTabs);
       toast.success(`New tab "${newTabName.trim()}" added successfully!`);
       setNewTabName("");
     } catch (error: unknown) {
       console.error("Error adding tab:", error);
-      toast.error("Failed to add new tab");
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to add new tab");
+      }
     } finally {
       setIsAddingTab(false);
+    }
+  };
+
+  const handleRemoveTab = async (index: number) => {
+    const tabToRemove = menuTabs[index];
+
+    if (!menuSettingId) {
+      toast.error("Menu setting not initialized");
+      return;
+    }
+
+    try {
+      const updatedMenuTabs = menuTabs.filter((_, i) => i !== index);
+
+      await updateAppSetting(menuSettingId, {
+        key: "MENU",
+        value: JSON.stringify(updatedMenuTabs),
+      });
+
+      setMenuTabs(updatedMenuTabs);
+      toast.success(`Tab "${tabToRemove}" removed successfully!`);
+    } catch (error: unknown) {
+      console.error("Error removing tab:", error);
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to remove tab");
+      }
     }
   };
 
@@ -182,7 +252,6 @@ export default function KnowledgePage() {
       toast.success(`File "${fileToDelete.name || fileToDelete.blob_name}" deleted successfully!`);
       setShowDeleteModal(false);
       setFileToDelete(null);
-      // Refresh the file list
       await fetchKnowledge();
     } catch (error: unknown) {
       console.error("Error deleting file:", error);
@@ -347,23 +416,25 @@ export default function KnowledgePage() {
                     className="group relative px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
                   >
                     {tab}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuTabs(menuTabs.filter((_, i) => i !== index));
-                      }}
-                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                      title="Remove topic"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
+                    {!defaultTabs.includes(tab) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveTab(index);
+                        }}
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        title="Remove topic"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
                   </button>
                 ))}
               </div>
@@ -386,7 +457,7 @@ export default function KnowledgePage() {
                   <Button
                     onClick={handleAddNewTab}
                     disabled={isAddingTab || !newTabName.trim()}
-                    className="btn-primary-gradient whitespace-nowrap"
+                    className="btn-primary-gradient whitespace-nowrap mt-1"
                   >
                     + Add
                   </Button>

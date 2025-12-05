@@ -4,13 +4,12 @@ export interface TableBooking {
   id: number;
   customer_id: number;
   table_id: number;
-  booking_date: string;
-  booking_time: string;
+  reservation_date: string;
   party_size: number;
   status: string;
-  notes: string;
-  call_sid: string;
+  special_request: string;
   created_at: string;
+  cancelled_at: string | null;
   customer: {
     id: number;
     phone_number: string;
@@ -18,14 +17,25 @@ export interface TableBooking {
     created_at: string;
   };
   table: {
-    id: number;
-    table_number: string;
     capacity: number;
+    table_number: string;
+    location: string;
+    is_active: boolean;
+    id: number;
     created_at: string;
   };
 }
 
-export interface TableBookingsResponse {
+export interface RestaurantTable {
+  id: number;
+  capacity: number;
+  table_number: string;
+  location: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface RestaurantReservationsResponse {
   data: TableBooking[];
   metadata: {
     total: number;
@@ -35,7 +45,17 @@ export interface TableBookingsResponse {
   };
 }
 
-export async function getTableBookingsList(
+export interface RestaurantTablesResponse {
+  data: RestaurantTable[];
+  metadata: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  };
+}
+
+export async function getRestaurantReservationsList(
   page: number = 1,
   limit: number = 10,
   user_timezone: string = "UTC",
@@ -43,7 +63,7 @@ export async function getTableBookingsList(
   customer_id?: number,
   status?: string,
   name?: string
-): Promise<TableBookingsResponse> {
+): Promise<RestaurantReservationsResponse> {
   try {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -63,11 +83,32 @@ export async function getTableBookingsList(
       params.append("name", name.trim());
     }
 
-    const response = await API.get(`/api/v1/table-bookings/?${params.toString()}`);
+    const response = await API.get(`/api/v1/restaurant/reservations?${params.toString()}`);
     console.log("api response", response?.data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching table bookings list:", error);
-    throw new Error("Failed to fetch table bookings list");
+    console.error("Error fetching restaurant reservations list:", error);
+    throw new Error("Failed to fetch restaurant reservations list");
+  }
+}
+
+export async function getRestaurantTablesList(
+  page: number = 1,
+  limit: number = 10,
+  user_timezone: string = "UTC"
+): Promise<RestaurantTablesResponse> {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      user_timezone,
+    });
+
+    const response = await API.get(`/api/v1/restaurant/tables?${params.toString()}`);
+    console.log("api response", response?.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching restaurant tables list:", error);
+    throw new Error("Failed to fetch restaurant tables list");
   }
 }

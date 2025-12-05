@@ -6,115 +6,50 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-
-// Define Table type
-export interface Table {
-  id: number;
-  table_number: string;
-  capacity: number;
-  location: "front" | "corner" | "roof" | "indoor" | "outdoor";
-  is_active: boolean;
-  created_at: string;
-}
+import { getRestaurantTablesList, RestaurantTable } from "../../actions/table-bookings";
 
 export default function TablesPage() {
   const router = useRouter();
-  const [tables, setTables] = useState<Table[]>([]);
+  const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalTables, setTotalTables] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
 
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [tableToDelete, setTableToDelete] = useState<Table | null>(null);
+  const [tableToDelete, setTableToDelete] = useState<RestaurantTable | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Debounced search value
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-
   // Simulate fetching data
-  const fetchTables = useCallback(async (page: number = 1, limit: number = 10, query: string = "") => {
-    // Dummy data
-    const dummyTables: Table[] = [
-      {
-        id: 1,
-        table_number: "T001",
-        capacity: 4,
-        location: "front",
-        is_active: true,
-        created_at: "2024-01-15T10:00:00Z",
-      },
-      {
-        id: 2,
-        table_number: "T002",
-        capacity: 6,
-        location: "corner",
-        is_active: true,
-        created_at: "2024-01-15T10:00:00Z",
-      },
-      {
-        id: 3,
-        table_number: "T003",
-        capacity: 2,
-        location: "roof",
-        is_active: false,
-        created_at: "2024-01-15T10:00:00Z",
-      },
-      {
-        id: 4,
-        table_number: "T004",
-        capacity: 8,
-        location: "indoor",
-        is_active: true,
-        created_at: "2024-01-15T10:00:00Z",
-      },
-      {
-        id: 5,
-        table_number: "T005",
-        capacity: 4,
-        location: "outdoor",
-        is_active: true,
-        created_at: "2024-01-15T10:00:00Z",
-      },
-    ];
-
+  const fetchTables = useCallback(async (page: number = 1, limit: number = 10) => {
+    const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     try {
       setLoading(true);
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      let filteredTables = dummyTables;
-
-      if (query) {
-        filteredTables = dummyTables.filter(
-          (table) =>
-            table.table_number.toLowerCase().includes(query.toLowerCase()) ||
-            table.location.toLowerCase().includes(query.toLowerCase()) ||
-            table.capacity.toString().includes(query)
-        );
-      }
-
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedTables = filteredTables.slice(startIndex, endIndex);
-
-      setTables(paginatedTables);
-      setTotalPages(Math.ceil(filteredTables.length / limit));
-      setTotalTables(filteredTables.length);
-    } catch (error) {
+      const response = await getRestaurantTablesList(page, limit, user_timezone);
+      setTables(response.data);
+      setTotalPages(response.metadata.total_pages);
+      setTotalTables(response.metadata.total);
+      setCurrentPage(response.metadata.page);
+    } catch (error: unknown) {
       console.error("Error fetching tables:", error);
-      toast.error("Failed to load tables");
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to load tables from server");
+      }
+      setTables([]);
+      setTotalPages(0);
+      setTotalTables(0);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchTables(currentPage, pageSize, debouncedSearchQuery);
-  }, [fetchTables, currentPage, pageSize, debouncedSearchQuery]);
+    fetchTables(currentPage, pageSize);
+  }, [fetchTables, currentPage, pageSize]);
 
   const handlePageChange = (pageIndex: number) => {
     setCurrentPage(pageIndex + 1); // DataTable uses 0-based indexing, API uses 1-based
@@ -125,21 +60,7 @@ export default function TablesPage() {
     setCurrentPage(1); // Reset to first page when page size changes
   };
 
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-  };
-
-  // Debounce search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-      setCurrentPage(1); // Reset to first page on search
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const handleDeleteClick = (table: Table) => {
+  const handleDeleteClick = (table: RestaurantTable) => {
     setTableToDelete(table);
     setDeleteDialogOpen(true);
   };
@@ -168,7 +89,7 @@ export default function TablesPage() {
   };
 
   // Define columns
-  const columns: ExtendedColumnDef<Table>[] = [
+  const columns: ExtendedColumnDef<RestaurantTable>[] = [
     {
       accessorKey: "table_number",
       header: "Table ID",
@@ -279,13 +200,8 @@ export default function TablesPage() {
         data={tables}
         columns={columns}
         title="Tables"
-        searchKey="table_number"
-        searchPlaceholder="Search here..."
-        showSearch={true}
         loading={loading}
         initialLoading={loading && tables.length === 0}
-        externalSearchValue={searchQuery}
-        onExternalSearchChange={handleSearchChange}
         enablePagination={true}
         externalPageIndex={currentPage - 1}
         totalPages={totalPages}

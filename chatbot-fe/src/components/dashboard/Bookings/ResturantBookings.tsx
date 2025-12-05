@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
-import { getTableBookingsList, TableBooking } from "../../../app/actions/table-bookings";
+import { getRestaurantReservationsList, TableBooking } from "../../../app/actions/table-bookings";
 import { toast } from "react-toastify";
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -65,16 +65,19 @@ const columns: ExtendedColumnDef<TableBooking>[] = [
     cell: ({ row }) => <div className="text-gray-600">{row.original.party_size || "N/A"}</div>,
   },
   {
-    accessorKey: "booking_date",
-    header: "Booking Date/Time",
+    accessorKey: "reservation_date",
+    header: "Reservation Date/Time",
     width: "180px",
     cell: ({ row }) => (
       <div className="text-gray-900">
-        {row.original.booking_date && row.original.booking_time
-          ? `${new Date(row.original.booking_date).toLocaleDateString("en-US", {
-              day: "numeric",
+        {row.original.reservation_date
+          ? new Date(row.original.reservation_date).toLocaleString("en-US", {
+              year: "numeric",
               month: "short",
-            })}, ${row.original.booking_time.slice(0, 5)}`
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
           : "N/A"}
       </div>
     ),
@@ -94,7 +97,6 @@ export default function ResturantBookings() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalBookings, setTotalBookings] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Debounced search value
@@ -114,7 +116,7 @@ export default function ResturantBookings() {
     async (page: number = 1, limit: number = 10, name: string = "") => {
       try {
         setLoading(true);
-        const response = await getTableBookingsList(
+        const response = await getRestaurantReservationsList(
           page,
           limit,
           user_timezone,
@@ -125,7 +127,6 @@ export default function ResturantBookings() {
         );
         setBookings(response.data);
         setTotalPages(response.metadata.total_pages);
-        setTotalBookings(response.metadata.total);
         setCurrentPage(response.metadata.page);
       } catch (error: unknown) {
         console.error("Error fetching table bookings:", error);
@@ -136,7 +137,6 @@ export default function ResturantBookings() {
         }
         setBookings([]);
         setTotalPages(0);
-        setTotalBookings(0);
       } finally {
         setLoading(false);
       }

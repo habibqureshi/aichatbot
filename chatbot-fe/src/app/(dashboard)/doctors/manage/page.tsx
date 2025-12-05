@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SingleSelect from "@/components/common/SingleSelect";
 import TimeRangePicker from "@/components/common/TimeRangePicker";
-import { getSpecialitiesList, Speciality } from "@/app/actions/specialities";
+import { getSpecialitiesList } from "@/app/actions/specialities";
 import { createDoctor, updateDoctor, getDoctorById } from "@/app/actions/doctors";
 import { toast } from "react-toastify";
 import { AddDoctorSkeleton, SpecialtySkeleton } from "@/components/ui/skeleton-loader";
@@ -55,7 +55,7 @@ function AddDoctorPageContent() {
     duration: 30,
     timeSlots: [],
   });
-  const [specialities, setSpecialities] = useState<Speciality[]>([]);
+  const [specialities, setSpecialities] = useState<string[]>([]);
   const [loading, setLoading] = useState(isEditMode); // Only show loading for edit mode
   const [loadingSpecialities, setLoadingSpecialities] = useState(true); // Separate loading for specialities
   const [selectedDayForSlot, setSelectedDayForSlot] = useState<string>("");
@@ -80,6 +80,7 @@ function AddDoctorPageContent() {
         // Fetch specialities (always needed)
         setLoadingSpecialities(true);
         const specialitiesResponse = await getSpecialitiesList(1, 100, user_timezone);
+        console.log("specialitiesResponse", specialitiesResponse);
         setSpecialities(specialitiesResponse.data);
         setLoadingSpecialities(false);
 
@@ -301,16 +302,17 @@ function AddDoctorPageContent() {
                     </label>
                     <SingleSelect
                       label=""
-                      options={specialities.map((specialty) => ({
-                        id: specialty.id,
-                        label: specialty.name,
-                        value: specialty.name,
+                      options={specialities.map((specialty, index) => ({
+                        id: index.toString(),
+                        label: specialty,
+                        value: specialty,
                       }))}
                       selectedValue={formData.specialty}
                       onChange={(value) =>
                         setFormData((prev) => ({ ...prev, specialty: value as string }))
                       }
                       placeholder="Select Specialty"
+                      searchable={true}
                     />
                   </>
                 )}
@@ -405,6 +407,7 @@ function AddDoctorPageContent() {
                     selectedValue={selectedDayForSlot}
                     onChange={(value) => setSelectedDayForSlot(value as string)}
                     placeholder="Choose a day to create slots"
+                    searchable={true}
                   />
                 </div>
 

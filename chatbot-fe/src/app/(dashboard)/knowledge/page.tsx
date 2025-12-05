@@ -694,7 +694,7 @@ export default function KnowledgePage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && fileToDelete && (
         <div
-          className="fixed inset-0  flex items-center justify-center z-[9999] p-4"
+          className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-[9999] p-4"
           style={{ margin: 0 }}
         >
           <div

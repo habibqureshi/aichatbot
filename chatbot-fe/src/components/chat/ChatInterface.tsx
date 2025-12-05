@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  startTransition,
-  useMemo,
-} from "react";
+import React, { useState, useRef, useEffect, startTransition, useMemo } from "react";
 import { ChatMessage } from "@/app/actions/chat";
 import { v4 as uuidv4 } from "uuid";
 import { ENDPOINTS } from "@/app/http/endpoints";
@@ -36,7 +30,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       startTransition(() => {
         setMessages((prev) => {
           return prev.map((msg) => {
-            let temp =
+            const temp =
               msg.id === messageIdRef.current && msg.role === "assistant"
                 ? { ...msg, content: bufferRef.current }
                 : msg;
@@ -60,6 +54,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -84,11 +79,11 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       }, 100);
       const eventSource = new EventSource(url);
       let conversationId;
-      let messageId = uuidv4();
+      const messageId = uuidv4();
       messageIdRef.current = messageId;
       eventSource.onmessage = (event) => {
         try {
-          isLoading ? setIsLoading(false) : null;
+          if (isLoading) setIsLoading(false);
           const parsed = JSON.parse(event.data);
           if (parsed && typeof parsed === "object" && parsed.id) {
             conversationId = parsed.id;
@@ -104,19 +99,9 @@ export default function ChatInterface({}: ChatInterfaceProps) {
             bufferRef.current = "";
             return;
           } else {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: messageId,
-                role: "assistant",
-                content: parsed["chunk"].replace(/^"(.*)"$/, "$1"),
-                timestamp: new Date(),
-              },
-            ]);
-            // bufferRef.current += parsed["chunk"].replace(/^"(.*)"$/, "$1"); // just append to buffer
+            bufferRef.current += parsed["chunk"].replace(/^"(.*)"$/, "$1"); // just append to buffer
           }
-          console.log(parsed["chunk"].replace(/^"(.*)"$/, "$1"));
-        } catch (e) {
+        } catch {
           const errorMessage: ChatMessage = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
@@ -127,7 +112,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
           setMessages((prev) => [...prev, errorMessage]);
         }
 
-        eventSource.onerror = (err) => {
+        eventSource.onerror = () => {
           eventSource.close();
           if (flushInterval.current) {
             clearInterval(flushInterval.current);
@@ -137,7 +122,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
         };
         return;
       };
-    } catch (error) {
+    } catch {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -156,44 +141,21 @@ export default function ChatInterface({}: ChatInterfaceProps) {
 
   const Message = React.memo((props: MessageProps) => {
     return (
-      <div
-        className={`flex ${
-          props.role === "user" ? "justify-end" : "justify-start"
-        }`}
-      >
-        <div
-          className={`flex max-w-[80%] ${
-            props.role === "user" ? "flex-row-reverse" : "flex-row"
-          }`}
-        >
+      <div className={`flex ${props.role === "user" ? "justify-end" : "justify-start"}`}>
+        <div className={`flex max-w-[80%] ${props.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
           {/* Avatar */}
-          <div
-            className={`flex-shrink-0 ${
-              props.role === "user" ? "ml-3" : "mr-3"
-            }`}
-          >
+          <div className={`flex-shrink-0 ${props.role === "user" ? "ml-3" : "mr-3"}`}>
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                props.role === "user"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-600"
+                props.role === "user" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-600"
               }`}
             >
               {props.role === "user" ? (
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               ) : (
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -208,23 +170,21 @@ export default function ChatInterface({}: ChatInterfaceProps) {
           {/* Message Content */}
           <div
             className={`rounded-2xl px-4 py-3 ${
-              props.role === "user"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-900"
+              props.role === "user" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
             }`}
           >
-            <div className="whitespace-pre-wrap break-words">
-              {props.content}
-            </div>
+            <div className="whitespace-pre-wrap break-words">{props.content}</div>
           </div>
         </div>
       </div>
     );
   });
 
+  Message.displayName = "Message";
+
   const renderedMessages = useMemo(() => {
     return messages.map((msg) => <Message key={msg.id} {...msg} />);
-  }, [messages]);
+  }, [messages, Message]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -267,12 +227,8 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                How can I help you today?
-              </h2>
-              <p className="text-gray-500">
-                Start a conversation by typing your message below.
-              </p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">How can I help you today?</h2>
+              <p className="text-gray-500">Start a conversation by typing your message below.</p>
             </div>
           </div>
         ) : (
@@ -285,12 +241,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                 <div className="flex max-w-[80%]">
                   <div className="flex-shrink-0 mr-3">
                     <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -343,14 +294,9 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                 <button
                   type="submit"
                   disabled={!inputValue.trim() || isLoading}
-                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"

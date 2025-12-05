@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getSession } from './app/actions/session'
+// import { getSession } from './app/actions/session'
 
 export async function middleware(request: NextRequest) {
     // return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
 
     // // Redirect to dashboard OR related to the user's role if accessing auth pages with valid token
     if (path === '/') {
-        return NextResponse.redirect(new URL('/chat', request.url))
+        return NextResponse.redirect(new URL('/calls', request.url))
     }
 
     return NextResponse.next();

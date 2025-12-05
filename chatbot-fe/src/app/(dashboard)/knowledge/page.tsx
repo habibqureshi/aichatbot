@@ -223,14 +223,14 @@ export default function KnowledgePage() {
     const files = Array.from(e.target.files || []);
 
     // Validate file types
-    const allowedExtensions = [".txt", ".pdf", ".csv"];
+    const allowedExtensions = [".txt"];
     const invalidFiles = files.filter((file) => {
       const extension = file.name.toLowerCase().substring(file.name.lastIndexOf("."));
       return !allowedExtensions.includes(extension);
     });
 
     if (invalidFiles.length > 0) {
-      toast.error("Only .txt, .pdf, and .csv files are allowed.");
+      toast.error("Only .txt files are allowed.");
       // Clear the input
       e.target.value = "";
       return;
@@ -586,7 +586,7 @@ export default function KnowledgePage() {
                   type="file"
                   id="file-upload"
                   multiple
-                  accept=".pdf,.txt,.csv,.docx"
+                  accept=".txt"
                   onChange={handleFileSelection}
                   className="hidden"
                 />
@@ -610,7 +610,7 @@ export default function KnowledgePage() {
                   <p className="text-sm font-medium text-gray-700 mb-1">
                     Drag & drop files here, or <span className="text-blue-600">browse</span>
                   </p>
-                  <p className="text-xs text-gray-500">Supports PDF, TXT, DOCX up to 10MB</p>
+                  <p className="text-xs text-gray-500">Supports TXT files up to 5MB</p>
                 </label>
               </div>
 

@@ -52,7 +52,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
           <Image src="/assets/LOGO.svg" alt="Logo" width={200} height={100} className="object-contain" />
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+          {/* <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
             <svg
               className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600"
               fill="none"
@@ -66,9 +66,9 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
               />
             </svg>
-          </button>
+          </button> */}
           <div className="relative group">
-            <button className="flex items-center space-x-2">
+            {/* <button className="flex items-center space-x-2">
               <Image
                 width={32}
                 height={32}
@@ -79,7 +79,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
               <span className="hidden sm:block text-sm font-medium text-gray-800">
                 {session?.user?.username || session?.user?.email}
               </span>
-            </button>
+            </button> */}
             {/* <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block hover:block z-50">
               <Link
                 href="/settings"

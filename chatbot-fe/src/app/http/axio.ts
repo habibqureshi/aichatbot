@@ -48,12 +48,12 @@ API.interceptors.request.use(
     }
 
     if (config.baseURL && config.url) {
-      console.log("Request backend:", {
-        url: config.baseURL + config.url,
-        method: config.method,
-        data: config.data,
-        headers: config.headers,
-      });
+      // console.log("Request backend:", {
+      //   url: config.baseURL + config.url,
+      //   method: config.method,
+      //   data: config.data,
+      //   headers: config.headers,
+      // });
     }
 
     return config;

@@ -7,83 +7,77 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
-// Define TableBooking type
-export interface TableBooking {
-  id: string;
-  tableNumber: number;
-  customerName: string;
-  phoneNumber: string;
-  date: string;
-  time: string;
-  guests: number;
-  status: "confirmed" | "pending" | "cancelled";
-  createdAt: string;
+// Define Table type
+export interface Table {
+  id: number;
+  table_number: string;
+  capacity: number;
+  location: "front" | "corner" | "roof" | "indoor" | "outdoor";
+  is_active: boolean;
+  created_at: string;
 }
 
 export default function TablesPage() {
   const router = useRouter();
-  const [bookings, setBookings] = useState<TableBooking[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalTables, setTotalTables] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [bookingToDelete, setBookingToDelete] = useState<TableBooking | null>(null);
+  const [tableToDelete, setTableToDelete] = useState<Table | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   // Debounced search value
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   // Simulate fetching data
-  const fetchBookings = useCallback(async (page: number = 1, limit: number = 10, query: string = "") => {
+  const fetchTables = useCallback(async (page: number = 1, limit: number = 10, query: string = "") => {
     // Dummy data
-    const dummyBookings: TableBooking[] = [
+    const dummyTables: Table[] = [
       {
-        id: "1",
-        tableNumber: 1,
-        customerName: "John Doe",
-        phoneNumber: "+1234567890",
-        date: "2025-12-05",
-        time: "19:00",
-        guests: 4,
-        status: "confirmed",
-        createdAt: "2025-12-01T10:00:00Z",
+        id: 1,
+        table_number: "T001",
+        capacity: 4,
+        location: "front",
+        is_active: true,
+        created_at: "2024-01-15T10:00:00Z",
       },
       {
-        id: "2",
-        tableNumber: 2,
-        customerName: "Jane Smith",
-        phoneNumber: "+1234567891",
-        date: "2025-12-05",
-        time: "20:00",
-        guests: 2,
-        status: "pending",
-        createdAt: "2025-12-02T11:00:00Z",
+        id: 2,
+        table_number: "T002",
+        capacity: 6,
+        location: "corner",
+        is_active: true,
+        created_at: "2024-01-15T10:00:00Z",
       },
       {
-        id: "3",
-        tableNumber: 3,
-        customerName: "Bob Johnson",
-        phoneNumber: "+1234567892",
-        date: "2025-12-06",
-        time: "18:30",
-        guests: 6,
-        status: "confirmed",
-        createdAt: "2025-12-03T12:00:00Z",
+        id: 3,
+        table_number: "T003",
+        capacity: 2,
+        location: "roof",
+        is_active: false,
+        created_at: "2024-01-15T10:00:00Z",
       },
       {
-        id: "4",
-        tableNumber: 4,
-        customerName: "Alice Brown",
-        phoneNumber: "+1234567893",
-        date: "2025-12-06",
-        time: "21:00",
-        guests: 3,
-        status: "cancelled",
-        createdAt: "2025-12-04T13:00:00Z",
+        id: 4,
+        table_number: "T004",
+        capacity: 8,
+        location: "indoor",
+        is_active: true,
+        created_at: "2024-01-15T10:00:00Z",
+      },
+      {
+        id: 5,
+        table_number: "T005",
+        capacity: 4,
+        location: "outdoor",
+        is_active: true,
+        created_at: "2024-01-15T10:00:00Z",
       },
     ];
 
@@ -92,34 +86,35 @@ export default function TablesPage() {
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      let filteredBookings = dummyBookings;
+      let filteredTables = dummyTables;
 
       if (query) {
-        filteredBookings = dummyBookings.filter(
-          (booking) =>
-            booking.customerName.toLowerCase().includes(query.toLowerCase()) ||
-            booking.phoneNumber.includes(query) ||
-            booking.tableNumber.toString().includes(query)
+        filteredTables = dummyTables.filter(
+          (table) =>
+            table.table_number.toLowerCase().includes(query.toLowerCase()) ||
+            table.location.toLowerCase().includes(query.toLowerCase()) ||
+            table.capacity.toString().includes(query)
         );
       }
 
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
-      const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
+      const paginatedTables = filteredTables.slice(startIndex, endIndex);
 
-      setBookings(paginatedBookings);
-      setTotalPages(Math.ceil(filteredBookings.length / limit));
+      setTables(paginatedTables);
+      setTotalPages(Math.ceil(filteredTables.length / limit));
+      setTotalTables(filteredTables.length);
     } catch (error) {
-      console.error("Error fetching bookings:", error);
-      toast.error("Failed to load table bookings");
+      console.error("Error fetching tables:", error);
+      toast.error("Failed to load tables");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchBookings(currentPage, pageSize, debouncedSearchQuery);
-  }, [fetchBookings, currentPage, pageSize, debouncedSearchQuery]);
+    fetchTables(currentPage, pageSize, debouncedSearchQuery);
+  }, [fetchTables, currentPage, pageSize, debouncedSearchQuery]);
 
   const handlePageChange = (pageIndex: number) => {
     setCurrentPage(pageIndex + 1); // DataTable uses 0-based indexing, API uses 1-based
@@ -144,13 +139,13 @@ export default function TablesPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const handleDeleteClick = (booking: TableBooking) => {
-    setBookingToDelete(booking);
+  const handleDeleteClick = (table: Table) => {
+    setTableToDelete(table);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!bookingToDelete) return;
+    if (!tableToDelete) return;
 
     try {
       setDeleting(true);
@@ -158,80 +153,59 @@ export default function TablesPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Remove from dummy data
-      setBookings((prev) => prev.filter((b) => b.id !== bookingToDelete.id));
+      setTables((prev) => prev.filter((t) => t.id !== tableToDelete.id));
+      setTotalTables((prev) => prev - 1);
 
-      toast.success("Table booking cancelled successfully");
+      toast.success("Table deleted successfully");
       setDeleteDialogOpen(false);
-      setBookingToDelete(null);
+      setTableToDelete(null);
     } catch (error) {
-      console.error("Error cancelling booking:", error);
-      toast.error("Failed to cancel booking");
+      console.error("Error deleting table:", error);
+      toast.error("Failed to delete table");
     } finally {
       setDeleting(false);
     }
   };
 
   // Define columns
-  const columns: ExtendedColumnDef<TableBooking>[] = [
+  const columns: ExtendedColumnDef<Table>[] = [
     {
-      accessorKey: "tableNumber",
-      header: "Table",
-      width: "100px",
-      cell: ({ row }) => (
-        <div className="font-medium text-gray-900">Table {row.original.tableNumber}</div>
-      ),
-    },
-    {
-      accessorKey: "customerName",
-      header: "Customer",
-      width: "200px",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium text-gray-900">{row.original.customerName}</div>
-          <div className="text-sm text-gray-500">{row.original.phoneNumber}</div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "date",
-      header: "Date & Time",
-      width: "180px",
-      cell: ({ row }) => (
-        <div>
-          <div>{new Date(row.original.date).toLocaleDateString()}</div>
-          <div className="text-sm text-gray-500">{row.original.time}</div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "guests",
-      header: "Guests",
-      width: "100px",
-      cell: ({ row }) => <div>{row.original.guests}</div>,
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: "table_number",
+      header: "Table ID",
       width: "120px",
+      cell: ({ row }) => <div className="font-medium text-gray-900">{row.original.table_number}</div>,
+    },
+    {
+      accessorKey: "capacity",
+      header: "Capacity",
+      width: "100px",
+      cell: ({ row }) => <div>{row.original.capacity} seats</div>,
+    },
+    {
+      accessorKey: "location",
+      header: "Location",
+      width: "120px",
+      cell: ({ row }) => <div className="capitalize">{row.original.location}</div>,
+    },
+    {
+      accessorKey: "is_active",
+      header: "Status",
+      width: "100px",
       cell: ({ row }) => (
         <span
           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-            row.original.status === "confirmed"
-              ? "bg-green-100 text-green-800"
-              : row.original.status === "pending"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-red-100 text-red-800"
+            row.original.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
           }`}
         >
-          {row.original.status.charAt(0).toUpperCase() + row.original.status.slice(1)}
+          {row.original.is_active ? "Active" : "Inactive"}
         </span>
       ),
     },
     {
-      accessorKey: "createdAt",
-      header: "Booked On",
+      accessorKey: "created_at",
+      header: "Created",
       width: "150px",
-      cell: ({ row }) => <div>{new Date(row.original.createdAt).toLocaleDateString()}</div>,
+      cell: ({ row }) => <div>{new Date(row.original.created_at).toLocaleDateString()}</div>,
     },
     {
       id: "actions",
@@ -240,26 +214,6 @@ export default function TablesPage() {
       cell: ({ row }) => (
         <ActionsMenu
           actions={[
-            {
-              label: "View",
-              icon: (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-              ),
-              onClick: () => router.push(`/tables/${row.original.id}`),
-            },
             {
               label: "Edit",
               icon: (
@@ -272,12 +226,12 @@ export default function TablesPage() {
                   />
                 </svg>
               ),
-              onClick: () => router.push(`/tables/manage?id=${row.original.id}`),
+              onClick: () => router.push(`/dashboard/tables/manage?id=${row.original.id}`),
             },
             {
-              label: "Cancel",
+              label: "Delete",
               icon: (
-                <svg className="w-4 h-4" fill="none" stroke="red" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -287,6 +241,7 @@ export default function TablesPage() {
                 </svg>
               ),
               onClick: () => handleDeleteClick(row.original),
+              className: "text-red-600 hover:text-red-800",
             },
           ]}
         />
@@ -299,15 +254,15 @@ export default function TablesPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Table Bookings</h1>
-          <p className="text-gray-600">Manage restaurant table reservations</p>
+          <h1 className="text-2xl font-bold text-gray-900">Tables</h1>
+          <p className="text-gray-600">Manage restaurant tables</p>
         </div>
-        {/* <Link
-          href="/tables/manage"
+        <Link
+          href="/dashboard/tables/manage"
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
         >
-          New Booking
-        </Link> */}
+          Add Table
+        </Link>
       </div>
 
       {/* Search */}
@@ -315,14 +270,14 @@ export default function TablesPage() {
 
       {/* Table */}
       <DataTable
-        data={bookings}
+        data={tables}
         columns={columns}
-        title="Table Bookings"
-        searchKey="customerName"
-        searchPlaceholder="Search by customer name, phone, or table number..."
+        title="Tables"
+        searchKey="table_number"
+        searchPlaceholder="Search here..."
         showSearch={true}
         loading={loading}
-        initialLoading={loading && bookings.length === 0}
+        initialLoading={loading && tables.length === 0}
         externalSearchValue={searchQuery}
         onExternalSearchChange={handleSearchChange}
         enablePagination={true}
@@ -336,9 +291,9 @@ export default function TablesPage() {
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Cancel Booking"
-        description={`Are you sure you want to cancel the booking for ${bookingToDelete?.customerName} at Table ${bookingToDelete?.tableNumber}?`}
-        confirmText="Cancel Booking"
+        title="Delete Table"
+        description={`Are you sure you want to delete table ${tableToDelete?.table_number}? This action cannot be undone.`}
+        confirmText="Delete Table"
         onConfirm={handleDeleteConfirm}
         loading={deleting}
       />

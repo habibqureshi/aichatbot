@@ -127,7 +127,7 @@ export default function CallDetails({
     } finally {
       setLoadingMore(false);
     }
-  }, [conversation?.id, currentPage, totalPages]);
+  }, [conversation?.id, currentPage]);
 
   // Reset pagination when conversation changes
   useEffect(() => {
@@ -143,6 +143,17 @@ export default function CallDetails({
       loadInitialMessages();
     }
   }, [conversation?.id, loadInitialMessages]);
+
+  // Reset audio state when conversation changes
+  useEffect(() => {
+    if (audioSrc && audioSrc.startsWith("blob:")) {
+      URL.revokeObjectURL(audioSrc);
+    }
+    setAudioSrc(null);
+    setIsPlaying(false);
+    setIsStreaming(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversation?.id]);
 
   // Scroll to bottom on initial load
   useEffect(() => {
@@ -269,8 +280,8 @@ export default function CallDetails({
             </svg>
           </div>
         </div>
-        <div className="h-[0.5px] my-4" style={{ background: "#E8E3FF" }} />
-        <div className="space-y-5">
+        <div className="h-[0.5px] mt-4 mb-2" style={{ background: "#E8E3FF" }} />
+        <div className="space-y-2">
           <div
             className={`transition-all duration-500 ease-in-out origin-top ${
               isDetailsOpen ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 h-0 overflow-hidden"
@@ -307,7 +318,7 @@ export default function CallDetails({
           </div>
           <div className="rounded-lg p-4" style={{ background: "#F5F3FF" }}>
             <div className="calldetails-section-title mb-3">Transcript Preview</div>
-            <div ref={messagesContainerRef} className="min-h-[200px] max-h-[400px] overflow-y-auto">
+            <div ref={messagesContainerRef} className="min-h-[300px] max-h-[380px] overflow-y-auto">
               <div className="space-y-3">
                 {loadingMore && (
                   <div className="flex justify-center py-2">
@@ -438,9 +449,9 @@ export default function CallDetails({
             </button>
           </div>
 
-          {/* Audio Player */}
-          {audioSrc && (
-            <div className="mt-4">
+          {/* Audio Player - Always reserve space for consistent height */}
+          <div className="mt-4" style={{ minHeight: audioSrc ? "auto" : "" }}>
+            {audioSrc && (
               <audio
                 controls
                 autoPlay={isPlaying}
@@ -459,8 +470,12 @@ export default function CallDetails({
                 <source src={audioSrc} type="audio/ogg" />
                 Your browser does not support the audio element.
               </audio>
-            </div>
-          )}
+              // ) : (
+              //   <div className="w-full h-[54px] opacity-0 pointer-events-none">
+              //     {/* Invisible placeholder to maintain consistent height */}
+              //   </div>
+            )}
+          </div>
         </div>
       </div>
     </aside>

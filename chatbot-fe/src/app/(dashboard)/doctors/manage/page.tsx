@@ -81,7 +81,7 @@ function AddDoctorPageContent() {
         setLoadingSpecialities(true);
         const specialitiesResponse = await getSpecialitiesList(1, 100, user_timezone);
         console.log("specialitiesResponse", specialitiesResponse);
-        setSpecialities(specialitiesResponse.data);
+        setSpecialities(specialitiesResponse.data.map((speciality) => speciality.name));
         setLoadingSpecialities(false);
 
         // If editing, fetch doctor data

@@ -246,7 +246,7 @@ function AddDoctorPageContent() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Doctor Information Card */}
           <div
-            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm"
+            className="border rounded-xl p-4 sm:p-6 shadow-sm"
             style={{
               background: "#FFFFFF",
               borderColor: "#F0EEFF",
@@ -322,7 +322,7 @@ function AddDoctorPageContent() {
 
           {/* Duration and Time Slots Card */}
           <div
-            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm space-y-6"
+            className="border rounded-xl p-4 sm:p-6 shadow-sm space-y-6"
             style={{
               background: "#FFFFFF",
               borderColor: "#F0EEFF",

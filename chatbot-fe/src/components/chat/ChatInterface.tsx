@@ -60,6 +60,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -104,18 +105,8 @@ export default function ChatInterface({}: ChatInterfaceProps) {
             bufferRef.current = "";
             return;
           } else {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: messageId,
-                role: "assistant",
-                content: parsed["chunk"].replace(/^"(.*)"$/, "$1"),
-                timestamp: new Date(),
-              },
-            ]);
-            // bufferRef.current += parsed["chunk"].replace(/^"(.*)"$/, "$1"); // just append to buffer
+            bufferRef.current += parsed["chunk"].replace(/^"(.*)"$/, "$1"); // just append to buffer
           }
-          console.log(parsed["chunk"].replace(/^"(.*)"$/, "$1"));
         } catch {
           const errorMessage: ChatMessage = {
             id: (Date.now() + 1).toString(),
@@ -223,9 +214,11 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     );
   });
 
+  Message.displayName = "Message";
+
   const renderedMessages = useMemo(() => {
     return messages.map((msg) => <Message key={msg.id} {...msg} />);
-  }, [messages]);
+  }, [messages, Message]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -344,7 +337,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                 <button
                   type="submit"
                   disabled={!inputValue.trim() || isLoading}
-                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
                 >
                   <svg
                     className="w-4 h-4"

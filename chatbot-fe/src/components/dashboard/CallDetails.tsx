@@ -283,8 +283,8 @@ export default function CallDetails({
         <div className="h-[0.5px] mt-4 mb-2" style={{ background: "#E8E3FF" }} />
         <div className="space-y-2">
           <div
-            className={`transition-all duration-500 ease-in-out origin-top ${
-              isDetailsOpen ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 h-0 overflow-hidden"
+            className={`transition-[max-height,opacity] duration-500 ease-in-out origin-top overflow-hidden ${
+              isDetailsOpen ? "opacity-100 max-h-48" : "opacity-0 max-h-0"
             }`}
           >
             <div className="space-y-5">

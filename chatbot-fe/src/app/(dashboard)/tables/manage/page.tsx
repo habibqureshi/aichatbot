@@ -4,6 +4,12 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SingleSelect from "@/components/common/SingleSelect";
 import { toast } from "react-toastify";
+import {
+  getRestaurantTable,
+  createRestaurantTable,
+  updateRestaurantTable,
+  RestaurantTable,
+} from "../../../actions/table-bookings";
 
 interface TableData {
   table_number: string;
@@ -42,22 +48,17 @@ function AddTablePageContent() {
   // Fetch table data on component mount if editing
   useEffect(() => {
     if (isEditMode && tableId) {
-      // Simulate fetching table data
       const fetchTable = async () => {
         try {
           setLoading(true);
-          // Simulate API call
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
-          // Mock data for editing
-          const mockTableData: TableData = {
-            table_number: "T001",
-            capacity: 4,
-            location: "front",
-            is_active: true,
-          };
-
-          setFormData(mockTableData);
+          const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const tableData = await getRestaurantTable(Number(tableId), user_timezone);
+          setFormData({
+            table_number: tableData.table_number,
+            capacity: tableData.capacity,
+            location: tableData.location as TableData["location"],
+            is_active: tableData.is_active,
+          });
           setLoading(false);
         } catch (error) {
           console.error("Error fetching table:", error);
@@ -91,15 +92,15 @@ function AddTablePageContent() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (isEditMode && tableId) {
         // Update existing table
+        await updateRestaurantTable(Number(tableId), formData, user_timezone);
         toast.success("Table updated successfully!");
         router.push("/tables");
       } else {
         // Create new table
+        await createRestaurantTable(formData, user_timezone);
         toast.success("Table created successfully!");
         router.push("/tables");
       }

@@ -112,3 +112,68 @@ export async function getRestaurantTablesList(
     throw new Error("Failed to fetch restaurant tables list");
   }
 }
+
+export async function getRestaurantTable(
+  table_id: number,
+  user_timezone: string = "UTC"
+): Promise<RestaurantTable> {
+  try {
+    const params = new URLSearchParams({
+      user_timezone,
+    });
+
+    const response = await API.get(`/api/v1/restaurant/tables/${table_id}?${params.toString()}`);
+    console.log("api response", response?.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching restaurant table:", error);
+    throw new Error("Failed to fetch restaurant table");
+  }
+}
+
+export async function createRestaurantTable(
+  data: {
+    capacity: number;
+    table_number: string;
+    location: string;
+    is_active: boolean;
+  },
+  user_timezone: string = "UTC"
+): Promise<RestaurantTable> {
+  try {
+    const params = new URLSearchParams({
+      user_timezone,
+    });
+
+    const response = await API.post(`/api/v1/restaurant/tables?${params.toString()}`, data);
+    console.log("api response", response?.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating restaurant table:", error);
+    throw new Error("Failed to create restaurant table");
+  }
+}
+
+export async function updateRestaurantTable(
+  table_id: number,
+  data: {
+    capacity: number;
+    table_number: string;
+    location: string;
+    is_active: boolean;
+  },
+  user_timezone: string = "UTC"
+): Promise<RestaurantTable> {
+  try {
+    const params = new URLSearchParams({
+      user_timezone,
+    });
+
+    const response = await API.put(`/api/v1/restaurant/tables/${table_id}?${params.toString()}`, data);
+    console.log("api response", response?.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating restaurant table:", error);
+    throw new Error("Failed to update restaurant table");
+  }
+}

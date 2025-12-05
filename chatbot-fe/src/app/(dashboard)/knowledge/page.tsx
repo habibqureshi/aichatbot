@@ -412,7 +412,7 @@ export default function KnowledgePage() {
               {/* Existing Menu Topics */}
               <div className="flex flex-wrap gap-2">
                 {menuTabs.map((tab, index) => (
-                  <button
+                  <div
                     key={index}
                     className="group relative px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
                   >
@@ -423,7 +423,7 @@ export default function KnowledgePage() {
                           e.stopPropagation();
                           handleRemoveTab(index);
                         }}
-                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
                         title="Remove topic"
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -436,7 +436,7 @@ export default function KnowledgePage() {
                         </svg>
                       </button>
                     )}
-                  </button>
+                  </div>
                 ))}
               </div>
 

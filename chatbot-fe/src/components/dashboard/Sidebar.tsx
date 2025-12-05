@@ -3,7 +3,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useInstallationType } from "@/app/hooks/useInstallationType";
+import { useInstallation } from "@/app/contexts/InstallationContext";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -38,7 +38,7 @@ const navigation = [
     href: "/doctors",
     iconActive: "/assets/sideBarIcons/doctor_active.svg",
     iconInactive: "/assets/sideBarIcons/doctor_inactive.svg",
-    showOnlyFor: "clinic", // Only show for clinic
+    showOnlyFor: "clinic", 
   },
   // {
   //   name: "Specialities",
@@ -56,13 +56,13 @@ const navigation = [
     href: "/tables",
     iconActive: "/assets/sideBarIcons/booking_active.svg", // Using booking icon as placeholder
     iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
-    showOnlyFor: ["restaurant", "cafe"], // Show for restaurant and cafe
+    showOnlyFor: ["restaurant", "cafe"], 
   },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { installationType, isLoading } = useInstallationType();
+  const { installationType, isLoading } = useInstallation();
 
   const handleLinkClick = () => {
     // Close sidebar on mobile when clicking a link

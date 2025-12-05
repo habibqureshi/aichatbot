@@ -306,8 +306,8 @@ export function DataTable<TData, TValue>({
         <div
           className="overflow-auto table-scroll"
           style={{
-            minHeight: "calc(100vh - 310px)",
-            maxHeight: "calc(100vh - 320px)",
+            minHeight: "calc(100vh - 318px)",
+            maxHeight: "calc(100vh - 220px)",
             scrollbarWidth: "thin",
             scrollbarColor: "#E8E3FF #F5F3FF",
           }}

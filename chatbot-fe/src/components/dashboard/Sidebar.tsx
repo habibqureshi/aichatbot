@@ -41,13 +41,13 @@ const navigation = [
     iconInactive: "/assets/sideBarIcons/doctor_inactive.svg",
     showOnlyFor: "clinic",
   },
-  {
-    name: "Tables",
-    href: "/tables",
-    iconActive: "/assets/sideBarIcons/booking_active.svg", // Using booking icon as placeholder
-    iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
-    showOnlyFor: ["restaurant", ],
-  },
+  // {
+  //   name: "Tables",
+  //   href: "/tables",
+  //   iconActive: "/assets/sideBarIcons/booking_active.svg", // Using booking icon as placeholder
+  //   iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
+  //   showOnlyFor: ["restaurant", ],
+  // },
   // {
   //   name: "Specialities",
   //   href: "/specialities",
@@ -60,14 +60,14 @@ const navigation = [
     iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
   },
 
-  {
-    name: "Restaurant Settings",
-    href: "/restaurant-settings",
-    iconActive: "/assets/sideBarIcons/knowledge_active.svg", // Using knowledge icon as placeholder
-    iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
-    showOnlyFor: ["restaurant", ],
-    // showOnlyFor: ["restaurant", "clinic"],
-  },
+  // {
+  //   name: "Restaurant Settings",
+  //   href: "/restaurant-settings",
+  //   iconActive: "/assets/sideBarIcons/knowledge_active.svg", // Using knowledge icon as placeholder
+  //   iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
+  //   showOnlyFor: ["restaurant", ],
+  //   // showOnlyFor: ["restaurant", "clinic"],
+  // },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {

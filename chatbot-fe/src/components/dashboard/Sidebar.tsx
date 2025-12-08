@@ -135,7 +135,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={handleLinkClick}
                   className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px] ${
-                    isActive ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/5"
+                    isActive ? "bg-gradient-to-r from-[#A357F7] to-[#CE53B7] text-white" : "text-white hover:bg-gradient-to-r hover:from-[#A357F7]/20 hover:to-[#CE53B7]/20"
                   }`}
                   aria-current={isActive ? "page" : undefined}
                 >

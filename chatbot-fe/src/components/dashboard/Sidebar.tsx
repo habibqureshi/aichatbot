@@ -100,7 +100,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 lg:top-20 left-0 z-40 w-64 border-r border-gray-200 bg-white
+        className={`fixed top-0 lg:top-20 left-0 z-40 w-64 border-r border-transparent bg-brand-purple text-white
               flex flex-col transform transition-transform duration-300 ease-in-out 
               h-screen lg:h-[calc(100vh-5rem)]
               ${isOpen ? "translate-x-0" : "-translate-x-full"} 
@@ -135,7 +135,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={handleLinkClick}
                   className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px] ${
-                    isActive ? "bg-purple-50 text-brand-blue" : "text-gray-600 hover:bg-gray-50"
+                    isActive ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/5"
                   }`}
                   aria-current={isActive ? "page" : undefined}
                 >

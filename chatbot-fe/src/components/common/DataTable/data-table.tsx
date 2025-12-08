@@ -162,7 +162,9 @@ export function DataTable<TData, TValue>({
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 mt-1">
         <div className="flex items-center space-x-2 px-2">
-          <h2 className="text-xl font-semibold tracking-tight text-brand-dark font-inter">{title}</h2>
+          <h2 className="font-figtree text-[32px] font-semibold tracking-tight text-brand-dark leading-[1.32] recent-calls-title">
+            {title}
+          </h2>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto px-2 sm:px-0">
           {/* Loading Spinner */}

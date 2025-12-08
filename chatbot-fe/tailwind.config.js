@@ -1,7 +1,7 @@
 import animate from "tailwindcss-animate";
 
 /** @type {import('tailwindcss').Config} */
-export default {
+const config = {
   darkMode: ["class"],
   content: ["./src/app/**/*.{ts,tsx}", "./src/components/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   theme: {
@@ -10,7 +10,9 @@ export default {
         custom930: "930px",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
+        sans: ["var(--font-figtree)", "Figtree", "sans-serif"],
+        inter: ["var(--font-inter)", "sans-serif"],
+        figtree: ["var(--font-figtree)", "Figtree", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -47,13 +49,13 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         "brand-white": "#FFFFFF",
-        "brand-purple": "#9882F7",
-        "brand-blue": "#4318FF",
+        "brand-purple": "#7D2ADD",
+        "brand-blue": "#4C2B97",
         "brand-dark": "#23272E",
         "brand-light": "#64748B",
         "brand-light2": "#F6F7F9",
         "brand-gray": "#2A2A2A",
-        "brand-card": "#F5F3FF",
+        "brand-card": "#7D2ADD",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -94,3 +96,5 @@ export default {
   },
   plugins: [animate],
 };
+
+export default config;

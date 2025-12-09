@@ -307,21 +307,39 @@ const CallRecordingTab: React.FC<Props> = ({
           )}
         </div>
         {audioSrc && (
-          <div className="grid grid-cols-3 gap-3 text-center text-xs mt-4 pt-4 ">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-gray-500 mb-2">Audio Quality</div>
-              <div className="font-medium text-gray-900">High Definition</div>
-              <div className="text-gray-400 text-xs">48kHz / 320kbps</div>
+          <div className="grid grid-cols-3 gap-4 text-center mt-4 pt-4">
+            <div className="w-full h-[113px] bg-[#F9FAFB] border border-[#E6E7EB] rounded-lg p-4 shadow-[0_2px_2px_0_rgba(35,39,46,0.08)]">
+              <div className="text-[#4C5564] font-medium text-base leading-[132%] tracking-normal mb-2">
+                Audio Quality
+              </div>
+              <div className="text-[#23272E] font-medium text-lg leading-[132%] tracking-normal">
+                High Definition
+              </div>
+              <div className="text-[#6B7281] font-medium text-sm leading-[132%] tracking-normal">
+                48kHz / 320kbps
+              </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-gray-500 mb-2">File Format</div>
-              <div className="font-medium text-gray-900">MP3</div>
-              <div className="text-gray-400 text-xs">Compressed audio</div>
+            <div className="w-full h-[113px] bg-[#F9FAFB] border border-[#E6E7EB] rounded-lg p-4 shadow-[0_2px_2px_0_rgba(35,39,46,0.08)]">
+              <div className="text-[#4C5564] font-medium text-base leading-[132%] tracking-normal mb-2">
+                File Format
+              </div>
+              <div className="text-[#23272E] font-medium text-lg leading-[132%] tracking-normal">
+                MP3
+              </div>
+              <div className="text-[#6B7281] font-medium text-sm leading-[132%] tracking-normal">
+                Compressed audio
+              </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-gray-500 mb-2">File Size</div>
-              <div className="font-medium text-gray-900">2.4 MB</div>
-              <div className="text-gray-400 text-xs">Estimated size</div>
+            <div className="w-full h-[113px] bg-[#F9FAFB] border border-[#E6E7EB] rounded-lg p-4 shadow-[0_2px_2px_0_rgba(35,39,46,0.08)]">
+              <div className="text-[#4C5564] font-medium text-base leading-[132%] tracking-normal mb-2">
+                File Size
+              </div>
+              <div className="text-[#23272E] font-medium text-lg leading-[132%] tracking-normal">
+                2.4 MB
+              </div>
+              <div className="text-[#6B7281] font-medium text-sm leading-[132%] tracking-normal">
+                Estimated size
+              </div>
             </div>
           </div>
         )}

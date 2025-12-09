@@ -20,7 +20,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
     fetchSession();
   }, []);
   return (
-    <header className="fixed top-0 w-full lg:left-[312px] lg:w-[calc(100%-312px)] z-30 bg-white border-b border-gray-100">
+    <header className="fixed top-0 w-full lg:left-[312px] lg:w-[calc(100%-312px)] z-30 bg-topbar">
       <div className="h-20 flex items-center justify-between px-4 lg:px-10">
         <div className="flex items-center gap-4">
           <Image
@@ -73,7 +73,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
             </svg>
           </button> */}
           <div className="relative group">
-            {/* <button className="flex items-center space-x-2">
+            <button className="flex items-center space-x-2">
               <Image
                 width={32}
                 height={32}
@@ -84,7 +84,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
               <span className="hidden sm:block text-sm font-medium text-gray-800">
                 {session?.user?.username || session?.user?.email}
               </span>
-            </button> */}
+            </button>
             {/* <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block hover:block z-50">
               <Link
                 href="/settings"

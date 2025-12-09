@@ -13,6 +13,9 @@ type Props = {
   messages?: Message[]; // Not used - we fetch messages internally
   loading?: boolean;
 };
+
+type TabType = "transcript" | "recording" | "summary";
+
 const StatusBadge = ({ status }: { status: string }) => {
   const statusStyles: Record<string, { bg: string; text: string }> = {
     active: { bg: "#06A35A", text: "#FFFFFF" },
@@ -36,6 +39,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     </span>
   );
 };
+
 export default function CallDetails({
   conversation,
   messages: initialMessages = [],
@@ -44,7 +48,7 @@ export default function CallDetails({
   const [isStreaming, setIsStreaming] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("transcript");
 
   // Pagination state
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -60,7 +64,7 @@ export default function CallDetails({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(false);
   const previousScrollHeightRef = useRef(0);
-
+  // console.log("conversation", conversation);
   // Load initial messages
   const loadInitialMessages = useCallback(async () => {
     if (!conversation?.id) return;
@@ -248,234 +252,407 @@ export default function CallDetails({
     }
   };
 
+  // Helper to format call duration
+  const formatDuration = (startDate: string | null | undefined, endDate: string | null | undefined) => {
+    if (!startDate || !endDate) return "0m";
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const minutes = Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  // Helper to format date
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" });
+  };
+
+  // Helper to format time
+  const formatTime = (dateString: string | null | undefined) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
     <aside className="w-full h-fit">
       <div
-        className="backdrop-blur-sm  rounded-xl p-4 shadow-sm"
+        className="rounded-xl shadow-sm"
         style={{
-          // background: "#FFFFFF",
-          // borderColor: "#F0EEFF",
           minHeight: "calc(100vh - 320px)",
-          maxHeight: "calc(100vh -220px)",
+          maxHeight: "calc(100vh - 220px)",
         }}
       >
-        <div
-          className="flex items-center justify-between cursor-pointer mb-6 group"
-          onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-        >
+        {/* Header */}
+        <div className="p-6">
           <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
             Call Details
           </h3>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 opacity-100  transition-opacity duration-200">
-              {isDetailsOpen ? "Hide" : "View"}
-            </span>
-            <svg
-              className={`w-5 h-5 transition-transform duration-200 ${
-                isDetailsOpen ? "rotate-180" : ""
-              }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+        </div>
+
+        {/* Three Info Cards */}
+        <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Customer Name Card */}
+          <div className=" p-4 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] ">
+            <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
+              Customer Name
+            </p>
+            <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-2">
+              <Image src={"/assets/calls/User.svg"} alt="Phone" width={24} height={24} />
+              {caller}
+            </div>
+            <div className="text-xs text-gray-500">{phone}</div>
+          </div>
+
+          {/* Call Duration Card */}
+          <div className=" p-4 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] ">
+            <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
+              Call Duration
+            </p>
+           <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-2">
+              <Image src={"/assets/calls/Clock.svg"} alt="Phone" width={24} height={24} />
+              {formatDuration(conversation?.started_at || null, conversation?.ended_at || null)}
+            </div>
+            <div className="mt-3">
+              <StatusBadge status={status} />
+            </div>
+          </div>
+
+          {/* Call Date & Time Card */}
+          <div className=" p-4 h-auto md:max-h-[159px] border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] ">
+            <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
+              Call Date & Time
+            </p>
+           <div className="font-semibold text-brand-dark text-xl mt-1 mb-2 leading-[1.32] flex items-center gap-2">
+              <Image src={"/assets/calls/Clock.svg"} alt="Phone" width={24} height={24} />
+              {formatDate(conversation?.started_at)}
+            </div>
+
+            <div className="font-semibold text-brand-dark text-sm">
+              {formatTime(conversation?.started_at)}
+            </div>
+            <div className="mt-2">
+              <div className="text-xs text-gray-400">Resolution</div>
+            </div>
+            <div className="mt-2">
+              <div className="text-xs text-gray-400">Recorded Follow-up scheduled</div>
+            </div>
           </div>
         </div>
-        <div className="h-[0.5px] mt-4 mb-2" style={{ background: "#E8E3FF" }} />
-        <div className="space-y-2">
-          <div
-            className={`transition-[max-height,opacity] duration-500 ease-in-out origin-top overflow-hidden ${
-              isDetailsOpen ? "opacity-100 max-h-48" : "opacity-0 max-h-0"
-            }`}
-          >
-            <div className="space-y-5">
-              <div>
-                <div className="calldetails-label mb-1">Caller</div>
-                <div className="calldetails-value">{caller}</div>
-              </div>
 
-              <div>
-                <div className="calldetails-label mb-1">Phone no</div>
-                <div className="calldetails-value">{phone}</div>
-              </div>
-
-              <div>
-                <div className="calldetails-label mb-2">Status</div>
-                <div className="mt-2 inline-block">
-                  <StatusBadge status={status} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg p-4" style={{ background: "#F5F3FF" }}>
-            <div className="calldetails-section-title mb-2">Summary</div>
-            <div
-              className="rounded-lg border p-3 min-h-[70px]"
-              style={{ background: "#FFFFFF", borderColor: "#E8E3FF" }}
-            >
-              <p className="calldetails-summary-text">{summary}</p>
-            </div>
-          </div>
-          <div className="rounded-lg p-4" style={{ background: "#F5F3FF" }}>
-            <div className="calldetails-section-title mb-3">Transcript Preview</div>
-            <div ref={messagesContainerRef} className="min-h-[300px] max-h-[380px] overflow-y-auto">
-              <div className="space-y-3">
-                {loadingMore && (
-                  <div className="flex justify-center py-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.1s" }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
-                {loading ? (
-                  // Skeleton loader for messages
-                  <>
-                    <div className="flex justify-start">
-                      <div
-                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                        style={{ background: "#E8E3FF" }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-end">
-                      <div
-                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                        style={{ background: "#E8E3FF" }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-start">
-                      <div
-                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                        style={{ background: "#E8E3FF" }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-end">
-                      <div
-                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                        style={{ background: "#E8E3FF" }}
-                      ></div>
-                    </div>
-                  </>
-                ) : messages && messages.length > 0 ? (
-                  messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.role === "user" ? "justify-start" : "justify-end"}`}
-                    >
-                      <div
-                        className={`text-sm p-3 rounded-lg max-w-xs lg:max-w-[255px] ${
-                          message.role === "user" ? "text-brand-blue" : "text-gray-700 border"
-                        }`}
-                        style={
-                          message.role === "user"
-                            ? { background: "linear-gradient(to right, #F0EEFF, #E8E3FF)" }
-                            : { background: "#FFFFFF", borderColor: "#E8E3FF" }
-                        }
-                      >
-                        <p
-                          className={
-                            message.role === "user" ? "calldetails-chat-user" : "calldetails-chat-bot"
-                          }
-                        >
-                          {message.content}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex justify-center">
-                    <div className="p-3 rounded-lg text-gray-500" style={{ background: "#F5F3FF" }}>
-                      <p>No chat transcript available</p>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6">
+        {/* Tabs */}
+        <div className="px-6 pb-6">
+          <div className="flex gap-6 border-b" style={{ borderBottomColor: "#D5D9E2" }}>
             <button
-              onClick={handlePlayRecording}
-              disabled={isStreaming || !conversation?.id}
-              className={`btn-primary-gradient w-full ${
-                isStreaming || !conversation?.id ? "opacity-50 cursor-not-allowed" : ""
+              onClick={() => setActiveTab("transcript")}
+              className={`pb-3 text-sm font-medium transition-colors ${
+                activeTab === "transcript"
+                  ? "text-brand-button border-b-2 border-brand-button"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
-              onMouseEnter={(e) => {
-                if (!isStreaming && conversation?.id) {
-                  e.currentTarget.style.background = "linear-gradient(to right, #7C3AED, #2563EB)";
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isStreaming && conversation?.id) {
-                  e.currentTarget.style.background = "linear-gradient(to right, #8B5CF6, #3B82F6)";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }
-              }}
+              style={
+                activeTab === "transcript" ? { borderBottomColor: "#2563EB", color: "#2563EB" } : {}
+              }
             >
-              <Image
-                width={20}
-                height={20}
-                src="/assets/images/audioIcon.svg"
-                alt="Audio icon"
-                className="flex-shrink-0"
-              />
-              {isStreaming ? (
-                <>
-                  <span>Loading</span>
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-                    <div
-                      className="w-2 h-2 bg-white rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-white rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    ></div>
-                  </div>
-                </>
-              ) : (
-                "Play Recording"
-              )}
+              Call Transcript
+            </button>
+            <button
+              onClick={() => setActiveTab("recording")}
+              className={`pb-3 text-sm font-medium transition-colors ${
+                activeTab === "recording"
+                  ? "text-brand-button border-b-2 border-brand-button"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              style={activeTab === "recording" ? { borderBottomColor: "#2563EB", color: "#2563EB" } : {}}
+            >
+              Call Recording
+            </button>
+            <button
+              onClick={() => setActiveTab("summary")}
+              className={`pb-3 text-sm font-medium transition-colors ${
+                activeTab === "summary"
+                  ? "text-brand-button border-b-2 border-brand-button"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              style={activeTab === "summary" ? { borderBottomColor: "#2563EB", color: "#2563EB" } : {}}
+            >
+              AI Summary
             </button>
           </div>
 
-          {/* Audio Player - Always reserve space for consistent height */}
-          <div className="mt-4" style={{ minHeight: audioSrc ? "auto" : "" }}>
-            {audioSrc && (
-              <audio
-                controls
-                autoPlay={isPlaying}
-                className="w-full"
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onEnded={() => setIsPlaying(false)}
-                onError={(e) => {
-                  console.error("Audio playback error:", e);
-                  setIsPlaying(false);
-                }}
-              >
-                <source src={audioSrc} type="audio/mpeg" />
-                <source src={audioSrc} type="audio/mp3" />
-                <source src={audioSrc} type="audio/wav" />
-                <source src={audioSrc} type="audio/ogg" />
-                Your browser does not support the audio element.
-              </audio>
-              // ) : (
-              //   <div className="w-full h-[54px] opacity-0 pointer-events-none">
-              //     {/* Invisible placeholder to maintain consistent height */}
-              //   </div>
+          {/* Tab Content */}
+          <div className="mt-6">
+            {/* Call Transcript Tab */}
+            {activeTab === "transcript" && (
+              <div className="space-y-4">
+                <div
+                  ref={messagesContainerRef}
+                  className="min-h-[300px] max-h-[400px] overflow-y-auto pr-2"
+                >
+                  <div className="space-y-3">
+                    {loadingMore && (
+                      <div className="flex justify-center py-2">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                          <div
+                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.1s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.2s" }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+                    {loading ? (
+                      <>
+                        <div className="flex justify-start">
+                          <div
+                            className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                            style={{ background: "#E8E3FF" }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-end">
+                          <div
+                            className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                            style={{ background: "#E8E3FF" }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-start">
+                          <div
+                            className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                            style={{ background: "#E8E3FF" }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-end">
+                          <div
+                            className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                            style={{ background: "#E8E3FF" }}
+                          ></div>
+                        </div>
+                      </>
+                    ) : messages && messages.length > 0 ? (
+                      messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`text-sm p-3 rounded-lg max-w-xs lg:max-w-[255px] ${
+                              message.role === "user" ? "text-white border" : "text-gray-700 border"
+                            }`}
+                            style={
+                              message.role === "user"
+                                ? { background: "#6366F1", borderColor: "#6366F1" }
+                                : { background: "#FFFFFF", borderColor: "#E8E3FF" }
+                            }
+                          >
+                            <p
+                              className={
+                                message.role === "user"
+                                  ? "calldetails-chat-user"
+                                  : "calldetails-chat-bot"
+                              }
+                            >
+                              {message.content}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex justify-center">
+                        <div className="p-3 rounded-lg text-gray-500" style={{ background: "#F5F3FF" }}>
+                          <p>No chat transcript available</p>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Call Recording Tab */}
+            {activeTab === "recording" && (
+              <div className="space-y-4">
+                <div
+                  className="rounded-lg p-6 border"
+                  style={{ background: "#FFFFFF", borderColor: "#D5D9E2" }}
+                >
+                  <div className="flex items-center gap-4 mb-6">
+                    <div
+                      className="w-12 h-12 rounded-lg flex items-center justify-center"
+                      style={{ background: "#6366F1" }}
+                    >
+                      <Image src="/assets/images/audioIcon.svg" alt="Audio" width={24} height={24} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-700">Audio Recording</div>
+                      <div className="text-xs text-gray-500">High quality call recording</div>
+                    </div>
+                  </div>
+
+                  {!audioSrc ? (
+                    <button
+                      onClick={handlePlayRecording}
+                      disabled={isStreaming || !conversation?.id}
+                      className={`btn-primary-gradient w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 ${
+                        isStreaming || !conversation?.id ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                      {isStreaming ? "Loading..." : "Play Recording"}
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <audio
+                        controls
+                        autoPlay={isPlaying}
+                        className="w-full"
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                        onEnded={() => setIsPlaying(false)}
+                        onError={(e) => {
+                          console.error("Audio playback error:", e);
+                          setIsPlaying(false);
+                        }}
+                      >
+                        <source src={audioSrc} type="audio/mpeg" />
+                        <source src={audioSrc} type="audio/mp3" />
+                        <source src={audioSrc} type="audio/wav" />
+                        <source src={audioSrc} type="audio/ogg" />
+                        Your browser does not support the audio element.
+                      </audio>
+                      <div className="grid grid-cols-3 gap-3 text-center text-xs">
+                        <div>
+                          <div className="text-gray-500 mb-1">Audio Quality</div>
+                          <div className="font-medium">High Definition</div>
+                          <div className="text-gray-400">48kHz / 320kbps</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 mb-1">File Format</div>
+                          <div className="font-medium">MP3</div>
+                          <div className="text-gray-400">Compressed audio</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 mb-1">File Size</div>
+                          <div className="font-medium">2.4 MB</div>
+                          <div className="text-gray-400">Estimated size</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = audioSrc;
+                            link.download = `call-recording-${conversation?.id}.mp3`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border"
+                          style={{ borderColor: "#D5D9E2" }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                          </svg>
+                          Download
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* AI Summary Tab */}
+            {activeTab === "summary" && (
+              <div className="space-y-4">
+                <div
+                  className="rounded-lg p-4 border"
+                  style={{ background: "#F5F3FF", borderColor: "#E8E3FF" }}
+                >
+                  <div className="flex gap-3 mb-3">
+                    <div
+                      className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0"
+                      style={{ background: "#6366F1" }}
+                    >
+                      <span className="text-white text-sm font-bold">AI</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-brand-dark">AI Generated Summary</div>
+                      <div className="text-xs text-gray-500">
+                        Automatically generated using advanced AI analysis
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="rounded-lg border p-3"
+                    style={{ background: "#FFFFFF", borderColor: "#E8E3FF" }}
+                  >
+                    <p className="text-sm text-gray-700 leading-relaxed">{summary}</p>
+                  </div>
+
+                  <div
+                    className="mt-4 rounded-lg p-3"
+                    style={{ background: "#FFFFFF", borderColor: "#E8E3FF" }}
+                  >
+                    <div className="font-medium text-sm text-brand-dark mb-2">Conversation Metrics</div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Total messages</div>
+                        <div className="font-semibold text-brand-dark">{messages.length}</div>
+                        <div className="text-xs text-gray-400">
+                          {messages.filter((m) => m.role === "user").length} AI •{" "}
+                          {messages.filter((m) => m.role !== "user").length} Customer
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Average response</div>
+                        <div className="font-semibold text-brand-dark">1.2s</div>
+                        <div className="text-xs text-gray-400">AI agent response time</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t" style={{ borderColor: "#E8E3FF" }}>
+                      <div className="text-xs font-medium text-gray-500 mb-2">Speaking Distribution</div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600">AI Agent</span>
+                          <span className="text-xs font-semibold text-brand-dark">55%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-brand-button h-2 rounded-full"
+                            style={{ width: "55%" }}
+                          ></div>
+                        </div>
+                        <div className="flex items-center justify-between mt-3">
+                          <span className="text-xs text-gray-600">Customer</span>
+                          <span className="text-xs font-semibold text-brand-dark">45%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-gray-400 h-2 rounded-full" style={{ width: "45%" }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>

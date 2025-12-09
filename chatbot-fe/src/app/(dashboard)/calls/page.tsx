@@ -23,6 +23,7 @@ export default function CallsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const isFetchingRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -40,7 +41,6 @@ export default function CallsPage() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   // Define columns inside the component
-  // Replaced the DataTable columns definition with a list view (CallCard components)
 
   // Debounce search query
   useEffect(() => {
@@ -67,18 +67,12 @@ export default function CallsPage() {
         if (append) {
           setConversations((prev) => [...prev, ...(response.data || [])]);
         } else {
-          if (append) {
-            setConversations((prev) => [...prev, ...(response.data || [])]);
-          } else {
-            setConversations(response.data);
-          }
-          setTotalCount(response.metadata.total);
-        }
-        setTotalPages(response.metadata.total_pages);
-        if (!append) {
+          setConversations(response.data);
           const firstConversation = response.data?.[0];
           setSelectedConversation(firstConversation || null);
         }
+        setTotalCount(response.metadata.total);
+        setTotalPages(response.metadata.total_pages);
         setHasMore(response.metadata.page < response.metadata.total_pages);
       } catch (error: unknown) {
         console.error("Error fetching conversations:", error);
@@ -118,12 +112,15 @@ export default function CallsPage() {
     if (!container) return;
 
     const onScroll = () => {
-      if (loadingMore || loading || !hasMore) return;
+      if (isFetchingRef.current || loadingMore || loading || !hasMore) return;
       const { scrollTop, scrollHeight, clientHeight } = container;
       if (scrollTop + clientHeight >= scrollHeight - 120) {
         // close to bottom, load next page
         if (currentPage < totalPages) {
-          fetchConversations(currentPage + 1, pageSize, debouncedSearchQuery, true);
+          isFetchingRef.current = true;
+          fetchConversations(currentPage + 1, pageSize, debouncedSearchQuery, true).finally(() => {
+            isFetchingRef.current = false;
+          });
           setCurrentPage((p) => p + 1);
         }
       }
@@ -191,23 +188,6 @@ export default function CallsPage() {
               <div className="text-sm text-gray-600">
                 Showing <span className="font-medium">{conversations.length}</span> calls
               </div>
-              {/* <div className="flex items-center gap-2">
-              <div className="text-sm text-gray-600">
-                Showing <span className="font-medium">{conversations.length}</span> calls
-              </div>
-
-              <select
-                value={pageSize}
-                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                className="border rounded-md text-sm px-2 py-1"
-              >
-                {[10, 20, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}/page
-                  </option>
-                ))}
-              </select>
-            </div> */}
             </div>
             <div className="flex flex-col gap-3">
               <div className="flex gap-2 items-center">

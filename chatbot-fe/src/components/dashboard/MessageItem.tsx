@@ -9,14 +9,14 @@ type Props = {
 };
 
 const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) => {
-  const isUser = message.role === "user" || message.role === "customer";
-  const displayName = isUser ? patientName || "Customer" : "AI Agent";
-  const avatarSrc = isUser ? "/assets/calls/User.svg" : "/assets/calls/aiAgent.svg";
+  const isUser = message.role === "user";
+  const displayName = isUser ? patientName || "Sarah Johnson" : "AI Agent";
+  const avatarSrc = isUser ? "/assets/calls/avatar.svg" : "/assets/calls/aiAgent.svg";
 
   const bubbleStyle: React.CSSProperties = isUser
     ? {
         background: "rgba(113,41,194,0.08)",
-        color: "#000000",
+        color: "#23272E",
         padding: "16px 15px",
         borderTopLeftRadius: 12,
         borderBottomRightRadius: 12,
@@ -67,7 +67,7 @@ const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) =
     <div className={`flex items-start gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
       {/* Left avatar for AI */}
       {!isUser && (
-        <div className="flex flex-col items-center pt-1">
+        <div className="flex  items-center pt-1 gap-2">
           <Image
             src={avatarSrc}
             alt={displayName}
@@ -76,15 +76,14 @@ const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) =
             className="rounded-full"
             style={{ borderWidth: 1, borderStyle: "solid", borderColor: "#E8E3FF" }}
           />
+          <div style={nameStyle} className="text-sm text-brand-dark">
+            {displayName}
+          </div>
         </div>
       )}
 
       {/* Content */}
       <div className={`flex-1 flex flex-col ${isUser ? "items-end" : "items-start"}`}>
-        <div style={nameStyle} className="text-sm text-brand-dark">
-          {displayName}
-        </div>
-
         <div className={`flex items-end gap-2`}>
           <div style={bubbleStyle} className="max-w-[463px] break-words">
             <p style={messageTextStyle}>{message.content}</p>

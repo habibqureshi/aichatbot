@@ -64,17 +64,16 @@ const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) =
   };
 
   return (
-    <div className={`flex items-start gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
-      {/* Left avatar for AI */}
+    <div className="flex flex-col">
+      {/* AI avatar + name on top */}
       {!isUser && (
-        <div className="flex  items-center pt-1 gap-2">
+        <div className="flex items-center gap-2 mb-1">
           <Image
             src={avatarSrc}
             alt={displayName}
             width={39}
             height={39}
             className="rounded-full"
-            style={{ borderWidth: 1, borderStyle: "solid", borderColor: "#E8E3FF" }}
           />
           <div style={nameStyle} className="text-sm text-brand-dark">
             {displayName}
@@ -82,30 +81,42 @@ const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) =
         </div>
       )}
 
-      {/* Content */}
-      <div className={`flex-1 flex flex-col ${isUser ? "items-end" : "items-start"}`}>
-        <div className={`flex items-end gap-2`}>
-          <div style={bubbleStyle} className="max-w-[463px] break-words">
-            <p style={messageTextStyle}>{message.content}</p>
-          </div>
-
-          <div style={timeStyle}>{formattedTime}</div>
-        </div>
-      </div>
-
-      {/* Right avatar for user */}
+      {/* USER avatar on top */}
       {isUser && (
-        <div className="flex flex-col items-center pt-1">
+        <div className="flex justify-end items-center gap-2 mb-1">
+          <div style={nameStyle} className="text-sm text-brand-dark">
+            {displayName}
+          </div>
           <Image
             src={avatarSrc}
             alt={displayName}
             width={39}
             height={39}
             className="rounded-full"
-            style={{ borderWidth: 1, borderStyle: "solid", borderColor: "#E8E3FF" }}
           />
         </div>
       )}
+
+      {/* Bubble + time */}
+      <div className={`flex ${isUser ? "justify-end pr-12" : "justify-start pl-12"}`}>
+        {!isUser ? (
+          // AI → Bubble then Time (default)
+          <div className="flex items-center gap-2">
+            <div style={bubbleStyle} className="max-w-[463px] break-words">
+              <p style={messageTextStyle}>{message.content}</p>
+            </div>
+            <div style={timeStyle}>{formattedTime}</div>
+          </div>
+        ) : (
+          // USER → Time then Bubble
+          <div className="flex items-center gap-2">
+            <div style={timeStyle}>{formattedTime}</div>
+            <div style={bubbleStyle} className="max-w-[463px] break-words">
+              <p style={messageTextStyle}>{message.content}</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

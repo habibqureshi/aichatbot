@@ -132,44 +132,51 @@ const CallRecordingTab: React.FC<Props> = ({
           </button>
         ) : (
           <div className="space-y-3">
-            <div className="relative rounded-lg p-6" style={{ background: "#F7F1FF70" }}>
+            <div className="relative rounded-lg p-6 bg-white">
               <div className="flex flex-col items-center gap-6 w-full">
                 {/* Waveform */}
                 <div className="flex-1 relative flex justify-center w-full">
-                  <div className=" w-full h-[175px] rounded-[30px] bg-white p-6 flex items-center justify-center relative">
-                    <div className="absolute inset-x-6 top-6 bottom-6 rounded-md bg-[#FFF] shadow-sm"></div>
-                    <div className="absolute left-[80px] flex items-center gap-[3px] h-[80px]">
-                      {[
-                        { height: 70, delay: "0s" },
-                        { height: 50, delay: "0.30s" },
-                        { height: 70, delay: "0.50s" },
-                        { height: 30, delay: "0.80s" },
-                        { height: 30, delay: "1.10s" },
-                        { height: 10, delay: "1.40s" },
-                        { height: 10, delay: "1.70s" },
-                        { height: 55, delay: "2.00s" },
-                        { height: 65, delay: "2.30s" },
-                        { height: 90, delay: "2.60s" },
-                        { height: 10, delay: "2.90s" },
-                        { height: 20, delay: "3.20s" },
-                        { height: 30, delay: "3.50s" },
-                        { height: 40, delay: "3.80s" },
-                        { height: 90, delay: "4.10s" },
-                        { height: 20, delay: "4.40s" },
-                        { height: 40, delay: "4.70s" },
-                        { height: 30, delay: "5.0s" },
-                        { height: 20, delay: "5.30s" },
-                        { height: 10, delay: "5.60s" },
-                      ].map((bar, i) => (
-                        <div
-                          key={i}
-                          className="w-[6px] origin-bottom animate-wave-fill rounded-sm bg-white/50"
-                          style={{
-                            height: `${bar.height}px`,
-                            animationDelay: bar.delay,
-                          }}
-                        ></div>
-                      ))}
+                  <div className="w-full h-[175px] rounded-[30px] bg-white p-6 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 flex items-center px-6">
+                      <div className="absolute left-[80px] flex items-center gap-[3px] h-[80px]">
+                        {[
+                          { height: 70, delay: "0s" },
+                          { height: 50, delay: "0.30s" },
+                          { height: 70, delay: "0.50s" },
+                          { height: 30, delay: "0.80s" },
+                          { height: 30, delay: "1.10s" },
+                          { height: 10, delay: "1.40s" },
+                          { height: 10, delay: "1.70s" },
+                          { height: 55, delay: "2.00s" },
+                          { height: 65, delay: "2.30s" },
+                          { height: 90, delay: "2.60s" },
+                          { height: 10, delay: "2.90s" },
+                          { height: 20, delay: "3.20s" },
+                          { height: 30, delay: "3.50s" },
+                          { height: 40, delay: "3.80s" },
+                          { height: 90, delay: "4.10s" },
+                          { height: 20, delay: "4.40s" },
+                          { height: 40, delay: "4.70s" },
+                          { height: 30, delay: "5.0s" },
+                          { height: 20, delay: "5.30s" },
+                          { height: 10, delay: "5.60s" },
+                        ].map((bar, i) => {
+                          const progress = duration > 0 ? currentTime / duration : 0;
+                          const barIndex = i / 20;
+                          const isFilled = barIndex <= progress;
+                          return (
+                            <div
+                              key={i}
+                              className={`w-[6px] rounded-sm origin-bottom transition-colors duration-200 ${
+                                isFilled ? "bg-[#6325A9]" : "bg-gray-300"
+                              }`}
+                              style={{
+                                height: `${bar.height}px`,
+                              }}
+                            ></div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -288,21 +295,21 @@ const CallRecordingTab: React.FC<Props> = ({
                 preload="auto"
               />
             </div>
-            <div className="grid grid-cols-3 gap-3 text-center text-xs mt-4">
-              <div>
-                <div className="text-gray-500 mb-1">Audio Quality</div>
-                <div className="font-medium">High Definition</div>
-                <div className="text-gray-400">48kHz / 320kbps</div>
+            <div className="grid grid-cols-3 gap-3 text-center text-xs mt-4 pt-4 border-t border-gray-200">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-gray-500 mb-2">Audio Quality</div>
+                <div className="font-medium text-gray-900">High Definition</div>
+                <div className="text-gray-400 text-xs">48kHz / 320kbps</div>
               </div>
-              <div>
-                <div className="text-gray-500 mb-1">File Format</div>
-                <div className="font-medium">MP3</div>
-                <div className="text-gray-400">Compressed audio</div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-gray-500 mb-2">File Format</div>
+                <div className="font-medium text-gray-900">MP3</div>
+                <div className="text-gray-400 text-xs">Compressed audio</div>
               </div>
-              <div>
-                <div className="text-gray-500 mb-1">File Size</div>
-                <div className="font-medium">2.4 MB</div>
-                <div className="text-gray-400">Estimated size</div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-gray-500 mb-2">File Size</div>
+                <div className="font-medium text-gray-900">2.4 MB</div>
+                <div className="text-gray-400 text-xs">Estimated size</div>
               </div>
             </div>
           </div>

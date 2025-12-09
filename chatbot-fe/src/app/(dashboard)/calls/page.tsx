@@ -1,46 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
+import { useState, useEffect, useCallback, useRef } from "react";
+// DataTable unused since cards were implemented; kept imports minimal
 import CallDetails from "@/components/dashboard/CallDetails";
 import { getConversationsList, Conversation } from "@/app/actions/conversations";
 import { toast } from "react-toastify";
+import CallFilterDropdown from "@/components/dashboard/CallFilterDropdown";
 import Image from "next/image";
 import SearchInput from "@/components/common/SearchInput";
+import CallCard from "@/components/dashboard/CallCard";
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<string, string> = {
-    completed: "bg-green-100 text-green-800",
-    "in-progress": "bg-blue-100 text-blue-800",
-    failed: "bg-red-100 text-red-800",
-    missed: "bg-yellow-100 text-yellow-800",
-  };
-
-  return (
-    <span
-      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-        statusStyles[status] || "bg-gray-100 text-gray-800"
-      }`}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
-
-const calculateDuration = (startedAt: string, endedAt: string | null): string => {
-  if (!endedAt) return "00:00";
-
-  const start = new Date(startedAt);
-  const end = new Date(endedAt);
-  const diffMs = end.getTime() - start.getTime();
-
-  if (diffMs <= 0) return "00:00";
-
-  const minutes = Math.floor(diffMs / 60000);
-  const seconds = Math.floor((diffMs % 60000) / 1000);
-
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-};
+// StatusBadge and calculateDuration moved to CallCard and CallDetails; removed from page
 
 export default function CallsPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -48,116 +18,28 @@ export default function CallsPage() {
   const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const pageSize = 10;
   const [totalPages, setTotalPages] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   // Status options passed from parent
   const statusOptions = [
-    { value: "all", label: "All Status" },
-    { value: "active", label: "Active" },
-    { value: "ended", label: "Ended" },
-    { value: "follow_up_needed", label: "Follow Up Needed" },
+    { id: "all", label: "All Status", value: "all" },
+    { id: "active", label: "Active", value: "active" },
+    { id: "ended", label: "Ended", value: "ended" },
+    { id: "follow_up_needed", label: "Follow Up Needed", value: "follow_up_needed" },
   ];
 
   // Debounced search value
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   // Define columns inside the component
-  const columns: ExtendedColumnDef<Conversation>[] = [
-    {
-      accessorKey: "patient.name",
-      header: "Patient Information",
-      minWidth: "200px",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium text-gray-900 truncate">{row.original.patient?.name || "N/A"}</div>
-          <div className="text-sm text-gray-500 truncate">
-            {row.original.patient?.phone_number || "N/A"}
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "started_at",
-      header: "Call Duration",
-      minWidth: "140px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600">
-          {calculateDuration(row.original.started_at, row.original.ended_at)}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      minWidth: "80px",
-      cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
-    },
-    {
-      accessorKey: "call_sid",
-      header: "Call SID",
-      minWidth: "140px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600 font-mono truncate">{row.original.call_sid || "N/A"}</div>
-      ),
-    },
-    {
-      id: "started_at_display",
-      header: "Started At",
-      minWidth: "140px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600">
-          {row.original.started_at ? new Date(row.original.started_at).toLocaleString() : "N/A"}
-        </div>
-      ),
-    },
-    {
-      id: "ended_at_display",
-      header: "Ended At",
-      minWidth: "140px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600">
-          {row.original.ended_at ? new Date(row.original.ended_at).toLocaleString() : "Ongoing"}
-        </div>
-      ),
-    },
-    // {
-    //   id: "actions",
-    //   header: "Actions",
-    //   minWidth: "80px",
-    //   cell: ({ row }) => (
-    //     <ActionsMenu
-    //       actions={[
-    //         {
-    //           label: "View",
-    //           icon: (
-    //             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //               <path
-    //                 strokeLinecap="round"
-    //                 strokeLinejoin="round"
-    //                 strokeWidth={2}
-    //                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-    //               />
-    //               <path
-    //                 strokeLinecap="round"
-    //                 strokeLinejoin="round"
-    //                 strokeWidth={2}
-    //                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-    //               />
-    //             </svg>
-    //           ),
-    //           onClick: () => {
-    //             // Set selected conversation in right pane
-    //             handleRowClick(row.original);
-    //           },
-    //         },
-    //       ]}
-    //     />
-    //   ),
-    // },
-  ];
+  // Replaced the DataTable columns definition with a list view (CallCard components)
 
   // Debounce search query
   useEffect(() => {
@@ -170,9 +52,10 @@ export default function CallsPage() {
   }, [searchQuery]);
 
   const fetchConversations = useCallback(
-    async (page: number = 1, limit: number = 10, name: string = "") => {
+    async (page: number = 1, limit: number = 10, name: string = "", append: boolean = false) => {
       try {
-        setLoading(true);
+        if (!append) setLoading(true);
+        else setLoadingMore(true);
         const response = await getConversationsList(
           page,
           limit,
@@ -180,10 +63,22 @@ export default function CallsPage() {
           statusFilter === "all" ? undefined : statusFilter || undefined,
           name
         );
-        setConversations(response.data);
+        if (append) {
+          setConversations((prev) => [...prev, ...(response.data || [])]);
+        } else {
+          if (append) {
+            setConversations((prev) => [...prev, ...(response.data || [])]);
+          } else {
+            setConversations(response.data);
+          }
+          setTotalCount(response.metadata.total);
+        }
         setTotalPages(response.metadata.total_pages);
-        const firstConversation = response.data?.[0];
-        setSelectedConversation(firstConversation || null);
+        if (!append) {
+          const firstConversation = response.data?.[0];
+          setSelectedConversation(firstConversation || null);
+        }
+        setHasMore(response.metadata.page < response.metadata.total_pages);
       } catch (error: unknown) {
         console.error("Error fetching conversations:", error);
 
@@ -198,6 +93,7 @@ export default function CallsPage() {
         setTotalPages(0);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     },
     [user_timezone, statusFilter]
@@ -209,17 +105,45 @@ export default function CallsPage() {
   }, [statusFilter]);
 
   useEffect(() => {
-    fetchConversations(currentPage, pageSize, debouncedSearchQuery);
-  }, [fetchConversations, currentPage, pageSize, debouncedSearchQuery]);
+    // Reset and fetch the first page when search or status changes
+    setConversations([]);
+    setCurrentPage(1);
+    fetchConversations(1, pageSize, debouncedSearchQuery, false);
+  }, [fetchConversations, pageSize, debouncedSearchQuery]);
 
-  const handlePageChange = (pageIndex: number) => {
-    setCurrentPage(pageIndex + 1); // DataTable uses 0-based indexing, API uses 1-based
-  };
+  // Attach scroll listener for infinite scroll
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
 
-  const handlePageSizeChange = (newPageSize: number) => {
-    setPageSize(newPageSize);
-    setCurrentPage(1); // Reset to first page when page size changes
-  };
+    const onScroll = () => {
+      if (loadingMore || loading || !hasMore) return;
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      if (scrollTop + clientHeight >= scrollHeight - 120) {
+        // close to bottom, load next page
+        if (currentPage < totalPages) {
+          fetchConversations(currentPage + 1, pageSize, debouncedSearchQuery, true);
+          setCurrentPage((p) => p + 1);
+        }
+      }
+    };
+
+    container.addEventListener("scroll", onScroll);
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [
+    currentPage,
+    pageSize,
+    debouncedSearchQuery,
+    hasMore,
+    loadingMore,
+    loading,
+    totalPages,
+    fetchConversations,
+  ]);
+
+  // loadNextPage handled inside scroll handler
+
+  // handlePageSizeChange removed in favor of infinite scroll; pageSize can be set via a future UI
 
   const handleRowClick = async (conversation: Conversation) => {
     setSelectedConversation(conversation);
@@ -240,23 +164,78 @@ export default function CallsPage() {
                   Recent Calls
                 </h3>
                 <p className="font-medium text-brand-light text-[12px] md:text-[16px] leading-[1.32]">
-                  5 total calls
+                  {totalCount.toLocaleString()} total calls
                 </p>
               </div>
-              <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer">
-                <Image src="/assets/Funnel.svg" alt="search" width={20} height={20} />
-                <p className="font-medium text-brand-dark text-[12px] md:text-[14px] leading-[1.32]">
-                  Filter
-                </p>
+              <CallFilterDropdown
+                options={statusOptions}
+                selectedValue={statusFilter}
+                onChange={(v: string | number | null) => setStatusFilter(String(v))}
+                trigger={
+                  <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer">
+                    <Image src="/assets/Funnel.svg" alt="search" width={20} height={20} />
+                    <p className="font-medium text-brand-dark text-[12px] md:text-[14px] leading-[1.32]">
+                      Filter
+                    </p>
+                  </div>
+                }
+              />
+            </div>
+
+            <div className="mt-3 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing <span className="font-medium">{conversations.length}</span> calls
+              </div>
+              {/* <div className="flex items-center gap-2">
+                <div className="text-sm text-gray-600">
+                  Showing <span className="font-medium">{conversations.length}</span> calls
+                </div>
+
+                <select
+                  value={pageSize}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  className="border rounded-md text-sm px-2 py-1"
+                >
+                  {[10, 20, 50].map((size) => (
+                    <option key={size} value={size}>
+                      {size}/page
+                    </option>
+                  ))}
+                </select>
+              </div> */}
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <SearchInput
+                    placeholder="Search calls by name, phone, or email"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    className="bg-[#F9FAFB] border border-[#E6E7EB] rounded-[8px]"
+                  />
+                </div>
+                {/* Filter dropdown moved to header; no inline select here */}
               </div>
             </div>
-            <SearchInput
-              placeholder="Search calls by name, phone, or email"
-              value={""}
-              onChange={(v) => ({})}
-              className="bg-[#F9FAFB] border border-[#E6E7EB] rounded-[8px]"
-            />
-            <div></div>
+
+            <div ref={listRef} className="mt-4 space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto pr-2">
+              {loading && conversations.length === 0 ? (
+                Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={idx} className="p-3 rounded-lg animate-pulse bg-[#F5F3FF] h-24" />
+                ))
+              ) : conversations?.length > 0 ? (
+                conversations.map((conv) => (
+                  <CallCard
+                    key={conv.id}
+                    conversation={conv}
+                    onClick={() => handleRowClick(conv)}
+                    isSelected={selectedConversation?.id === conv.id}
+                  />
+                ))
+              ) : (
+                <div className="p-3 text-sm text-gray-500">No calls found.</div>
+              )}
+            </div>
             {/* <DataTable
               title="Recent Calls"
               columns={columns}

@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import MessageItem from "./MessageItem";
 import CallRecordingTab from "./CallRecordingTab";
 import AISummaryTab from "./AISummaryTab";
+import StatusBadge from "./StatusBadge";
 
 type Props = {
   conversation?: Conversation | null;
@@ -18,30 +19,6 @@ type Props = {
 };
 
 type TabType = "transcript" | "recording" | "summary";
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<string, { bg: string; text: string }> = {
-    active: { bg: "#06A35A", text: "#FFFFFF" },
-    confirmed: { bg: "#10B981", text: "#FFFFFF" },
-    pending: { bg: "#FBBF24", text: "#FFFFFF" },
-    cancelled: { bg: "#EF4444", text: "#FFFFFF" },
-    canceled: { bg: "#EF4444", text: "#FFFFFF" },
-    completed: { bg: "#3B82F6", text: "#FFFFFF" },
-    rescheduled: { bg: "#3B82F6", text: "#FFFFFF" },
-  };
-
-  const cleanStatus = status?.trim().toLowerCase();
-  const style = statusStyles[cleanStatus] || { bg: "#6B7280", text: "#FFFFFF" };
-
-  return (
-    <span
-      className="inline-flex px-3 py-1 text-xs font-medium rounded"
-      style={{ backgroundColor: style.bg, color: style.text }}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
 
 export default function CallDetails({
   conversation,
@@ -284,6 +261,36 @@ export default function CallDetails({
     return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
   };
 
+  // Info cards configuration
+  const infoCards = [
+    {
+      title: "Customer Name",
+      icon: "/assets/calls/User.svg",
+      mainContent: caller,
+      subtitle: phone,
+    },
+    {
+      title: "Call Duration",
+      icon: "/assets/calls/Clock.svg",
+      mainContent: formatDuration(conversation?.started_at || null, conversation?.ended_at || null),
+      extraContent: <StatusBadge status={status} />,
+    },
+    {
+      title: "Call Date & Time",
+      icon: "/assets/calls/Clock.svg",
+      mainContent: formatDate(conversation?.started_at),
+      subtitle: formatTime(conversation?.started_at),
+      additionalText: ["Resolution", "Recorded Follow-up scheduled"],
+    },
+  ];
+
+  // Tabs configuration
+  const tabs = [
+    { id: "transcript", label: "Call Transcript" },
+    { id: "recording", label: "Call Recording" },
+    { id: "summary", label: "AI Summary" },
+  ] as const;
+
   return (
     <aside className="w-full h-fit">
       <div
@@ -302,62 +309,34 @@ export default function CallDetails({
 
         {/* Three Info Cards */}
         <div className=" pb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Customer Name Card */}
-          <div className=" p-4 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] ">
-            <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
-              Customer Name
-            </p>
-            <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-2">
-              <Image src={"/assets/calls/User.svg"} alt="Phone" width={24} height={24} />
-              {caller}
+          {infoCards.map((card, index) => (
+            <div
+              key={index}
+              className=" p-4 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] "
+            >
+              <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
+                {card.title}
+              </p>
+              <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-2">
+                <Image src={card.icon} alt={card.title} width={24} height={24} />
+                {card.mainContent}
+              </div>
+              {card.subtitle && <div className="text-xs text-gray-500">{card.subtitle}</div>}
+              {card.extraContent && <div className="mt-3">{card.extraContent}</div>}
+              {card.additionalText &&
+                card.additionalText.map((text, textIndex) => (
+                  <div key={textIndex} className="mt-2">
+                    <div className="text-xs text-gray-400">{text}</div>
+                  </div>
+                ))}
             </div>
-            <div className="text-xs text-gray-500">{phone}</div>
-          </div>
-
-          {/* Call Duration Card */}
-          <div className=" p-4 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] ">
-            <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
-              Call Duration
-            </p>
-            <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-2">
-              <Image src={"/assets/calls/Clock.svg"} alt="Phone" width={24} height={24} />
-              {formatDuration(conversation?.started_at || null, conversation?.ended_at || null)}
-            </div>
-            <div className="mt-3">
-              <StatusBadge status={status} />
-            </div>
-          </div>
-
-          {/* Call Date & Time Card */}
-          <div className=" p-4 h-auto md:max-h-[159px] border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] ">
-            <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
-              Call Date & Time
-            </p>
-            <div className="font-semibold text-brand-dark text-xl mt-1 mb-2 leading-[1.32] flex items-center gap-2">
-              <Image src={"/assets/calls/Clock.svg"} alt="Phone" width={24} height={24} />
-              {formatDate(conversation?.started_at)}
-            </div>
-
-            <div className="font-semibold text-brand-dark text-sm">
-              {formatTime(conversation?.started_at)}
-            </div>
-            <div className="mt-2">
-              <div className="text-xs text-gray-400">Resolution</div>
-            </div>
-            <div className="mt-2">
-              <div className="text-xs text-gray-400">Recorded Follow-up scheduled</div>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Tabs */}
         <div className=" p-6 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[16px] ">
           <div className="flex gap-6 border-b" style={{ borderBottomColor: "#E6E7EB" }}>
-            {[
-              { id: "transcript", label: "Call Transcript" },
-              { id: "recording", label: "Call Recording" },
-              { id: "summary", label: "AI Summary" },
-            ].map(({ id, label }) => (
+            {tabs.map(({ id, label }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id as TabType)}

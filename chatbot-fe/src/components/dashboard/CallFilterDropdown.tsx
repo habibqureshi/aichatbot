@@ -54,7 +54,7 @@ export default function CallFilterDropdown({ options, selectedValue, onChange, t
                 </label>
               ))}
             </div>
-            <div className="mt-3 flex items-center justify-between">
+            {/* <div className="mt-3 flex items-center justify-between">
               <button
                 onClick={() => {
                   onChange("all");
@@ -70,7 +70,7 @@ export default function CallFilterDropdown({ options, selectedValue, onChange, t
               >
                 Apply
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       )}

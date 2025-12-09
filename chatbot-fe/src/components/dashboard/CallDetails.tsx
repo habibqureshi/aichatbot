@@ -297,7 +297,7 @@ export default function CallDetails({
         </div>
 
         {/* Three Info Cards */}
-        <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className=" pb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Customer Name Card */}
           <div className=" p-4 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] ">
             <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
@@ -315,7 +315,7 @@ export default function CallDetails({
             <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
               Call Duration
             </p>
-           <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-2">
+            <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-2">
               <Image src={"/assets/calls/Clock.svg"} alt="Phone" width={24} height={24} />
               {formatDuration(conversation?.started_at || null, conversation?.ended_at || null)}
             </div>
@@ -329,7 +329,7 @@ export default function CallDetails({
             <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
               Call Date & Time
             </p>
-           <div className="font-semibold text-brand-dark text-xl mt-1 mb-2 leading-[1.32] flex items-center gap-2">
+            <div className="font-semibold text-brand-dark text-xl mt-1 mb-2 leading-[1.32] flex items-center gap-2">
               <Image src={"/assets/calls/Clock.svg"} alt="Phone" width={24} height={24} />
               {formatDate(conversation?.started_at)}
             </div>
@@ -347,43 +347,32 @@ export default function CallDetails({
         </div>
 
         {/* Tabs */}
-        <div className="px-6 pb-6">
-          <div className="flex gap-6 border-b" style={{ borderBottomColor: "#D5D9E2" }}>
-            <button
-              onClick={() => setActiveTab("transcript")}
-              className={`pb-3 text-sm font-medium transition-colors ${
-                activeTab === "transcript"
-                  ? "text-brand-button border-b-2 border-brand-button"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-              style={
-                activeTab === "transcript" ? { borderBottomColor: "#2563EB", color: "#2563EB" } : {}
-              }
-            >
-              Call Transcript
-            </button>
-            <button
-              onClick={() => setActiveTab("recording")}
-              className={`pb-3 text-sm font-medium transition-colors ${
-                activeTab === "recording"
-                  ? "text-brand-button border-b-2 border-brand-button"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-              style={activeTab === "recording" ? { borderBottomColor: "#2563EB", color: "#2563EB" } : {}}
-            >
-              Call Recording
-            </button>
-            <button
-              onClick={() => setActiveTab("summary")}
-              className={`pb-3 text-sm font-medium transition-colors ${
-                activeTab === "summary"
-                  ? "text-brand-button border-b-2 border-brand-button"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-              style={activeTab === "summary" ? { borderBottomColor: "#2563EB", color: "#2563EB" } : {}}
-            >
-              AI Summary
-            </button>
+        <div className=" p-6 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[16px] ">
+          <div className="flex gap-6 border-b" style={{ borderBottomColor: "#E6E7EB" }}>
+            {[
+              { id: "transcript", label: "Call Transcript" },
+              { id: "recording", label: "Call Recording" },
+              { id: "summary", label: "AI Summary" },
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as TabType)}
+                className={`pb-3 transition-colors min-w-[160px] ${
+                  activeTab === id
+                    ? "text-[#6325A9] border-b-2 border-[#6325A9]"
+                    : "text-[#4C5564] hover:text-gray-700"
+                }`}
+                style={{
+                  fontFamily: "Figtree",
+                  fontWeight: 500,
+                  fontSize: "20px",
+                  lineHeight: "132%",
+                  letterSpacing: "0%",
+                }}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           {/* Tab Content */}

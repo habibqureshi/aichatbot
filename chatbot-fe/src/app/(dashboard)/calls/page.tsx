@@ -5,6 +5,8 @@ import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 import CallDetails from "@/components/dashboard/CallDetails";
 import { getConversationsList, Conversation } from "@/app/actions/conversations";
 import { toast } from "react-toastify";
+import Image from "next/image";
+import SearchInput from "@/components/common/SearchInput";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusStyles: Record<string, string> = {
@@ -230,9 +232,32 @@ export default function CallsPage() {
   return (
     <div className="p-2 sm:p-4 lg:p-6">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="col-span-1 lg:col-span-8">
-          <div className="h-full overflow-auto">
-            <DataTable
+        <div className="col-span-1 lg:col-span-3">
+          <div className="h-full overflow-auto border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] p-4">
+            <div className="w-full flex justify-between items-center mb-4">
+              <div className="flex flex-col">
+                <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
+                  Recent Calls
+                </h3>
+                <p className="font-medium text-brand-light text-[12px] md:text-[16px] leading-[1.32]">
+                  5 total calls
+                </p>
+              </div>
+              <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer">
+                <Image src="/assets/Funnel.svg" alt="search" width={20} height={20} />
+                <p className="font-medium text-brand-dark text-[12px] md:text-[14px] leading-[1.32]">
+                  Filter
+                </p>
+              </div>
+            </div>
+            <SearchInput
+              placeholder="Search calls by name, phone, or email"
+              value={""}
+              onChange={(v) => ({})}
+              className="bg-[#F9FAFB] border border-[#E6E7EB] rounded-[8px]"
+            />
+            <div></div>
+            {/* <DataTable
               title="Recent Calls"
               columns={columns}
               data={conversations}
@@ -256,11 +281,11 @@ export default function CallsPage() {
               onRowClick={handleRowClick}
               rowTooltipText="Click to view conversation details"
               selectedRowId={selectedConversation?.id}
-            />
+            /> */}
           </div>
         </div>
 
-        <div className="col-span-1 lg:col-span-4">
+        <div className="col-span-1 lg:col-span-9">
           <CallDetails conversation={selectedConversation} />
         </div>
       </div>

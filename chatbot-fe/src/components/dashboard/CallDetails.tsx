@@ -251,10 +251,10 @@ export default function CallDetails({
   return (
     <aside className="w-full h-fit">
       <div
-        className="backdrop-blur-sm border rounded-xl p-4 shadow-sm"
+        className="backdrop-blur-sm  rounded-xl p-4 shadow-sm"
         style={{
-          background: "#FFFFFF",
-          borderColor: "#F0EEFF",
+          // background: "#FFFFFF",
+          // borderColor: "#F0EEFF",
           minHeight: "calc(100vh - 320px)",
           maxHeight: "calc(100vh -220px)",
         }}
@@ -263,7 +263,9 @@ export default function CallDetails({
           className="flex items-center justify-between cursor-pointer mb-6 group"
           onClick={() => setIsDetailsOpen(!isDetailsOpen)}
         >
-          <h3 className="calldetails-title">Call Details</h3>
+          <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
+            Call Details
+          </h3>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 opacity-100  transition-opacity duration-200">
               {isDetailsOpen ? "Hide" : "View"}

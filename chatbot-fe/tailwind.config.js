@@ -56,7 +56,9 @@ const config = {
         "brand-light2": "#F6F7F9",
         "brand-gray": "#2A2A2A",
         "brand-card": "#7D2ADD",
+        "brand-button": "#384152",
         "topbar": "#ECEEF2",
+     
       },
       borderRadius: {
         lg: "var(--radius)",

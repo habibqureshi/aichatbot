@@ -26,6 +26,7 @@ export default function CallsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [showList, setShowList] = useState<boolean>(true);
 
   // Status options passed from parent
   const statusOptions = [
@@ -156,37 +157,38 @@ export default function CallsPage() {
   return (
     <div className="p-2 sm:p-4 lg:p-6">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="col-span-1 lg:col-span-3">
-          <div className="h-full overflow-auto border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] p-4">
-            <div className="w-full flex justify-between items-center mb-4">
-              <div className="flex flex-col">
-                <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
-                  Recent Calls
-                </h3>
-                <p className="font-medium text-brand-light text-[12px] md:text-[16px] leading-[1.32]">
-                  {totalCount.toLocaleString()} total calls
-                </p>
+        {showList && (
+          <div className="col-span-1 lg:col-span-3">
+            <div className="h-full overflow-auto border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] p-4">
+              <div className="w-full flex justify-between items-center mb-4">
+                <div className="flex flex-col">
+                  <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
+                    Recent Calls
+                  </h3>
+                  <p className="font-medium text-brand-light text-[12px] md:text-[16px] leading-[1.32]">
+                    {totalCount.toLocaleString()} total calls
+                  </p>
+                </div>
+                <CallFilterDropdown
+                  options={statusOptions}
+                  selectedValue={statusFilter}
+                  onChange={(v: string | number | null) => setStatusFilter(String(v))}
+                  trigger={
+                    <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer">
+                      <Image src="/assets/Funnel.svg" alt="search" width={20} height={20} />
+                      <p className="font-medium text-brand-dark text-[12px] md:text-[14px] leading-[1.32]">
+                        Filter
+                      </p>
+                    </div>
+                  }
+                />
               </div>
-              <CallFilterDropdown
-                options={statusOptions}
-                selectedValue={statusFilter}
-                onChange={(v: string | number | null) => setStatusFilter(String(v))}
-                trigger={
-                  <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer">
-                    <Image src="/assets/Funnel.svg" alt="search" width={20} height={20} />
-                    <p className="font-medium text-brand-dark text-[12px] md:text-[14px] leading-[1.32]">
-                      Filter
-                    </p>
-                  </div>
-                }
-              />
-            </div>
 
-            <div className="mt-3 flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing <span className="font-medium">{conversations.length}</span> calls
-              </div>
-              {/* <div className="flex items-center gap-2">
+              <div className="mt-3 flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  Showing <span className="font-medium">{conversations.length}</span> calls
+                </div>
+                {/* <div className="flex items-center gap-2">
                 <div className="text-sm text-gray-600">
                   Showing <span className="font-medium">{conversations.length}</span> calls
                 </div>
@@ -203,40 +205,43 @@ export default function CallsPage() {
                   ))}
                 </select>
               </div> */}
-            </div>
-            <div className="flex flex-col gap-3">
-              <div className="flex gap-2 items-center">
-                <div className="flex-1">
-                  <SearchInput
-                    placeholder="Search calls by name, phone, or email"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    className="bg-[#F9FAFB] border border-[#E6E7EB] rounded-[8px]"
-                  />
-                </div>
-                {/* Filter dropdown moved to header; no inline select here */}
               </div>
-            </div>
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1">
+                    <SearchInput
+                      placeholder="Search calls by name, phone, or email"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      className="bg-[#F9FAFB] border border-[#E6E7EB] rounded-[8px]"
+                    />
+                  </div>
+                  {/* Filter dropdown moved to header; no inline select here */}
+                </div>
+              </div>
 
-            <div ref={listRef} className="mt-4 space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto pr-2">
-              {loading && conversations.length === 0 ? (
-                Array.from({ length: 4 }).map((_, idx) => (
-                  <div key={idx} className="p-3 rounded-lg animate-pulse bg-[#F5F3FF] h-24" />
-                ))
-              ) : conversations?.length > 0 ? (
-                conversations.map((conv) => (
-                  <CallCard
-                    key={conv.id}
-                    conversation={conv}
-                    onClick={() => handleRowClick(conv)}
-                    isSelected={selectedConversation?.id === conv.id}
-                  />
-                ))
-              ) : (
-                <div className="p-3 text-sm text-gray-500">No calls found.</div>
-              )}
-            </div>
-            {/* <DataTable
+              <div
+                ref={listRef}
+                className="mt-4 space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto pr-2"
+              >
+                {loading && conversations.length === 0 ? (
+                  Array.from({ length: 4 }).map((_, idx) => (
+                    <div key={idx} className="p-3 rounded-lg animate-pulse bg-[#F5F3FF] h-24" />
+                  ))
+                ) : conversations?.length > 0 ? (
+                  conversations.map((conv) => (
+                    <CallCard
+                      key={conv.id}
+                      conversation={conv}
+                      onClick={() => handleRowClick(conv)}
+                      isSelected={selectedConversation?.id === conv.id}
+                    />
+                  ))
+                ) : (
+                  <div className="p-3 text-sm text-gray-500">No calls found.</div>
+                )}
+              </div>
+              {/* <DataTable
               title="Recent Calls"
               columns={columns}
               data={conversations}
@@ -261,10 +266,31 @@ export default function CallsPage() {
               rowTooltipText="Click to view conversation details"
               selectedRowId={selectedConversation?.id}
             /> */}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="col-span-1 lg:col-span-9">
+        <div className={`col-span-1 ${showList ? "lg:col-span-9" : "lg:col-span-12"}`}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <button
+                onClick={() => setShowList(!showList)}
+                className="bg-white border rounded-md px-3 py-3 font-normal  text-brand-button text-lg leading-[1.32]   flex items-center gap-2"
+              >
+                {showList && <Image src="/assets/CaretLeft.svg" alt="Calls" width={16} height={16} />}
+                {showList ? "Hide Calls List" : "Show Calls List"}
+                {!showList && (
+                  <Image
+                    src="/assets/CaretLeft.svg"
+                    alt="Calls"
+                    width={16}
+                    height={16}
+                    className="rotate-180"
+                  />
+                )}
+              </button>
+            </div>
+          </div>
           <CallDetails conversation={selectedConversation} />
         </div>
       </div>

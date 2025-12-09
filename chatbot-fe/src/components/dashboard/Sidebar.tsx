@@ -95,21 +95,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 z-50 w-64 border-r border-transparent bg-brand-purple text-white
-              flex flex-col transform transition-transform duration-300 ease-in-out 
-              h-screen
-              ${isOpen ? "translate-x-0" : "-translate-x-full"} 
-              lg:translate-x-0`}
+        className={`fixed top-0 left-0 z-50 w-[248px] sm:w-[280px] lg:w-[312px] border-r border-transparent bg-brand-purple text-white
+            flex flex-col transform transition-transform duration-300 ease-in-out 
+            h-screen
+            ${isOpen ? "translate-x-0" : "-translate-x-full"} 
+            lg:translate-x-0`}
       >
         {/* Logo */}
-        <div className="flex items-center justify-center h-20 px-4 border-b border-purple-200/30">
-          <Image
-            src="/assets/sidebarLogo.svg"
-            alt="Logo"
-            width={200}
-            height={100}
-            className="object-contain"
-          />
+        <div className="flex items-center h-20  relative">
+          <div className="w-[192px] sm:w-[248px] mx-auto h-[56px] flex items-center gap-2 rounded-[16px] p-4 ">
+            <Image
+              src="/assets/sidebarLogo.svg"
+              alt="Logo"
+              width={233}
+              height={44}
+              className="object-contain -mx-3"
+            />
+            {/* optional title or empty space to match design */}
+          </div>
         </div>
         {/* <button
           onClick={onClose}
@@ -128,9 +131,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 flex flex-col">
           {/* MENUS heading + items */}
-          <div>
-            <h3 className="text-xs text-purple-100 uppercase tracking-wider mb-3">Menus</h3>
-            <div className="space-y-2">
+          <div className="mx-auto w-[216px] sm:w-[280px]">
+            <h3 className="text-[11px] sm:text-[12px] leading-[1.32] tracking-[0.12em] sm:tracking-[0.24em] uppercase text-purple-100 font-medium mb-3">
+              Menus
+            </h3>
+            <div className="space-y-3">
               {filteredNavigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -138,7 +143,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     key={item.name}
                     href={item.href}
                     onClick={handleLinkClick}
-                    className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px] ${
+                    className={`group flex items-center w-[192px] sm:w-[248px] h-[56px] p-4 rounded-[16px] transition-all ${
                       isActive
                         ? "bg-gradient-to-r from-[#A357F7] to-[#CE53B7] text-white"
                         : "text-white hover:bg-gradient-to-r hover:from-[#A357F7]/20 hover:to-[#CE53B7]/20"
@@ -148,12 +153,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <Image
                       src={item.icon}
                       alt={`${item.name} icon`}
-                      width={24}
-                      height={24}
+                      width={18}
+                      height={18}
                       className="mr-3"
                     />
-
-                    {item.name}
+                    <span className="text-[14px] sm:text-[16px] font-medium leading-[1.32]">
+                      {item.name}
+                    </span>
                   </Link>
                 );
               })}
@@ -161,22 +167,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* SUPPORT heading + items */}
-          <div className="mt-6">
-            <h3 className="text-xs text-purple-100 uppercase tracking-wider mb-3">Support</h3>
-            <div className="space-y-2">
+          <div className="mx-auto w-[216px] sm:w-[280px] mt-6">
+            <h3 className="text-[11px] sm:text-[12px] leading-[1.32] tracking-[0.12em] sm:tracking-[0.24em] uppercase text-purple-100 font-medium mb-3">
+              Support
+            </h3>
+            <div className="space-y-3">
               <Link
                 href="/auth/logout"
                 onClick={handleLinkClick}
-                className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px] text-white hover:bg-gradient-to-r hover:from-[#A357F7]/20 hover:to-[#CE53B7]/20`}
+                className="group flex items-center w-[192px] sm:w-[248px] h-[56px] p-4 rounded-[16px] transition-all text-white hover:bg-gradient-to-r hover:from-[#A357F7]/20 hover:to-[#CE53B7]/20"
               >
-                <Image
-                  src="/assets/sideBarIcons/Power.svg"
-                  alt="Logout icon"
-                  width={24}
-                  height={24}
-                  className="mr-3"
-                />
-                Logout
+                <svg className="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 11-4 0v-1m0-8V7a2 2 0 114 0v1"
+                  />
+                </svg>
+                <span className="text-[14px] sm:text-[16px] font-medium leading-[1.32]">Logout</span>
               </Link>
             </div>
           </div>
@@ -187,17 +196,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Powered by footer */}
         <div className="p-4">
-          <div className="bg-white/6 hover:bg-white/10 rounded-lg p-3 flex items-center gap-3">
+          <div className="mx-auto w-[192px] sm:w-[248px] h-[64px] sm:h-[74px] rounded-[16px] px-3 sm:px-4 py-2 bg-[#4C2B97] flex items-center gap-2 sm:gap-3">
             <Image
               src="/assets/sideBarIcons/Shape.svg"
               alt="CallSynthra"
-              width={26}
-              height={26}
-              className="object-contain rounded"
+              width={36}
+              height={36}
+              className="object-contain rounded w-7 h-7 sm:w-9 sm:h-9"
             />
             <div className="text-white">
-              <div className="text-xs text-purple-100">Powered by</div>
-              <div className="text-sm font-medium">CallSynthra</div>
+              <div className="text-[11px] sm:text-[12px] font-medium leading-[1.32]">Powered by</div>
+              <div className="text-[14px] sm:text-[16px] font-extrabold leading-[1.25]">CallSynthra</div>
             </div>
           </div>
         </div>

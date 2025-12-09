@@ -20,9 +20,18 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
     fetchSession();
   }, []);
   return (
-    <header className="fixed top-0 w-full z-50 bg-white border-b border-gray-100">
+    <header className="fixed top-0 w-full lg:left-64 lg:w-[calc(100%-16rem)] z-40 bg-white border-b border-gray-100">
       <div className="h-20 flex items-center justify-between px-4 lg:px-10">
         <div className="flex items-center gap-4">
+          <Image
+            src="/assets/LOGO.svg"
+            alt="Logo"
+            width={200}
+            height={100}
+            className={`object-contain lg:hidden ${isSidebarOpen ? "hidden" : ""}`}
+          />
+        </div>
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {/* Hamburger menu button */}
           <button
             onClick={onMenuClick}
@@ -48,10 +57,6 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
               </svg>
             )}
           </button>
-
-          <Image src="/assets/LOGO.svg" alt="Logo" width={200} height={100} className="object-contain" />
-        </div>
-        <div className="flex items-center space-x-2 sm:space-x-4">
           {/* <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
             <svg
               className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600"

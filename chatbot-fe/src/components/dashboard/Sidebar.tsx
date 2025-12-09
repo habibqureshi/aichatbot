@@ -19,14 +19,12 @@ const navigation = [
   {
     name: "Calls",
     href: "/calls",
-    iconActive: "/assets/sideBarIcons/call_active.svg",
-    iconInactive: "/assets/sideBarIcons/call_inactive.svg",
+    icon: "/assets/sideBarIcons/Phone.svg",
   },
   {
-    name: "Bookings",
-    href: "/bookings",
-    iconActive: "/assets/sideBarIcons/booking_active.svg",
-    iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
+    name: "Reservations",
+    href: "/reservations",
+    icon: "/assets/sideBarIcons/CalendarDots.svg",
   },
 
   // {
@@ -37,15 +35,13 @@ const navigation = [
   {
     name: "Doctors",
     href: "/doctors",
-    iconActive: "/assets/sideBarIcons/doctor_active.svg",
-    iconInactive: "/assets/sideBarIcons/doctor_inactive.svg",
+    icon: "/assets/sideBarIcons/doctor_active.svg",
     showOnlyFor: "clinic",
   },
   {
     name: "Tables",
     href: "/tables",
-    iconActive: "/assets/sideBarIcons/booking_active.svg", // Using booking icon as placeholder
-    iconInactive: "/assets/sideBarIcons/booking_inactive.svg",
+    icon: "/assets/sideBarIcons/booking_active.svg",
     showOnlyFor: ["restaurant"],
   },
   // {
@@ -56,8 +52,7 @@ const navigation = [
   {
     name: "Knowledge",
     href: "/knowledge",
-    iconActive: "/assets/sideBarIcons/knowledge_active.svg",
-    iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
+    icon: "/assets/sideBarIcons/Brain.svg",
   },
 
   // {
@@ -100,97 +95,112 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 lg:top-20 left-0 z-40 w-64 border-r border-transparent bg-brand-purple text-white
+        className={`fixed top-0 left-0 z-50 w-64 border-r border-transparent bg-brand-purple text-white
               flex flex-col transform transition-transform duration-300 ease-in-out 
-              h-screen lg:h-[calc(100vh-5rem)]
+              h-screen
               ${isOpen ? "translate-x-0" : "-translate-x-full"} 
               lg:translate-x-0`}
       >
-        {/* Header - Only show close button on mobile */}
-        <div className="flex items-center justify-end p-4 border-b border-gray-200 lg:hidden">
-          {/* Close button for mobile */}
-          <button
-            onClick={onClose}
-            className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-600"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+        {/* Logo */}
+        <div className="flex items-center justify-center h-20 px-4 border-b border-purple-200/30">
+          <Image
+            src="/assets/sidebarLogo.svg"
+            alt="Logo"
+            width={200}
+            height={100}
+            className="object-contain"
+          />
         </div>
-
+        {/* <button
+          onClick={onClose}
+          aria-label="Close sidebar"
+          className="lg:hidden absolute right-0 top-0 p-2 rounded-md hover:bg-white/10 transition-colors text-white"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button> */}
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6">
-          <div className="space-y-2">
-            {filteredNavigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={handleLinkClick}
-                  className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px] ${
-                    isActive ? "bg-gradient-to-r from-[#A357F7] to-[#CE53B7] text-white" : "text-white hover:bg-gradient-to-r hover:from-[#A357F7]/20 hover:to-[#CE53B7]/20"
-                  }`}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  <Image
-                    src={isActive ? item.iconActive : item.iconInactive}
-                    alt={`${item.name} icon`}
-                    width={24}
-                    height={24}
-                    className="mr-3"
-                  />
+        <nav className="flex-1 px-4 py-6 flex flex-col">
+          {/* MENUS heading + items */}
+          <div>
+            <h3 className="text-xs text-purple-100 uppercase tracking-wider mb-3">Menus</h3>
+            <div className="space-y-2">
+              {filteredNavigation.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={handleLinkClick}
+                    className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px] ${
+                      isActive
+                        ? "bg-gradient-to-r from-[#A357F7] to-[#CE53B7] text-white"
+                        : "text-white hover:bg-gradient-to-r hover:from-[#A357F7]/20 hover:to-[#CE53B7]/20"
+                    }`}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <Image
+                      src={item.icon}
+                      alt={`${item.name} icon`}
+                      width={24}
+                      height={24}
+                      className="mr-3"
+                    />
 
-                  {item.name}
-                </Link>
-              );
-            })}
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
+
+          {/* SUPPORT heading + items */}
+          <div className="mt-6">
+            <h3 className="text-xs text-purple-100 uppercase tracking-wider mb-3">Support</h3>
+            <div className="space-y-2">
+              <Link
+                href="/auth/logout"
+                onClick={handleLinkClick}
+                className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all h-[48px] text-white hover:bg-gradient-to-r hover:from-[#A357F7]/20 hover:to-[#CE53B7]/20`}
+              >
+                <Image
+                  src="/assets/sideBarIcons/Power.svg"
+                  alt="Logout icon"
+                  width={24}
+                  height={24}
+                  className="mr-3"
+                />
+                Logout
+              </Link>
+            </div>
+          </div>
+
+          {/* spacer to push footer to bottom */}
+          <div className="flex-1" />
         </nav>
 
-        {/* Bottom Section */}
-        {/* <div className="border-t border-purple-200/30 p-4">
-          <Link
-            href="/settings"
-            onClick={handleLinkClick}
-            className={`sidebar-item group flex items-center px-4 py-3 rounded-lg transition-all hover:bg-purple-100/30
-                        ${
-                          pathname === "/settings" ? "bg-gradient-to-r from-[#F1E6FF] to-[#E3C5FF]" : ""
-                        }`}
-            style={{
-              color: pathname === "/settings" ? "#751AE5" : "#2A2A2A",
-            }}
-            aria-current={pathname === "/settings" ? "page" : undefined}
-          >
-            <svg
-              className="mr-3 h-5 w-5 transition-colors"
-              style={{ color: pathname === "/settings" ? "#751AE5" : "#666666" }}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            Settings
-          </Link>
-        </div> */}
+        {/* Powered by footer */}
+        <div className="p-4">
+          <div className="bg-white/6 hover:bg-white/10 rounded-lg p-3 flex items-center gap-3">
+            <Image
+              src="/assets/sideBarIcons/Shape.svg"
+              alt="CallSynthra"
+              width={26}
+              height={26}
+              className="object-contain rounded"
+            />
+            <div className="text-white">
+              <div className="text-xs text-purple-100">Powered by</div>
+              <div className="text-sm font-medium">CallSynthra</div>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );

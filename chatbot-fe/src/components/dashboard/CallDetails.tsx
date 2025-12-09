@@ -11,6 +11,7 @@ import MessageItem from "./MessageItem";
 import CallRecordingTab from "./CallRecordingTab";
 import AISummaryTab from "./AISummaryTab";
 import StatusBadge from "./StatusBadge";
+import { formatDuration, formatDate, formatTime } from "@/lib/utils";
 
 type Props = {
   conversation?: Conversation | null;
@@ -233,34 +234,6 @@ export default function CallDetails({
     }
   };
 
-  // Helper to format call duration
-  const formatDuration = (startDate: string | null | undefined, endDate: string | null | undefined) => {
-    if (!startDate || !endDate) return "0m";
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const minutes = Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  };
-
-  // Helper to format date
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" });
-  };
-
-  // Helper to format time
-  const formatTime = (dateString: string | null | undefined) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-  };
-
   // Info cards configuration
   const infoCards = [
     {
@@ -290,7 +263,7 @@ export default function CallDetails({
     { id: "recording", label: "Call Recording" },
     { id: "summary", label: "AI Summary" },
   ] as const;
-
+  console.log("messages", messages);
   return (
     <aside className="w-full h-fit">
       <div
@@ -415,7 +388,7 @@ export default function CallDetails({
                         <MessageItem
                           key={message.id}
                           message={message}
-                          patientName={conversation?.patient?.name || "Customer"}
+                          patientName={conversation?.patient?.name || "Sarah Johnson"}
                           formattedTime={formatTime(message.timestamp)}
                         />
                       ))

@@ -20,7 +20,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
     fetchSession();
   }, []);
   return (
-    <header className="fixed top-0 w-full lg:left-[312px] lg:w-[calc(100%-312px)] z-30 bg-topbar">
+    <header className="fixed top-0 w-full lg:left-[300px] lg:w-[calc(100%-300px)] z-30 bg-topbar">
       <div className="h-20 flex items-center justify-between px-4 lg:px-10">
         <div className="flex items-center gap-4">
           <Image

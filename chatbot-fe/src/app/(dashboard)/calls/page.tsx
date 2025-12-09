@@ -152,15 +152,15 @@ export default function CallsPage() {
   };
 
   return (
-    <div className="p-2 sm:p-4 lg:p-6">
+    <div className="">
       <div className="flex flex-col lg:flex-row gap-6">
         <div
           className={`relative transition-all duration-300 ease-in-out ${
-            showList ? "lg:w-3/12" : "lg:w-0"
+            showList ? "lg:w-4/12" : "lg:w-0"
           } overflow-hidden`}
         >
-          <div className="h-full overflow-auto border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] p-4">
-            <div className="w-full flex justify-between items-center mb-4">
+          <div className="h-full overflow-auto border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] py-4">
+            <div className="w-full flex justify-between items-center mb-4 px-4 ">
               <div className="flex flex-col">
                 <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
                   Recent Calls
@@ -184,12 +184,12 @@ export default function CallsPage() {
               />
             </div>
 
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-3 flex items-center justify-between px-4 py-2">
               <div className="text-sm text-gray-600">
                 Showing <span className="font-medium">{conversations.length}</span> calls
               </div>
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 px-4 ">
               <div className="flex gap-2 items-center">
                 <div className="flex-1">
                   <SearchInput
@@ -203,10 +203,10 @@ export default function CallsPage() {
               </div>
             </div>
 
-            <div ref={listRef} className="mt-4 space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto pr-2">
+            <div ref={listRef} className="mt-4 space-y-1 max-h-[calc(100vh-280px)] overflow-y-auto ">
               {loading && conversations.length === 0 ? (
                 Array.from({ length: 4 }).map((_, idx) => (
-                  <div key={idx} className="p-3 rounded-lg animate-pulse bg-[#F5F3FF] h-24" />
+                  <div key={idx} className="rounded-lg animate-pulse bg-[#F5F3FF] h-24" />
                 ))
               ) : conversations?.length > 0 ? (
                 conversations.map((conv) => (
@@ -250,7 +250,7 @@ export default function CallsPage() {
         </div>
 
         <div
-          className={`transition-all duration-300 ease-in-out ${showList ? "lg:w-9/12" : "lg:w-full"}`}
+          className={`transition-all duration-300 ease-in-out ${showList ? "lg:w-8/12" : "lg:w-full"}`}
         >
           <div className="flex items-center justify-between mb-4">
             <div>

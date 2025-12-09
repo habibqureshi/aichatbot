@@ -281,7 +281,7 @@ export default function CallDetails({
         </div>
 
         {/* Three Info Cards */}
-        <div className=" pb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {infoCards.map((card, index) => (
             <div
               key={index}
@@ -290,16 +290,16 @@ export default function CallDetails({
               <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
                 {card.title}
               </p>
-              <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-2">
+              <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-1 break-words">
                 <Image src={card.icon} alt={card.title} width={24} height={24} />
                 {card.mainContent}
               </div>
-              {card.subtitle && <div className="text-xs text-gray-500">{card.subtitle}</div>}
+              {card.subtitle && <div className="text-xs text-gray-500 break-words">{card.subtitle}</div>}
               {card.extraContent && <div className="mt-3">{card.extraContent}</div>}
               {card.additionalText &&
                 card.additionalText.map((text, textIndex) => (
                   <div key={textIndex} className="mt-2">
-                    <div className="text-xs text-gray-400">{text}</div>
+                    <div className="text-xs text-gray-400 break-words">{text}</div>
                   </div>
                 ))}
             </div>
@@ -308,7 +308,7 @@ export default function CallDetails({
 
         {/* Tabs */}
         <div className=" p-6 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[16px] ">
-          <div className="flex gap-6 border-b" style={{ borderBottomColor: "#E6E7EB" }}>
+          <div className="flex gap-6 border-b overflow-x-auto" style={{ borderBottomColor: "#E6E7EB" }}>
             {tabs.map(({ id, label }) => (
               <button
                 key={id}

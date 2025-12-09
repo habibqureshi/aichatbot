@@ -95,7 +95,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 z-50 w-[248px] sm:w-[280px] lg:w-[312px] border-r border-transparent bg-brand-purple text-white
+        className={`fixed top-0 left-0 z-50 w-[248px] sm:w-[280px] lg:w-[300px] border-r border-transparent bg-brand-purple text-white
             flex flex-col transform transition-transform duration-300 ease-in-out 
             h-screen
             ${isOpen ? "translate-x-0" : "-translate-x-full"} 

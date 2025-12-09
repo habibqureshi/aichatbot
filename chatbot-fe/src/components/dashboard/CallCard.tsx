@@ -21,7 +21,7 @@ const sentimentFromSummary = (summary?: string) => {
 
 const SentimentBadge = ({ sentiment }: { sentiment: string }) => {
   const styles: Record<string, string> = {
-    Positive: "bg-green-100 text-green-700",
+    Positive: "bg-[#F3FDF5D4] text-[#3E864A]",
     Negative: "bg-red-100 text-red-700",
     Neutral: "bg-yellow-100 text-yellow-800",
   };
@@ -66,16 +66,20 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
     <div
       role="button"
       onClick={() => onClick && onClick(conversation)}
-      className={`cursor-pointer flex items-start gap-3 p-3 rounded-lg transition-shadow border ${
-        isSelected ? "ring-2 ring-indigo-300 bg-indigo-50" : "hover:shadow-sm"
-      }`}
+      className={`cursor-pointer flex items-start gap-1 p-6 min-h-[200px] transition-shadow 
+    border-b border-gray-200 border-l border-transparent
+    ${
+      isSelected
+        ? "border-l-4 border-brand-purple bg-[#6325A90F]"
+        : "hover:bg-[#6325A90F] hover:shadow-sm"
+    }`}
     >
-      <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+      <div className="flex-shrink-0 w-[47px] h-[47px] rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
         <Image
           src="/assets/images/user.png"
           alt={caller}
-          width={48}
-          height={48}
+          width={47}
+          height={47}
           className="object-cover"
         />
       </div>
@@ -83,8 +87,8 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-medium text-sm text-brand-dark truncate">{caller}</p>
-            <p className="text-[13px] text-gray-500 truncate">{phone}</p>
+            <p className="font-semibold text-base leading-[100%] text-black truncate">{caller}</p>
+            <p className="font-medium text-xs leading-[132%] text-[#64748B] truncate">{phone}</p>
           </div>
           <div className="flex items-center gap-2">
             <SentimentBadge sentiment={sentiment} />
@@ -100,11 +104,13 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
             </span>
           </div>
           <div className="text-xs">
-            <span className="text-xs text-gray-500">{conversation.ended_at ? "Ended" : "Ongoing"}</span>
+            <span className="text-xs text-[#3E864A]">
+              {conversation.ended_at ? "Completed" : "Ongoing"}
+            </span>
           </div>
         </div>
 
-        <div className="mt-2 text-xs text-gray-600 truncate max-w-full">
+        <div className="mt-2 font-medium text-base leading-[132%] text-gray-600 max-w-full">
           {summary || "No summary available."}
         </div>
       </div>

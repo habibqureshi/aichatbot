@@ -13,11 +13,19 @@ export default function LiveCallActivity({
 }) {
   return (
     <div className="bg-gradient-to-r from-[#7A3BC4] to-[#CE53B7] text-white rounded-[12px] p-4 shadow-md">
-      <div className="text-sm font-semibold">Live Call Activity</div>
-      <div className="text-xs mt-1">Real-time agent status</div>
+      <div className="text-[24px] font-semibold leading[1.32] tracking-normal text-white">
+        Live Call Activity
+      </div>
+      <div className="text-base font-medium leading[1.32] tracking-normal text-white mt-1">
+        Real-time agent status
+      </div>
       <div className="mt-4 flex items-center justify-between">
-        <div className="text-lg font-extrabold">{activeCalls}</div>
-        <div className="text-xs text-white/70">Active Calls</div>
+        <div className="text-xl font-semibold leading[1.32] tracking-normal text-white">
+          {activeCalls}
+        </div>
+        <div className="text-base font-medium leading[1.32] tracking-normal text-white">
+          Active Calls
+        </div>
       </div>
       <div className="mt-4 bg-white/10 p-3 rounded-md flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -31,8 +39,10 @@ export default function LiveCallActivity({
             />
           </div>
           <div>
-            <div className="text-sm font-medium">{agentName}</div>
-            <div className="text-xs text-white/60">On Call</div>
+            <div className="text-base font-bold leading[1.32] tracking-normal text-white">
+              {agentName}
+            </div>
+            <div className="text-base font-normal leading[1.32] tracking-normal text-white">On Call</div>
           </div>
         </div>
         <div className="text-xs">{agentTime}</div>

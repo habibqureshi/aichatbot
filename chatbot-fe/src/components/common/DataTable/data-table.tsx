@@ -155,16 +155,16 @@ export function DataTable<TData, TValue>({
   // const [firstWord, ...rest] = (title ?? "").split(" ");
   // const restTitle = rest.join(" ");
   return (
-    <div
-      className="bg-brand-white border rounded-xl p-4 px-6 shadow-sm"
-      style={{ borderColor: "#F0EEFF" }}
-    >
+    <div className="bg-brand-light2  rounded-xl p-4 px-6 ">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 mt-1">
         <div className="flex items-center space-x-2 px-2">
-          <h2 className="font-figtree text-[32px] font-semibold tracking-tight text-brand-dark leading-[1.32] recent-calls-title">
+          <h2 className="font-figtree text-[24px] font-semibold tracking-tight text-brand-dark leading-[1.32] ">
             {title}
           </h2>
+          <span className="h-7 w-12 bg-white flex items-center justify-center text-[16px] font-inter font-semibold text-black rounded-[8px] p-4">
+            234
+          </span>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto px-2 sm:px-0">
           {/* Loading Spinner */}
@@ -301,33 +301,20 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div
-        className="bg-brand-card border rounded-sm overflow-hidden"
-        style={{ borderColor: "#E8E3FF" }}
-      >
+      <div className="rounded-sm overflow-hidden">
         <div
           className="overflow-auto table-scroll"
           style={{
             minHeight: "calc(100vh - 318px)",
             maxHeight: "calc(100vh - 220px)",
-            scrollbarWidth: "thin",
-            scrollbarColor: "#E8E3FF #F5F3FF",
+            // scrollbarWidth: "thin",
+            // scrollbarColor: "#E8E3FF #F5F3FF",
           }}
         >
-          <table className="min-w-[950px] table-auto w-full border-collapse">
-            <thead
-              className="sticky top-0 z-20"
-              style={{
-                background: "linear-gradient(to right, #F0EEFD 0%, #D9D6FE 100%)",
-                borderBottom: "1px solid #E8E3FF",
-              }}
-            >
+          <table className="min-w-[950px] table-auto w-full ">
+            <thead className="sticky top-0 z-20 bg-brand-light2">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow
-                  key={headerGroup.id}
-                  className="border-b"
-                  style={{ background: "transparent", borderColor: "#E8E3FF" }}
-                >
+                <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     const columnDef = header.column.columnDef as ExtendedColumnDef<TData, TValue>;
                     const widthStyle = columnDef.width ? { width: columnDef.width } : {};
@@ -336,7 +323,7 @@ export function DataTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className="font-medium text-xs sm:text-sm text-brand-dark py-3 px-4 first:pl-6 last:pr-6 border-0"
+                        className="font-medium text-xs  text-[#8695AA] leading-[1.32] tracking-[0.24em] uppercase py-3 px-4 first:pl-6 last:pr-6"
                         style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
                       >
                         {header.isPlaceholder
@@ -364,10 +351,9 @@ export function DataTable<TData, TValue>({
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      className={`bg-brand-white hover:bg-gradient-to-r hover:from-[#F7F5FF] hover:to-[#F4F2FF] transition-colors duration-150 ${
-                        isSelected ? "bg-gradient-to-r from-[#F6F4FF] to-[#F4F1FF]" : ""
-                      } ${onRowClick ? "cursor-pointer" : ""}`}
-                      style={{ borderBottom: "1px solid #F3F0FF" }}
+                      className={`${row.index % 2 === 0 ? "bg-white" : "bg-transparent"} ${
+                        onRowClick ? "cursor-pointer" : ""
+                      }`}
                       onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                       title={onRowClick && rowTooltipText ? rowTooltipText : undefined}
                     >
@@ -388,7 +374,7 @@ export function DataTable<TData, TValue>({
                             key={cell.id}
                             className={`text-xs sm:text-sm ${
                               isSelected ? "text-brand-dark" : "text-muted-foreground"
-                            } py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0 ${
+                            } py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 ${
                               isSimpleTextCell ? "font-medium break-words whitespace-pre-wrap" : ""
                             }`}
                             style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}

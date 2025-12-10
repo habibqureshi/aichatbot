@@ -87,7 +87,7 @@ export default function DashboardPage() {
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Chart */}
-        <div className="lg:col-span-7 bg-[#F6F7F9] rounded-[12px] p-6 shadow-sm border border-[#EEEFF2]">
+        <div className="lg:col-span-7 bg-[#F6F7F9] rounded-[12px] p-6 pb-4 pt-4 shadow-sm border border-[#EEEFF2]">
           {/* Header with Title and Filter */}
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -132,7 +132,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Legend - Vertical Layout */}
-          <div className="flex gap-8 mb-6 pb-4 border-b border-gray-200">
+          <div className="flex gap-6 mb-5 ">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-[#863ED8] inline-block" />

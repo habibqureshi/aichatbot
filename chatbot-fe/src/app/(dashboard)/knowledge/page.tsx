@@ -12,6 +12,7 @@ import {
   FileUpload,
   DeleteModal,
 } from "@/components/knowledge";
+import KnowledgeSkeleton from "@/components/loading-skeletons/KnowledgeSkeleton";
 
 export default function KnowledgePage() {
   const [existingFiles, setExistingFiles] = useState<Knowledge[]>([]);
@@ -286,29 +287,7 @@ export default function KnowledgePage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-2 sm:p-4 lg:p-6">
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Knowledge Management</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
-            Train AI, manage menus, and upload knowledge files
-          </p>
-        </div>
-        <div
-          className="backdrop-blur-sm border rounded-xl p-6 shadow-sm"
-          style={{
-            background: "#FFFFFF",
-            borderColor: "#F0EEFF",
-          }}
-        >
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-10 bg-gray-100 rounded"></div>
-            <div className="h-32 bg-gray-100 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <KnowledgeSkeleton />;
   }
 
   return (

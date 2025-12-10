@@ -71,6 +71,7 @@ interface DataTableProps<TData, TValue> {
   rowTooltipText?: string;
   // Selected row ID for highlighting
   selectedRowId?: string | number;
+  totalCount?: number;
 }
 
 export function DataTable<TData, TValue>({
@@ -107,6 +108,7 @@ export function DataTable<TData, TValue>({
   onRowClick,
   rowTooltipText,
   selectedRowId,
+  totalCount,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -163,7 +165,7 @@ export function DataTable<TData, TValue>({
             {title}
           </h2>
           <span className="h-7 w-12 bg-white flex items-center justify-center text-[16px] font-inter font-semibold text-black rounded-[8px] p-4">
-            234
+            {totalCount !== undefined ? totalCount : data.length}
           </span>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto px-2 sm:px-0">
@@ -305,8 +307,8 @@ export function DataTable<TData, TValue>({
         <div
           className="overflow-auto table-scroll"
           style={{
-            minHeight: "calc(100vh - 318px)",
-            maxHeight: "calc(100vh - 220px)",
+            minHeight: "calc(100vh - 400px)",
+            maxHeight: "calc(100vh - 350px)",
             // scrollbarWidth: "thin",
             // scrollbarColor: "#E8E3FF #F5F3FF",
           }}

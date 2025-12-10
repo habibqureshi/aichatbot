@@ -30,7 +30,7 @@ const navigation = [
     name: "Reservations",
     href: "/reservations",
     icon: "/assets/sideBarIcons/CalendarDots.svg",
-    showOnlyFor: "restaurant",
+    // showOnlyFor: "restaurant",
   },
   {
     name: "Appointments",

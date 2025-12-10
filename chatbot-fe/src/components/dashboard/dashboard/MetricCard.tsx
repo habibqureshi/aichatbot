@@ -4,23 +4,31 @@ import React from "react";
 type MetricCardProps = {
   title: string;
   value: string | number;
-  subtitle?: string;
+
   delta?: string; // e.g., +21%
 };
 
-export default function MetricCard({ title, value, subtitle, delta }: MetricCardProps) {
+export default function MetricCard({ title, value, delta }: MetricCardProps) {
   return (
-    <div className="bg-white rounded-[12px] p-5 shadow-sm border border-transparent">
-      <div className="text-xs text-gray-500 font-medium">{title}</div>
-      <div className="text-2xl font-extrabold text-black mt-2">{value}</div>
-      {subtitle && <div className="text-sm text-gray-400 mt-1">{subtitle}</div>}
+    <div className=" p-4 bg-[#FFFFFF] border border-[#D5D9E2] shadow-[0px_1px_1px_0px_#23272E14] rounded-[8px] ">
+      <div className="text-base font-medium text-brand-dark leading-[1.32]  tracking-[0%]">{title}</div>
+      <div className="text-[40px] font-semibold text-brand-dark leading-[1.32]  tracking-[0%] mt-2">
+        {value}
+      </div>
+
       {delta && (
-        <div
-          className={`text-xs mt-2 inline-block font-semibold ${
-            delta.startsWith("+") ? "text-green-600" : "text-red-600"
-          }`}
-        >
-          {delta} Compared to last month
+        <div className="text-[14px] mt-2 inline-block font-semibold  ">
+          <span
+            className={`inline-flex items-center justify-center h-[28px] px-2 rounded ${
+              delta.startsWith("+") ? "text-[#337F3F] bg-[#E2FBE8]" : "text-[#C64C7F] bg-[#F9E8F3]"
+            }`}
+          >
+            {delta}
+          </span>
+
+          <span className="text-[#64748B] font-medium leading[1.32] tracking-normal ml-2">
+            Compared to last month
+          </span>
         </div>
       )}
     </div>

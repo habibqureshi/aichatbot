@@ -72,14 +72,14 @@ API.interceptors.response.use(
     console.log("Interceptors Error:", error);
 
     // Handle 403 authentication errors
-    if (error.response?.status === 403) {
-      // Clear cookie on client side
-      if (typeof window !== "undefined") {
-        // Delete the auth_session cookie
-        document.cookie = "auth_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-        window.location.href = "/auth/login";
-      }
-    }
+    // if (error.response?.status === 403) {
+    //   // Clear cookie on client side
+    //   if (typeof window !== "undefined") {
+    //     // Delete the auth_session cookie
+    //     document.cookie = "auth_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    //     window.location.href = "/auth/login";
+    //   }
+    // }
 
     // Parse and format error messages uniformly
     if (error.response?.data) {

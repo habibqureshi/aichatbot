@@ -12,7 +12,7 @@ export default function LiveCallActivity({
   agentTime?: string;
 }) {
   return (
-    <div className="bg-brand-card text-white rounded-[8px] p-4 shadow-md h-[328px]">
+    <div className="bg-brand-card text-white rounded-[8px] p-4 shadow-md h-[347px]">
       <div className="text-[24px] font-semibold leading[1.32] tracking-normal text-white">
         Live Call Activity
       </div>

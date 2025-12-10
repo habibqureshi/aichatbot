@@ -72,6 +72,9 @@ interface DataTableProps<TData, TValue> {
   // Selected row ID for highlighting
   selectedRowId?: string | number;
   totalCount?: number;
+  actionButton?: React.ReactNode;
+  tableMinHeight?: string;
+  tableMaxHeight?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -109,6 +112,9 @@ export function DataTable<TData, TValue>({
   rowTooltipText,
   selectedRowId,
   totalCount,
+  actionButton,
+  tableMinHeight,
+  tableMaxHeight,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -164,9 +170,11 @@ export function DataTable<TData, TValue>({
           <h2 className="font-figtree text-[24px] font-semibold tracking-tight text-brand-dark leading-[1.32] ">
             {title}
           </h2>
-          <span className="h-7 w-12 bg-white flex items-center justify-center text-[16px] font-inter font-semibold text-black rounded-[8px] p-4">
-            {totalCount !== undefined ? totalCount : data.length}
-          </span>
+          {totalCount !== undefined && totalCount > 0 && (
+            <span className="h-7 w-12 bg-white flex items-center justify-center text-[16px] font-inter font-semibold text-black rounded-[8px] p-4">
+              {totalCount !== undefined ? totalCount : ""}
+            </span>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto px-2 sm:px-0">
           {/* Loading Spinner */}
@@ -241,7 +249,7 @@ export function DataTable<TData, TValue>({
               </Select>
             </div>
           )}
-
+          {actionButton && actionButton}
           {/* Department Filter */}
           {onExternalDepartmentChange && departmentOptions && (
             <Select
@@ -307,8 +315,8 @@ export function DataTable<TData, TValue>({
         <div
           className="overflow-auto table-scroll"
           style={{
-            minHeight: "calc(100vh - 400px)",
-            maxHeight: "calc(100vh - 350px)",
+            minHeight: tableMinHeight || "calc(100vh - 400px)",
+            maxHeight: tableMaxHeight || "calc(100vh - 350px)",
             // scrollbarWidth: "thin",
             // scrollbarColor: "#E8E3FF #F5F3FF",
           }}

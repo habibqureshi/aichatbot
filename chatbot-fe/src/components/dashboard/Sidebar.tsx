@@ -129,7 +129,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </svg>
         </button> */}
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 flex flex-col">
+        <nav className="flex-1 px-4 py-6 flex flex-col mt-8">
           {/* MENUS heading + items */}
           <div className="mx-auto w-[216px] sm:w-[280px]">
             <h3 className="text-[11px] sm:text-[12px] leading-[1.32] tracking-[0.12em] sm:tracking-[0.24em] uppercase text-purple-100 font-medium mb-3">

@@ -67,10 +67,10 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
       role="button"
       onClick={() => onClick && onClick(conversation)}
       className={`cursor-pointer flex items-start gap-1 p-6 min-h-[200px] transition-shadow 
-    border-b border-gray-200 border-l border-transparent
+    border-b border-gray-200
     ${
       isSelected
-        ? "border-l-4 border-brand-purple bg-[#6325A90F]"
+        ? "border-l-4 !border-l-[#6325A9] bg-[#6325A90F]"
         : "hover:bg-[#6325A90F] hover:shadow-sm"
     }`}
     >

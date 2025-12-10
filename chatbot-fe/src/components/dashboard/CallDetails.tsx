@@ -402,6 +402,28 @@ export default function CallDetails({
                     <div ref={messagesEndRef} />
                   </div>
                 </div>
+                <div className="mt-4 px-2 pt-2 border-t border-gray-200">
+                  <div className="flex justify-between items-center text-sm text-[#64748B]">
+                    <div className="w-1/3 flex items-center justify-between">
+                      <div>
+                        {" "}
+                        Total Messages: <span className="text-[#000000]">{messages.length}</span>
+                      </div>
+                      <span>
+                        Duration:{" "}
+                        <span className="text-[#000000]">
+                          {formatDuration(
+                            conversation?.started_at || null,
+                            conversation?.ended_at || null
+                          )}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="text-[#6325A9] flex items-center gap-2 ">
+                      <span className="text-[#000000] text-[8px]">🟣</span> <span>Analyzed with AI</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

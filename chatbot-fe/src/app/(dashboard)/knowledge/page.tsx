@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { getKnowledgeList, createKnowledge, deleteKnowledge } from "@/app/actions/knowledge";
 import { getAppSettingByKey, updateAppSetting } from "@/app/actions/app-settings";
 import { Knowledge } from "@/app/types/knowledge";
-import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import Image from "next/image";
+import {
+  GreetingConfiguration,
+  MenuTopics,
+  KnowledgeBase,
+  FileUpload,
+  DeleteModal,
+} from "@/components/knowledge";
 
 export default function KnowledgePage() {
   const [existingFiles, setExistingFiles] = useState<Knowledge[]>([]);
@@ -30,13 +34,16 @@ export default function KnowledgePage() {
   const [isAddingTab, setIsAddingTab] = useState(false);
 
   // Default tabs that cannot be deleted
-  const defaultTabs = ["appointment book", "cancel", "reschedule", "general inquiry"];
+  const defaultTabs = useMemo(() => ["appointment book", "reschedule", "general inquiry", "cancel"], []);
 
   // States for file upload
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<Knowledge | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Ref for upload button scrolling
+  const uploadButtonRef = useRef<HTMLButtonElement>(null);
 
   const fetchKnowledge = useCallback(async (page: number = 1, limit: number = 10) => {
     try {
@@ -71,7 +78,11 @@ export default function KnowledgePage() {
         try {
           const parsedMenu = JSON.parse(menuData.value);
           if (Array.isArray(parsedMenu)) {
-            setMenuTabs(parsedMenu);
+            // Sort the menu tabs to match the default order
+            const sortedMenu = defaultTabs
+              .filter((tab) => parsedMenu.includes(tab))
+              .concat(parsedMenu.filter((tab) => !defaultTabs.includes(tab)));
+            setMenuTabs(sortedMenu);
           }
         } catch (parseError) {
           console.error("Error parsing menu data:", parseError);
@@ -86,7 +97,7 @@ export default function KnowledgePage() {
         toast.error("Failed to load app settings");
       }
     }
-  }, []);
+  }, [defaultTabs]);
 
   useEffect(() => {
     fetchKnowledge();
@@ -239,6 +250,14 @@ export default function KnowledgePage() {
     }
 
     setUploadedFiles(files);
+
+    // Scroll to upload button after file selection
+    setTimeout(() => {
+      uploadButtonRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 100);
   };
 
   const handleDeleteFile = (file: Knowledge) => {
@@ -301,492 +320,48 @@ export default function KnowledgePage() {
         </p>
       </div>
 
-      {/* Grid Layout: Left and Right Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT COLUMN */}
         <div className="space-y-6">
-          {/* 1. Agent Persona - Train AI Section with Chat Preview */}
-          <div
-            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[400px] flex flex-col"
-            style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
-            }}
-          >
-            <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 w-14 h-14 bg-[#6325A9] rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-7 h-7 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-black">Dynamic Greeting Configuration</h2>
-                <p className="text-sm text-[#64748B] mt-1">
-                  First Impression - Different Greetings for different situations
-                </p>
-              </div>
-            </div>
+          <GreetingConfiguration
+            greetingMessage={greetingMessage}
+            setGreetingMessage={setGreetingMessage}
+            isTraining={isTraining}
+            handleTrainAI={handleTrainAI}
+          />
 
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-black text-lg  leading-[1.32] mb-2">
-                  Default Greeting
-                </h4>
-
-                <textarea
-                  id="greeting-message"
-                  value={greetingMessage}
-                  onChange={(e) => setGreetingMessage(e.target.value)}
-                  className="w-full p-5 rounded-lg  bg-[#F3F3F5] text-black font-medium focus:outline-none  resize-none"
-                  placeholder="Hello! I'm your MediCall AI assistant. How can I help you today?"
-                  rows={3}
-                  required
-                />
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleTrainAI}
-                  disabled={isTraining || !greetingMessage.trim()}
-                  className="btn-primary-gradient"
-                >
-                  {isTraining ? "Updating..." : "Update Agent"}
-                </Button>
-              </div>
-
-              <div className="bg-[#6325A912] rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="w-5 h-5 text-[#6325A9] flex-shrink-0 mt-0.5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <p className="text-xs text-[#6325A9]">
-                    <strong>Preview Updates Live:</strong> Changes to your greeting message appear
-                    instantly in the chat preview
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Menu Topics Section */}
-          <div
-            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[430px] flex flex-col"
-            style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
-            }}
-          >
-            <div className="flex items-start gap-3 mb-8">
-              <div className="flex-shrink-0 w-14 h-14 bg-[#6325A9] rounded-lg flex items-center justify-center">
-                <Image src="/assets/doc.svg" alt="AI Chatbot Logo" width={25} height={31} />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-black">Menu Topics</h2>
-                <p className="text-sm text-[#64748B] mt-1">Configure available conversation topics</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {/* Existing Menu Topics */}
-              <ul className="flex flex-col gap-2 list-none p-0 m-0 w-full h-[238px] overflow-auto">
-                {menuTabs.map((tab, index) => {
-                  const isDefault = defaultTabs.includes(tab);
-                  // icon selection for defaults and generic icon for new tabs
-                  const getIconSrc = () => {
-                    // map tab names to public asset paths
-                    const key = tab.toLowerCase();
-                    if (!isDefault) {
-                      return "/assets/menuicons/appointment.svg"; // generic icon for new menus
-                    }
-
-                    if (key.includes("appointment")) {
-                      return "/assets/menuicons/appointment.svg";
-                    }
-                    if (
-                      key.includes("reschedule") ||
-                      key.includes("schedule") ||
-                      key.includes("resched")
-                    ) {
-                      return "/assets/menuicons/clock.svg";
-                    }
-                    if (key.includes("inquiry") || key.includes("general")) {
-                      return "/assets/menuicons/inquiry.svg";
-                    }
-                    if (key.includes("cancel")) {
-                      return "/assets/menuicons/XCircle.svg";
-                    }
-
-                    return "/assets/menuicons/appointment.svg";
-                  };
-
-                  return (
-                    <li
-                      key={index}
-                      className="group  w-full flex justify-between items-center gap-4 px-4 py-3 rounded-[15px] text-[12px] font-medium font-figtree leading-[1.32] bg-[#F4F0F9] text-[#6325A9] text-center transition-all border border-transparent h-9 "
-                    >
-                      <div className="flex items-center justify-start gap-2">
-                        <Image src={getIconSrc()} alt={`${tab} icon`} width={18} height={18} />
-                        {tab}
-                      </div>
-
-                      {!isDefault && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveTab(index);
-                          }}
-                          className="relative w-5 h-5 opacity-100 flex items-center justify-center hover:opacity-100 cursor-pointer"
-                          aria-label={`Remove ${tab}`}
-                          role="button"
-                          title="Remove topic"
-                        >
-                          <Image
-                            src="/assets/menuicons/X.svg"
-                            alt="remove icon"
-                            width={20}
-                            height={20}
-                          />
-                        </button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-
-              {/* Add New Topic */}
-              <div className="flex items-center justify-between gap-2">
-                <input
-                  type="text"
-                  value={newTabName}
-                  onChange={(e) => setNewTabName(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter" && newTabName.trim()) {
-                      handleAddNewTab();
-                    }
-                  }}
-                  className="flex-1 px-3 py-3 border border-[#D2D5DB] rounded-lg shadow-sm bg-[#F9FAFB] h-9 text-black placeholder:text-[#9DA3AE] focus:outline-none max-w-[530px]"
-                  placeholder="Add a new topic..."
-                />
-                <Button
-                  onClick={handleAddNewTab}
-                  disabled={isAddingTab || !newTabName.trim()}
-                  className="btn-primary-gradient whitespace-nowrap mt-1 w-32 flex items-center justify-between gap-2"
-                >
-                  <span className="text-[20px]">+</span>
-                  <span>Add</span>
-                </Button>
-              </div>
-            </div>
-          </div>
+          <MenuTopics
+            menuTabs={menuTabs}
+            newTabName={newTabName}
+            setNewTabName={setNewTabName}
+            isAddingTab={isAddingTab}
+            handleAddNewTab={handleAddNewTab}
+            handleRemoveTab={handleRemoveTab}
+            defaultTabs={defaultTabs}
+          />
         </div>
 
         {/* RIGHT COLUMN */}
         <div className="space-y-6">
-          {/* 3. Knowledge Base - Uploaded Files with Training History */}
-          <div
-            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[400px] flex flex-col"
-            style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
-            }}
-          >
-            <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 w-14 h-14 bg-[#6325A9] rounded-lg flex items-center justify-center">
-                <Image src="/assets/knowledge.svg" alt="AI Chatbot Logo" width={37} height={35} />
-              </div>
-              <div className="">
-                <h2 className="text-xl font-semibold text-black">Knowledge Base</h2>
-                <p className="text-sm text-[#64748B] mt-1">Upload documents to train your AI agent</p>
-              </div>
-            </div>
+          <KnowledgeBase existingFiles={existingFiles} handleDeleteFile={handleDeleteFile} />
 
-            {/* Existing Files with Training Status */}
-            {existingFiles.length > 0 ? (
-              <div className="space-y-3 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
-                {existingFiles.map((file) => (
-                  <div
-                    key={file.id}
-                    className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg border border-[#dbdde7] hover:border-[#cacdda] transition-colors"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="flex-shrink-0 w-9 h-9 bg-[#FFFFFF] rounded-lg flex items-center justify-center">
-                        <svg
-                          className="w-6 h-6 text-gray-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-normal text-base leading[1.32] text-brand-dark truncate">
-                          {file.name || file.blob_name}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          {/* {file.is_active ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                              ✓ Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                              In-active
-                            </span>
-                          )} */}
-                          <span className="text-xs text-gray-500">
-                            {new Date(file.updatedAt || file.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteFile(file)}
-                      className="ml-2 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete file"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-center py-12 text-gray-500">
-                <div>
-                  <svg
-                    className="w-16 h-16 mx-auto mb-4 text-gray-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <p className="text-sm font-medium text-gray-700 mb-1">No documents uploaded yet</p>
-                  <p className="text-xs text-gray-500">Upload files below to train your AI agent</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 4. File Upload Section */}
-          <div
-            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[430px] flex flex-col"
-            style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
-            }}
-          >
-            <div className="flex items-start gap-3 mb-8">
-              <div className="flex-shrink-0 w-14 h-14 bg-[#6325A9] rounded-lg flex items-center justify-center">
-                <Image src="/assets/doc.svg" alt="AI Chatbot Logo" width={25} height={31} />
-              </div>
-              <div className="">
-                <h2 className="text-xl font-semibold text-black">Upload Documents</h2>
-                <p className="text-sm text-[#64748B] mt-1">Add new knowledge to your AI agent</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {/* Drag & Drop Area */}
-              <div className="relative ">
-                <input
-                  type="file"
-                  id="file-upload"
-                  multiple
-                  accept=".txt"
-                  onChange={handleFileSelection}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="flex flex-col items-center justify-center w-full h-52 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
-                >
-                  <Image src="/assets/upload.svg" alt="AI Chatbot Logo" width={72} height={68} />
-                  <p className="text-sm font-medium text-black mt-6">
-                    Drag & drop files here, or <span className="text-brand-purple">browse</span>
-                  </p>
-                  <p className="text-xs text-gray-500">Supports TXT files up to 5MB</p>
-                </label>
-              </div>
-
-              {/* Selected Files Preview */}
-              {uploadedFiles.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-gray-900">
-                      Selected Files ({uploadedFiles.length})
-                    </h4>
-                    <button
-                      onClick={() => setUploadedFiles([])}
-                      className="text-xs text-gray-500 hover:text-gray-700"
-                    >
-                      Clear all
-                    </button>
-                  </div>
-                  <ul className="space-y-2">
-                    {uploadedFiles.map((file, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm text-gray-700">
-                        <svg
-                          className="w-4 h-4 text-gray-400 flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                        <span className="flex-1 truncate">{file.name}</span>
-                        <span className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleFileUpload}
-                  disabled={isUploading || uploadedFiles.length === 0}
-                  className="btn-primary-gradient w-full sm:w-auto"
-                >
-                  {isUploading ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Uploading...
-                    </>
-                  ) : (
-                    "Upload Files"
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
+          <FileUpload
+            uploadedFiles={uploadedFiles}
+            setUploadedFiles={setUploadedFiles}
+            isUploading={isUploading}
+            handleFileSelection={handleFileSelection}
+            handleFileUpload={handleFileUpload}
+            uploadButtonRef={uploadButtonRef}
+          />
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal &&
-        fileToDelete &&
-        createPortal(
-          <div
-            className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-[9999] p-4"
-            style={{ margin: 0 }}
-          >
-            <div
-              className="backdrop-blur-sm border rounded-xl shadow-xl max-w-md w-full relative z-[10000]"
-              style={{
-                background: "#FFFFFF",
-                borderColor: "#F0EEFF",
-              }}
-            >
-              <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-red-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Delete File</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Are you sure you want to delete this file? This action cannot be undone.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
-                  <h4 className="font-medium text-sm text-gray-900 mb-1">
-                    {fileToDelete.name || fileToDelete.blob_name}
-                  </h4>
-                  <p className="text-xs text-gray-500">
-                    Updated:{" "}
-                    {new Date(fileToDelete.updatedAt || fileToDelete.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <Button
-                    onClick={cancelDeleteFile}
-                    variant="outline"
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={confirmDeleteFile} className="bg-red-600 hover:bg-red-700 text-white">
-                    Delete File
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+      <DeleteModal
+        showDeleteModal={showDeleteModal}
+        fileToDelete={fileToDelete}
+        confirmDeleteFile={confirmDeleteFile}
+        cancelDeleteFile={cancelDeleteFile}
+      />
     </div>
   );
 }

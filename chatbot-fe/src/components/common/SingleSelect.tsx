@@ -114,7 +114,7 @@ export default function SingleSelect({
   return (
     <div className="relative single-select-container">
       {title && (
-        <label className="flex items-baseline gap-1 mb-2 font-semibold text-[20px] leading-[132%] text-black">
+        <label className="flex items-baseline gap-1 mb-2 font-semibold text-[16px] leading-[132%] text-black">
           <span>{title}</span>
           {required && (
             <Image

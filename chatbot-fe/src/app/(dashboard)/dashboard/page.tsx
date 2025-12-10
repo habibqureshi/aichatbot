@@ -53,6 +53,23 @@ export default function DashboardPage() {
       summary: "Converted to sale, sending follow-up info.",
     },
   ];
+  const metrics = [
+    {
+      title: "Total Calls",
+      value: "3.4K",
+      delta: "+21%",
+    },
+    {
+      title: "Average Duration",
+      value: "4:32",
+      delta: "-17%",
+    },
+    {
+      title: "Conversion Rate",
+      value: "84%",
+      delta: "+24%",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -62,31 +79,16 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary metrics */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <MetricCard
-          title="Total Calls"
-          value="3.4K"
-          subtitle="21% Compared to last month"
-          delta="+21%"
-        />
-        <MetricCard
-          title="Average Duration"
-          value="4:32"
-          subtitle="17% Compared to last month"
-          delta="-17%"
-        />
-        <MetricCard
-          title="Conversion Rate"
-          value="84%"
-          subtitle="24% Compared to last month"
-          delta="+24%"
-        />
-      </div> */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {metrics.map((item, index) => (
+          <MetricCard key={index} title={item.title} value={item.value} delta={item.delta} />
+        ))}
+      </div>
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Chart */}
-        {/* <div className="lg:col-span-9 bg-white rounded-[12px] p-6 shadow-sm border border-transparent">
+        <div className="lg:col-span-7 bg-white rounded-[12px] p-6 shadow-sm border border-transparent">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-base font-semibold">Overall Call Volume</div>
@@ -106,16 +108,16 @@ export default function DashboardPage() {
             </div>
           </div>
           <LineChart />
-        </div> */}
+        </div>
 
         {/* Right: Live Call Activity */}
-        {/* <div className="lg:col-span-3">
+        {/* <div className="lg:col-span-5">
           <LiveCallActivity />
         </div>
       </div> */}
 
-      {/* Secondary grid: Recent Calls + Sentiment */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Secondary grid: Recent Calls + Sentiment */}
+        {/* <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8">
           <div className="bg-white rounded-[12px] p-6 shadow-sm border border-transparent">
             <div className="flex items-center justify-between">

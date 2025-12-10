@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-vars */
 "use client";
 
-import Image from "next/image";
 import React from "react";
 import { Conversation } from "@/app/actions/conversations";
+import Image from "next/image";
 
 type Props = {
   conversation: Conversation;
@@ -36,6 +36,23 @@ const SentimentBadge = ({ sentiment }: { sentiment: string }) => {
   );
 };
 
+const StatusBadge = ({ status }: { status: string }) => {
+  const styles: Record<string, string> = {
+    Completed: "bg-[#F4FBF6] text-[#3E864A]",
+    Ongoing: "bg-yellow-100 text-yellow-800",
+  };
+  return (
+    <span
+      className={`inline-flex items-center text-xs font-semibold px-3 py-2 rounded-[8px] ${
+        styles[status] || styles.Ongoing
+      }`}
+    >
+      <span className="w-1 h-1 rounded-full bg-current mr-1"></span>
+      {status}
+    </span>
+  );
+};
+
 const formatTime = (dateString?: string) => {
   if (!dateString) return "N/A";
   try {
@@ -43,6 +60,15 @@ const formatTime = (dateString?: string) => {
   } catch {
     return "N/A";
   }
+};
+
+const getInitials = (name: string) => {
+  if (!name || name === "Unknown") return "U";
+  return name
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("")
+    .slice(0, 2); // Limit to 2 characters
 };
 
 const calculateDuration = (startedAt: string, endedAt: string | null): string => {
@@ -74,19 +100,13 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
         : "hover:bg-[#6325A90F] hover:shadow-sm"
     }`}
     >
-      <div className="flex-shrink-0 w-[47px] h-[47px] rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-        <Image
-          src="/assets/images/user.png"
-          alt={caller}
-          width={47}
-          height={47}
-          className="object-cover"
-        />
+      <div className="flex-shrink-0 w-[47px] h-[47px] rounded-full overflow-hidden bg-[#6C54C4] flex items-center justify-center">
+        <span className="text-white font-medium text-[22px]">{getInitials(caller)}</span>
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
+          <div className="min-w-0 ml-2">
             <p className="font-semibold text-base leading-[100%] text-black truncate">{caller}</p>
             <p className="font-medium text-xs leading-[132%] text-[#64748B] truncate">{phone}</p>
           </div>
@@ -95,18 +115,21 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex flex-col items-start justify-between mt-4">
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span className="inline-block">{formatTime(conversation.started_at)}</span>
-            <span className="text-gray-300">•</span>
-            <span className="font-mono text-[12px] text-gray-700">
-              {calculateDuration(conversation.started_at, conversation.ended_at)}
-            </span>
+            <div className="flex items-center gap-2">
+              <Image src="/assets/Clock.svg" alt="clock" width={16} height={16} />
+              <span className="inline-block">{formatTime(conversation.started_at)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Image src="/assets/Phone.svg" alt="phone" width={16} height={16} />
+              <span className="font-mono text-[12px] text-gray-700">
+                {calculateDuration(conversation.started_at, conversation.ended_at)}
+              </span>
+            </div>
           </div>
-          <div className="text-xs">
-            <span className="text-xs text-[#3E864A]">
-              {conversation.ended_at ? "Completed" : "Ongoing"}
-            </span>
+          <div className="text-xs mt-4">
+            <StatusBadge status={conversation.ended_at ? "Completed" : "Ongoing"} />
           </div>
         </div>
 

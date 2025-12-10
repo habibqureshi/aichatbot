@@ -12,22 +12,23 @@ export default function LiveCallActivity({
   agentTime?: string;
 }) {
   return (
-    <div className="bg-gradient-to-r from-[#7A3BC4] to-[#CE53B7] text-white rounded-[12px] p-4 shadow-md">
+    <div className="bg-brand-card text-white rounded-[8px] p-4 shadow-md">
       <div className="text-[24px] font-semibold leading[1.32] tracking-normal text-white">
         Live Call Activity
       </div>
       <div className="text-base font-medium leading[1.32] tracking-normal text-white mt-1">
         Real-time agent status
       </div>
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 bg-[#9151DC] p-3 rounded-md flex flex-col items-start justify-between h-[69px]">
+        <div className="flex items-center gap-2text-base font-medium leading[1.32] tracking-normal text-white">
+          <Image src="/assets/activecall.svg" alt="call" width={24} height={24} className="mr-2" />{" "}
+          Active Calls
+        </div>
         <div className="text-xl font-semibold leading[1.32] tracking-normal text-white">
           {activeCalls}
         </div>
-        <div className="text-base font-medium leading[1.32] tracking-normal text-white">
-          Active Calls
-        </div>
       </div>
-      <div className="mt-4 bg-white/10 p-3 rounded-md flex items-center justify-between">
+      <div className="mt-4 bg-[#9151DC] p-3 rounded-md flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-white/20 rounded-full">
             <Image

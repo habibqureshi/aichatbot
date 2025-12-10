@@ -269,14 +269,14 @@ export default function CallDetails({
   return (
     <aside className="w-full h-fit">
       <div
-        className="rounded-xl shadow-sm"
+        className="rounded-xl shadow-sm overflow-y-auto"
         style={{
           minHeight: "calc(100vh - 320px)",
           maxHeight: "calc(100vh - 220px)",
         }}
       >
         {/* Header */}
-        <div className="p-6">
+        <div className="py-6">
           <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
             Call Details
           </h3>

@@ -17,6 +17,11 @@ const navigation = [
   //   icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z",
   // },
   {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: "/assets/sideBarIcons/dashboard.svg",
+  },
+  {
     name: "Calls",
     href: "/calls",
     icon: "/assets/sideBarIcons/Phone.svg",
@@ -25,6 +30,13 @@ const navigation = [
     name: "Reservations",
     href: "/reservations",
     icon: "/assets/sideBarIcons/CalendarDots.svg",
+    showOnlyFor: "restaurant",
+  },
+  {
+    name: "Appointments",
+    href: "/appointments",
+    icon: "/assets/sideBarIcons/CalendarDots.svg",
+    showOnlyFor: "clinic",
   },
 
   // {

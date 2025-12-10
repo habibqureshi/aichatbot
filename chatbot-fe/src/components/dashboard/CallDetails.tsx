@@ -282,7 +282,7 @@ export default function CallDetails({
           </h3>
         </div>
 
-        {true ? (
+        {loading ? (
           <>
             {/* Info Cards Skeleton */}
             <div className="pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

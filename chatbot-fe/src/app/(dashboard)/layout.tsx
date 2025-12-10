@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
           {/* Main content area */}
-          <div className="flex-1 flex flex-col w-full lg:pl-[300px]">
+          <div className="flex-1 flex flex-col w-full lg:pl-[300px] pb-6">
             <main className="flex-1 p-1 sm:p-4 overflow-auto">
               <div className="w-full h-full relative z-10">{children}</div>
             </main>

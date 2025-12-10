@@ -166,17 +166,16 @@ function AddTablePageContent() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Table Information Card */}
           <div
-            className="border rounded-xl p-4 sm:p-6 shadow-sm"
+            className=" rounded-xl p-4 sm:p-6 "
             style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
+              background: "#F6F7F9",
             }}
           >
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Table Information</h2>
               <p className="text-sm text-gray-600 mt-1">Enter the table details</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4 sm:gap-6">
               <div>
                 <label htmlFor="table_number" className="block text-sm font-medium text-gray-900 mb-2">
                   Table ID

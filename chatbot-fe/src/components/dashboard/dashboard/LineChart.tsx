@@ -1,74 +1,76 @@
 "use client";
-import React from "react";
+
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-  TimeScale,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
+  ChartConfig,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-  TimeScale
-);
+const chartData = [
+  { month: "Apr", successful: 50, failed: 10 },
+  { month: "May", successful: 60, failed: 8 },
+  { month: "Jun", successful: 70, failed: 12 },
+  { month: "Jul", successful: 90, failed: 15 },
+  { month: "Aug", successful: 80, failed: 20 },
+  { month: "Sep", successful: 95, failed: 18 },
+  { month: "Oct", successful: 110, failed: 25 },
+  { month: "Nov", successful: 120, failed: 26 },
+  { month: "Dec", successful: 140, failed: 30 },
+  { month: "Jan", successful: 130, failed: 40 },
+  { month: "Feb", successful: 120, failed: 45 },
+  { month: "Mar", successful: 150, failed: 22 },
+];
 
-const labels = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+const chartConfig = {
+  successful: {
+    label: "Successful Calls",
+    color: "#6325A9",
+  },
+  failed: {
+    label: "Failed Calls",
+    color: "#EA4A4A",
+  },
+} satisfies ChartConfig;
 
-const data = {
-  labels,
-  datasets: [
-    {
-      label: "Successful Calls",
-      data: [50, 60, 70, 90, 80, 95, 110, 120, 140, 130, 120, 150],
-      fill: true,
-      backgroundColor: "rgba(99,37,169,0.15)",
-      borderColor: "#6325A9",
-      tension: 0.4,
-      pointRadius: 0,
-    },
-    {
-      label: "Failed Calls",
-      data: [10, 8, 12, 15, 20, 18, 25, 26, 30, 40, 45, 22],
-      fill: false,
-      borderColor: "#EA4A4A",
-      backgroundColor: "rgba(234,74,74,0.15)",
-      tension: 0.4,
-      pointRadius: 0,
-    },
-  ],
-};
-
-export default function LineChart({ className = "" }: { className?: string }) {
+export default function CallsAreaChart({ className = "" }: { className?: string }) {
   return (
     <div className={`w-full h-[320px] ${className}`}>
-      <Line
-        options={{
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: true, position: "top" },
-            tooltip: { mode: "index", intersect: false },
-          },
-          interaction: { mode: "index", intersect: false },
-          scales: {
-            x: { grid: { display: false } },
-            y: { grid: { color: "#F3F4F6" }, beginAtZero: true },
-          },
-        }}
-        data={data}
-      />
+      <ChartContainer config={chartConfig}>
+        <AreaChart
+          accessibilityLayer
+          data={chartData}
+          margin={{
+            left: 12,
+            right: 12,
+          }}
+        >
+          <CartesianGrid vertical={false} />
+          <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
+          <Area
+            dataKey="failed"
+            type="natural"
+            fill="#EA4A4A"
+            fillOpacity={0.4}
+            stroke="#EA4A4A"
+            stackId="a"
+          />
+          <Area
+            dataKey="successful"
+            type="natural"
+            fill="#6325A9"
+            fillOpacity={0.4}
+            stroke="#6325A9"
+            stackId="a"
+          />
+          <ChartLegend content={<ChartLegendContent />} />
+        </AreaChart>
+      </ChartContainer>
     </div>
   );
 }

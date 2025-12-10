@@ -47,6 +47,10 @@
   --brand-blue: 258 56% 38%; /* #4C2B97 */
   --brand-white: 0 0% 100%; /* #FFFFFF */
   --brand-light2: 210 10% 97%; /* #F6F7F9 */
+
+  /* Chart colors */
+  --chart-1: 260 76% 52%; /* #6325A9 - Successful Calls */
+  --chart-2: 0 84% 60%; /* #EA4A4A - Failed Calls */
 }
 
 .dark {
@@ -427,7 +431,7 @@ html {
   font-size: 16px;
   border: none;
   cursor: pointer;
-  background: #6325A9;
+  background: #6325a9;
 }
 
 .btn-primary-gradient:hover:not(:disabled) {

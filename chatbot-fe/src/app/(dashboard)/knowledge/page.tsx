@@ -7,6 +7,7 @@ import { getAppSettingByKey, updateAppSetting } from "@/app/actions/app-settings
 import { Knowledge } from "@/app/types/knowledge";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
+import Image from "next/image";
 
 export default function KnowledgePage() {
   const [existingFiles, setExistingFiles] = useState<Knowledge[]>([]);
@@ -20,9 +21,9 @@ export default function KnowledgePage() {
   // States for menu
   const [menuTabs, setMenuTabs] = useState<string[]>([
     "appointment book",
-    "cancel",
     "reschedule",
     "general inquiry",
+    "cancel",
   ]);
   const [menuSettingId, setMenuSettingId] = useState<number | null>(null);
   const [newTabName, setNewTabName] = useState("");
@@ -313,9 +314,9 @@ export default function KnowledgePage() {
             }}
           >
             <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-[#8B5CF6] to-[#3B82F6] rounded-lg flex items-center justify-center">
+              <div className="flex-shrink-0 w-14 h-14 bg-[#6325A9] rounded-lg flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-white"
+                  className="w-7 h-7 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -329,39 +330,29 @@ export default function KnowledgePage() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Agent Persona</h2>
-                <p className="text-sm text-gray-600 mt-1">Customize your AI&apos;s greeting message</p>
+                <h2 className="text-xl font-semibold text-black">Dynamic Greeting Configuration</h2>
+                <p className="text-sm text-[#64748B] mt-1">
+                  First Impression - Different Greetings for different situations
+                </p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
+                <h4 className="font-semibold text-black text-lg  leading-[1.32] mb-2">
+                  Default Greeting
+                </h4>
+
                 <textarea
                   id="greeting-message"
                   value={greetingMessage}
                   onChange={(e) => setGreetingMessage(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  className="w-full p-5 rounded-lg  bg-[#F3F3F5] text-black font-medium focus:outline-none  resize-none"
                   placeholder="Hello! I'm your MediCall AI assistant. How can I help you today?"
                   rows={3}
                   required
                 />
               </div>
-
-              {/* Chat Preview */}
-              {/* {greetingMessage && (
-                <div className="bg-gradient-to-br from-[#8B5CF6] to-[#3B82F6] rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                      <span className="text-[#8B5CF6] font-semibold text-sm">AI</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-xs text-white/80 mb-1">MediCall Assistant</div>
-                      <div className="text-sm text-white">{greetingMessage}</div>
-                      <div className="text-xs text-white/60 mt-2">Just now</div>
-                    </div>
-                  </div>
-                </div>
-              )} */}
 
               <div className="flex justify-end">
                 <Button
@@ -373,10 +364,10 @@ export default function KnowledgePage() {
                 </Button>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div className="flex items-start gap-2">
+              <div className="bg-[#6325A912] rounded-lg p-3">
+                <div className="flex items-center gap-2">
                   <svg
-                    className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+                    className="w-5 h-5 text-[#6325A9] flex-shrink-0 mt-0.5"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -386,7 +377,7 @@ export default function KnowledgePage() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <p className="text-xs text-blue-800">
+                  <p className="text-xs text-[#6325A9]">
                     <strong>Preview Updates Live:</strong> Changes to your greeting message appear
                     instantly in the chat preview
                   </p>
@@ -403,66 +394,105 @@ export default function KnowledgePage() {
               borderColor: "#F0EEFF",
             }}
           >
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-900">Menu Topics</h2>
-              <p className="text-sm text-gray-600 mt-1">Configure available conversation topics</p>
+            <div className="flex items-start gap-3 mb-8">
+              <div className="flex-shrink-0 w-14 h-14 bg-[#6325A9] rounded-lg flex items-center justify-center">
+                <Image src="/assets/doc.svg" alt="AI Chatbot Logo" width={25} height={31} />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-black">Menu Topics</h2>
+                <p className="text-sm text-[#64748B] mt-1">Configure available conversation topics</p>
+              </div>
             </div>
 
             <div className="space-y-4">
               {/* Existing Menu Topics */}
-              <div className="flex flex-wrap gap-2">
-                {menuTabs.map((tab, index) => (
-                  <div
-                    key={index}
-                    className="group relative px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
-                  >
-                    {tab}
-                    {!defaultTabs.includes(tab) && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveTab(index);
-                        }}
-                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
-                        title="Remove topic"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
+              <ul className="flex flex-col gap-2 list-none p-0 m-0 w-full h-[238px] overflow-auto">
+                {menuTabs.map((tab, index) => {
+                  const isDefault = defaultTabs.includes(tab);
+                  // icon selection for defaults and generic icon for new tabs
+                  const getIconSrc = () => {
+                    // map tab names to public asset paths
+                    const key = tab.toLowerCase();
+                    if (!isDefault) {
+                      return "/assets/menuicons/appointment.svg"; // generic icon for new menus
+                    }
+
+                    if (key.includes("appointment")) {
+                      return "/assets/menuicons/appointment.svg";
+                    }
+                    if (
+                      key.includes("reschedule") ||
+                      key.includes("schedule") ||
+                      key.includes("resched")
+                    ) {
+                      return "/assets/menuicons/clock.svg";
+                    }
+                    if (key.includes("inquiry") || key.includes("general")) {
+                      return "/assets/menuicons/inquiry.svg";
+                    }
+                    if (key.includes("cancel")) {
+                      return "/assets/menuicons/XCircle.svg";
+                    }
+
+                    return "/assets/menuicons/appointment.svg";
+                  };
+
+                  return (
+                    <li
+                      key={index}
+                      className="group  w-full flex justify-between items-center gap-4 px-4 py-3 rounded-[15px] text-[12px] font-medium font-figtree leading-[1.32] bg-[#F4F0F9] text-[#6325A9] text-center transition-all border border-transparent h-9 "
+                    >
+                      <div className="flex items-center justify-start gap-2">
+                        <Image src={getIconSrc()} alt={`${tab} icon`} width={18} height={18} />
+                        {tab}
+                      </div>
+
+                      {!isDefault && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveTab(index);
+                          }}
+                          className="relative w-5 h-5 opacity-100 flex items-center justify-center hover:opacity-100 cursor-pointer"
+                          aria-label={`Remove ${tab}`}
+                          role="button"
+                          title="Remove topic"
+                        >
+                          <Image
+                            src="/assets/menuicons/X.svg"
+                            alt="remove icon"
+                            width={20}
+                            height={20}
                           />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
 
               {/* Add New Topic */}
-              <div className="border-t border-gray-200 pt-8">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newTabName}
-                    onChange={(e) => setNewTabName(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter" && newTabName.trim()) {
-                        handleAddNewTab();
-                      }
-                    }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Add a new topic..."
-                  />
-                  <Button
-                    onClick={handleAddNewTab}
-                    disabled={isAddingTab || !newTabName.trim()}
-                    className="btn-primary-gradient whitespace-nowrap mt-1"
-                  >
-                    + Add
-                  </Button>
-                </div>
+              <div className="flex items-center justify-between gap-2">
+                <input
+                  type="text"
+                  value={newTabName}
+                  onChange={(e) => setNewTabName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && newTabName.trim()) {
+                      handleAddNewTab();
+                    }
+                  }}
+                  className="flex-1 px-3 py-3 border border-[#D2D5DB] rounded-lg shadow-sm bg-[#F9FAFB] h-9 text-black placeholder:text-[#9DA3AE] focus:outline-none max-w-[530px]"
+                  placeholder="Add a new topic..."
+                />
+                <Button
+                  onClick={handleAddNewTab}
+                  disabled={isAddingTab || !newTabName.trim()}
+                  className="btn-primary-gradient whitespace-nowrap mt-1 w-32 flex items-center justify-between gap-2"
+                >
+                  <span className="text-[20px]">+</span>
+                  <span>Add</span>
+                </Button>
               </div>
             </div>
           </div>
@@ -478,9 +508,14 @@ export default function KnowledgePage() {
               borderColor: "#F0EEFF",
             }}
           >
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Knowledge Base</h2>
-              <p className="text-sm text-gray-600 mt-1">Upload documents to train your AI agent</p>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-14 h-14 bg-[#6325A9] rounded-lg flex items-center justify-center">
+                <Image src="/assets/knowledge.svg" alt="AI Chatbot Logo" width={37} height={35} />
+              </div>
+              <div className="">
+                <h2 className="text-xl font-semibold text-black">Knowledge Base</h2>
+                <p className="text-sm text-[#64748B] mt-1">Upload documents to train your AI agent</p>
+              </div>
             </div>
 
             {/* Existing Files with Training Status */}
@@ -489,12 +524,12 @@ export default function KnowledgePage() {
                 {existingFiles.map((file) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-[#8B5CF6] transition-colors"
+                    className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg border border-[#dbdde7] hover:border-[#cacdda] transition-colors"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div className="flex-shrink-0 w-9 h-9 bg-[#FFFFFF] rounded-lg flex items-center justify-center">
                         <svg
-                          className="w-5 h-5 text-gray-600"
+                          className="w-6 h-6 text-gray-600"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -508,7 +543,7 @@ export default function KnowledgePage() {
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm text-gray-900 truncate">
+                        <h4 className="font-normal text-base leading[1.32] text-brand-dark truncate">
                           {file.name || file.blob_name}
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
@@ -575,14 +610,19 @@ export default function KnowledgePage() {
               borderColor: "#F0EEFF",
             }}
           >
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Upload Documents</h2>
-              <p className="text-sm text-gray-600 mt-1">Add new knowledge to your AI agent</p>
+            <div className="flex items-start gap-3 mb-8">
+              <div className="flex-shrink-0 w-14 h-14 bg-[#6325A9] rounded-lg flex items-center justify-center">
+                <Image src="/assets/doc.svg" alt="AI Chatbot Logo" width={25} height={31} />
+              </div>
+              <div className="">
+                <h2 className="text-xl font-semibold text-black">Upload Documents</h2>
+                <p className="text-sm text-[#64748B] mt-1">Add new knowledge to your AI agent</p>
+              </div>
             </div>
 
             <div className="space-y-4">
               {/* Drag & Drop Area */}
-              <div className="relative">
+              <div className="relative ">
                 <input
                   type="file"
                   id="file-upload"
@@ -593,23 +633,11 @@ export default function KnowledgePage() {
                 />
                 <label
                   htmlFor="file-upload"
-                  className="flex flex-col items-center justify-center w-full h-40 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                  className="flex flex-col items-center justify-center w-full h-52 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
                 >
-                  <svg
-                    className="w-10 h-10 text-gray-400 mb-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <p className="text-sm font-medium text-gray-700 mb-1">
-                    Drag & drop files here, or <span className="text-blue-600">browse</span>
+                  <Image src="/assets/upload.svg" alt="AI Chatbot Logo" width={72} height={68} />
+                  <p className="text-sm font-medium text-black mt-6">
+                    Drag & drop files here, or <span className="text-brand-purple">browse</span>
                   </p>
                   <p className="text-xs text-gray-500">Supports TXT files up to 5MB</p>
                 </label>

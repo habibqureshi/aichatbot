@@ -9,7 +9,7 @@ export interface Speciality {
 }
 
 export interface SpecialitiesResponse {
-  data: Speciality[];
+  data: string[];
   metadata: {
     total: number;
     page: number;

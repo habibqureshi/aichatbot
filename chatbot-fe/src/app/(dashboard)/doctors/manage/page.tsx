@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SingleSelect from "@/components/common/SingleSelect";
+import InputField from "@/components/common/InputField";
 import TimeRangePicker from "@/components/common/TimeRangePicker";
 import { getSpecialitiesList } from "@/app/actions/specialities";
 import { createDoctor, updateDoctor, getDoctorById } from "@/app/actions/doctors";
@@ -246,10 +247,9 @@ function AddDoctorPageContent() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Doctor Information Card */}
           <div
-            className="border rounded-xl p-4 sm:p-6 shadow-sm"
+            className=" rounded-xl p-4 sm:p-6 "
             style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
+              background: "#F6F7F9",
             }}
           >
             <div className="mb-4">
@@ -257,51 +257,32 @@ function AddDoctorPageContent() {
               <p className="text-sm text-gray-600 mt-1">Enter the doctor&apos;s basic details</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-2">
-                  Doctor Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter doctor's full name"
-                />
-              </div>
+              <InputField
+                title="Doctor Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                placeholder="Enter doctor's full name"
+              />
 
-              <div>
-                <label htmlFor="phone_number" className="block text-sm font-medium text-gray-900 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  id="phone_number"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter phone number"
-                />
-              </div>
+              <InputField
+                title="Phone Number"
+                name="phone_number"
+                value={formData.phone_number}
+                onChange={handleChange}
+                type="tel"
+                required
+                placeholder="Enter phone number"
+              />
 
               <div>
                 {loadingSpecialities ? (
                   <SpecialtySkeleton />
                 ) : (
                   <>
-                    <label
-                      htmlFor="specialty_id"
-                      className="block text-sm font-medium text-gray-900 mb-2"
-                    >
-                      Specialty
-                    </label>
                     <SingleSelect
-                      label=""
+                      title="Specialty"
                       options={specialities.map((specialty, index) => ({
                         id: index.toString(),
                         label: specialty,
@@ -312,7 +293,6 @@ function AddDoctorPageContent() {
                         setFormData((prev) => ({ ...prev, specialty: value as string }))
                       }
                       placeholder="Select Specialty"
-                      searchable={true}
                     />
                   </>
                 )}
@@ -322,10 +302,9 @@ function AddDoctorPageContent() {
 
           {/* Duration and Time Slots Card */}
           <div
-            className="border rounded-xl p-4 sm:p-6 shadow-sm space-y-6"
+            className=" rounded-xl p-4 sm:p-6 space-y-6"
             style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
+              background: "#F6F7F9",
             }}
           >
             {/* Duration Section */}
@@ -346,10 +325,10 @@ function AddDoctorPageContent() {
                       disabled={formData.timeSlots.length > 0}
                       className={`px-6 py-3 text-sm font-medium rounded-lg transition-all ${
                         formData.duration === duration
-                          ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white shadow-md"
+                          ? "bg-[#6325a9] text-white shadow-md"
                           : formData.timeSlots.length > 0
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-300"
-                          : "bg-white text-gray-700 border border-gray-300 hover:border-[#8B5CF6] hover:text-[#8B5CF6]"
+                          : "bg-white text-gray-700 border border-gray-300 hover:border-[#6325a9] hover:text-[#6325a9]"
                       }`}
                     >
                       {duration} minutes
@@ -398,16 +377,12 @@ function AddDoctorPageContent() {
 
               <div className="space-y-4">
                 <div className="max-w-2xl">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
-                    Select Day for Slot Creation
-                  </label>
                   <SingleSelect
-                    label=""
+                    title="Select Day for Slot Creation"
                     options={DAYS_OF_WEEK}
                     selectedValue={selectedDayForSlot}
                     onChange={(value) => setSelectedDayForSlot(value as string)}
                     placeholder="Choose a day to create slots"
-                    searchable={true}
                   />
                 </div>
 

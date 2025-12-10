@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { DataTable, ExtendedColumnDef, ActionsMenu } from "@/components/common/DataTable";
+import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 
 export default function SpecialitiesPage() {
   const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const [specialities, setSpecialities] = useState<Speciality[]>([]);
+  const [specialities, setSpecialities] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -40,75 +40,12 @@ export default function SpecialitiesPage() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   // Define columns inside the component to access handlers
-  const columns: ExtendedColumnDef<Speciality>[] = [
-    {
-      accessorKey: "id",
-      header: "ID",
-      width: "80px",
-      cell: ({ row }) => <div className="text-sm text-gray-600 font-mono">{row.original.id}</div>,
-    },
+  const columns: ExtendedColumnDef<string>[] = [
     {
       accessorKey: "name",
       header: "Name",
       width: "200px",
-      cell: ({ row }) => <div className="font-medium text-gray-900">{row.original.name || "N/A"}</div>,
-    },
-    {
-      accessorKey: "description",
-      header: "Description",
-      width: "300px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600">{row.original.description || "N/A"}</div>
-      ),
-    },
-    {
-      accessorKey: "created_at",
-      header: "Created At",
-      width: "160px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600">
-          {row.original.created_at ? new Date(row.original.created_at).toLocaleString() : "N/A"}
-        </div>
-      ),
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      width: "100px",
-      cell: ({ row }) => (
-        <ActionsMenu
-          actions={[
-            {
-              label: "Edit",
-              icon: (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-              ),
-              onClick: () => handleEditClick(row.original),
-            },
-            // {
-            //   label: "Delete",
-            //   icon: (
-            //     <svg className="w-4 h-4" fill="none" stroke="red" viewBox="0 0 24 24">
-            //       <path
-            //         strokeLinecap="round"
-            //         strokeLinejoin="round"
-            //         strokeWidth={2}
-            //         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            //       />
-            //     </svg>
-            //   ),
-            //   onClick: () => handleDeleteClick(row.original),
-            // },
-          ]}
-        />
-      ),
+      cell: ({ row }) => <div className="font-medium text-gray-900">{row.original}</div>,
     },
   ];
 
@@ -169,17 +106,6 @@ export default function SpecialitiesPage() {
     setEditingSpeciality(null);
     setFormData({ name: "", description: "" });
     setModalOpen(true);
-  };
-
-  const handleEditClick = (speciality: Speciality) => {
-    setEditingSpeciality(speciality);
-    setFormData({ name: speciality.name, description: speciality.description });
-    setModalOpen(true);
-  };
-
-  const handleDeleteClick = (speciality: Speciality) => {
-    setSpecialityToDelete(speciality);
-    setDeleteDialogOpen(true);
   };
 
   const handleModalClose = () => {

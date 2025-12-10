@@ -190,7 +190,7 @@ export default function DoctorsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Doctors</h1>
           <p className="text-sm sm:text-base text-gray-600 mt-1">
-            Manage doctor profiles and availability ({totalDoctors} total)
+            Manage doctor profiles and availability 
           </p>
         </div>
         <Link href="/doctors/manage" className="btn-primary-gradient">
@@ -222,6 +222,7 @@ export default function DoctorsPage() {
         totalPages={totalPages}
         onExternalPageChange={handlePageChange}
         onExternalPageSizeChange={handlePageSizeChange}
+        totalCount={totalDoctors}
       />
 
       <ConfirmDialog

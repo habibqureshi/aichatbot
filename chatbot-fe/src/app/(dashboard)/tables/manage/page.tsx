@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SingleSelect from "@/components/common/SingleSelect";
+import InputField from "@/components/common/InputField";
 import { toast } from "react-toastify";
 import {
   getRestaurantTable,
@@ -14,7 +15,7 @@ import {
 interface TableData {
   table_number: string;
   capacity: number;
-  location: "front" | "corner" | "roof" | "indoor" | "outdoor";
+  location: "front" | "corner" | "roof" | "indoor" | "outdoor" | null;
   is_active: boolean;
 }
 
@@ -35,14 +36,14 @@ function AddTablePageContent() {
   const [formData, setFormData] = useState<TableData>({
     table_number: "",
     capacity: 2,
-    location: "indoor",
+    location: null,
     is_active: true,
   });
   const [loading, setLoading] = useState(isEditMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isFormValid = () => {
-    return formData.table_number.trim() !== "" && formData.capacity > 0;
+    return formData.table_number.trim() !== "" && formData.capacity > 0 && formData.location !== null;
   };
 
   // Fetch table data on component mount if editing
@@ -93,14 +94,15 @@ function AddTablePageContent() {
 
     try {
       const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const submitData = { ...formData, location: formData.location as string };
       if (isEditMode && tableId) {
         // Update existing table
-        await updateRestaurantTable(Number(tableId), formData, user_timezone);
+        await updateRestaurantTable(Number(tableId), submitData, user_timezone);
         toast.success("Table updated successfully!");
         router.push("/tables");
       } else {
         // Create new table
-        await createRestaurantTable(formData, user_timezone);
+        await createRestaurantTable(submitData, user_timezone);
         toast.success("Table created successfully!");
         router.push("/tables");
       }
@@ -110,7 +112,7 @@ function AddTablePageContent() {
         setFormData({
           table_number: "",
           capacity: 2,
-          location: "indoor",
+          location: null,
           is_active: true,
         });
       }
@@ -176,53 +178,38 @@ function AddTablePageContent() {
               <p className="text-sm text-gray-600 mt-1">Enter the table details</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-1 gap-4 sm:gap-6">
-              <div>
-                <label htmlFor="table_number" className="block text-sm font-medium text-gray-900 mb-2">
-                  Table ID
-                </label>
-                <input
-                  type="text"
-                  id="table_number"
-                  name="table_number"
-                  value={formData.table_number}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter table ID (e.g., T001)"
-                />
-              </div>
+              <InputField
+                title="Table ID"
+                name="table_number"
+                value={formData.table_number}
+                onChange={handleChange}
+                required
+                placeholder="Enter table ID (e.g., T001)"
+              />
 
-              <div>
-                <label htmlFor="capacity" className="block text-sm font-medium text-gray-900 mb-2">
-                  Capacity
-                </label>
-                <input
-                  type="number"
-                  id="capacity"
-                  name="capacity"
-                  value={formData.capacity}
-                  onChange={handleChange}
-                  required
-                  min="1"
-                  max="20"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter number of seats"
-                />
-              </div>
+              <InputField
+                title="Capacity"
+                name="capacity"
+                value={formData.capacity}
+                onChange={handleChange}
+                type="number"
+                required
+                min={1}
+                max={20}
+                placeholder="Enter number of seats"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">Location</label>
-                <SingleSelect
-                  options={LOCATIONS.map((location) => ({
-                    id: location.id,
-                    label: location.label,
-                    value: location.value,
-                  }))}
-                  selectedValue={formData.location}
-                  onChange={handleLocationChange}
-                  placeholder="Select location"
-                />
-              </div>
+              <SingleSelect
+                title="Location"
+                options={LOCATIONS.map((location) => ({
+                  id: location.id,
+                  label: location.label,
+                  value: location.value,
+                }))}
+                selectedValue={formData.location}
+                onChange={handleLocationChange}
+                placeholder="Select location"
+              />
 
               <div className="flex items-center">
                 <input

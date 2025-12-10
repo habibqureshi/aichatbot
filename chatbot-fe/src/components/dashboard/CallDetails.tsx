@@ -263,7 +263,7 @@ export default function CallDetails({
     { id: "recording", label: "Call Recording" },
     { id: "summary", label: "AI Summary" },
   ] as const;
-  console.log("messages", messages);
+  // console.log("messages", messages);
   return (
     <aside className="w-full h-fit">
       <div

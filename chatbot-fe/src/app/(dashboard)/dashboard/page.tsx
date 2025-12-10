@@ -211,9 +211,17 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* <div className="lg:col-span-4">
-            <SentimentBar positive={2456} neutral={756} negative={266} />
-          </div> */}
+          <div className="lg:col-span-12  bg-[#F6F7F9] rounded-[12px]">
+            <SentimentBar
+              positive={2456}
+              neutral={756}
+              negative={266}
+              iconSize={44}
+              emojiSize={24}
+              fillColors={{ positive: "#337F3F", neutral: "#F9A307", negative: "#C61E12" }}
+              progressBarColors={["#984AF8", "#E34998", "#4318FF"]}
+            />
+          </div>
         </div>
       </div>
     </div>

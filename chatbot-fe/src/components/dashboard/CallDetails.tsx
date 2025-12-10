@@ -12,6 +12,8 @@ import CallRecordingTab from "./CallRecordingTab";
 import AISummaryTab from "./AISummaryTab";
 import StatusBadge from "./StatusBadge";
 import { formatDuration, formatDate, formatTime } from "@/lib/utils";
+import CallInfoCardSkeleton from "@/components/loading-skeletons/CallInfoCardSkeleton";
+import CallTabsSkeleton from "@/components/loading-skeletons/CallTabsSkeleton";
 
 type Props = {
   conversation?: Conversation | null;
@@ -280,169 +282,194 @@ export default function CallDetails({
           </h3>
         </div>
 
-        {/* Three Info Cards */}
-        <div className="pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {infoCards.map((card, index) => (
-            <div
-              key={index}
-              className=" p-4 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] "
-            >
-              <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
-                {card.title}
-              </p>
-              <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-1 break-words">
-                <Image src={card.icon} alt={card.title} width={24} height={24} />
-                {card.mainContent}
-              </div>
-              {card.subtitle && <div className="text-xs text-gray-500 break-words">{card.subtitle}</div>}
-              {card.extraContent && <div className="mt-3">{card.extraContent}</div>}
-              {card.additionalText &&
-                card.additionalText.map((text, textIndex) => (
-                  <div key={textIndex} className="mt-2">
-                    <div className="text-xs text-gray-400 break-words">{text}</div>
-                  </div>
-                ))}
+        {true ? (
+          <>
+            {/* Info Cards Skeleton */}
+            <div className="pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <CallInfoCardSkeleton title="Customer Name" />
+              <CallInfoCardSkeleton title="Call Duration" />
+              <CallInfoCardSkeleton title="Call Date & Time" />
             </div>
-          ))}
-        </div>
-
-        {/* Tabs */}
-        <div className=" p-6 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[16px] ">
-          <div className="flex gap-6 border-b overflow-x-auto" style={{ borderBottomColor: "#E6E7EB" }}>
-            {tabs.map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as TabType)}
-                className={`pb-3 transition-colors min-w-[160px] ${
-                  activeTab === id
-                    ? "text-[#6325A9] border-b-2 border-[#6325A9]"
-                    : "text-[#4C5564] hover:text-gray-700"
-                }`}
-                style={{
-                  fontFamily: "Figtree",
-                  fontWeight: 500,
-                  fontSize: "20px",
-                  lineHeight: "132%",
-                  letterSpacing: "0%",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab Content */}
-          <div className="mt-6">
-            {/* Call Transcript Tab */}
-            {activeTab === "transcript" && (
-              <div className="space-y-4">
+            {/* Tabs Skeleton */}
+            <CallTabsSkeleton tabs={tabs.map((tab) => tab.label)} />
+          </>
+        ) : (
+          <>
+            {/* Three Info Cards */}
+            <div className="pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {infoCards.map((card, index) => (
                 <div
-                  ref={messagesContainerRef}
-                  className="min-h-[300px] max-h-[400px] overflow-y-auto pr-2"
+                  key={index}
+                  className=" p-4 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] "
                 >
-                  <div className="space-y-3">
-                    {loadingMore && (
-                      <div className="flex justify-center py-2">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div
-                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.1s" }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.2s" }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-                    {loading ? (
-                      <>
-                        <div className="flex justify-start">
-                          <div
-                            className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                            style={{ background: "#E8E3FF" }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-end">
-                          <div
-                            className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                            style={{ background: "#E8E3FF" }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-start">
-                          <div
-                            className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                            style={{ background: "#E8E3FF" }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-end">
-                          <div
-                            className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                            style={{ background: "#E8E3FF" }}
-                          ></div>
-                        </div>
-                      </>
-                    ) : messages && messages.length > 0 ? (
-                      messages.map((message) => (
-                        <MessageItem
-                          key={message.id}
-                          message={message}
-                          patientName={conversation?.patient?.name || "Sarah Johnson"}
-                          formattedTime={formatTime(message.timestamp)}
-                        />
-                      ))
-                    ) : (
-                      <div className="flex justify-center">
-                        <div className="p-3 rounded-lg text-gray-500" style={{ background: "#F5F3FF" }}>
-                          <p>No chat transcript available</p>
-                        </div>
-                      </div>
-                    )}
-                    <div ref={messagesEndRef} />
+                  <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
+                    {card.title}
+                  </p>
+                  <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-1 break-words">
+                    <Image src={card.icon} alt={card.title} width={24} height={24} />
+                    {card.mainContent}
                   </div>
-                </div>
-                <div className="mt-4 px-2 pt-2 border-t border-gray-200">
-                  <div className="flex justify-between items-center text-sm text-[#64748B]">
-                    <div className="w-1/3 flex items-center justify-between">
-                      <div>
-                        {" "}
-                        Total Messages: <span className="text-[#000000]">{messages.length}</span>
+                  {card.subtitle && (
+                    <div className="text-xs text-gray-500 break-words">{card.subtitle}</div>
+                  )}
+                  {card.extraContent && <div className="mt-3">{card.extraContent}</div>}
+                  {card.additionalText &&
+                    card.additionalText.map((text, textIndex) => (
+                      <div key={textIndex} className="mt-2">
+                        <div className="text-xs text-gray-400 break-words">{text}</div>
                       </div>
-                      <span>
-                        Duration:{" "}
-                        <span className="text-[#000000]">
-                          {formatDuration(
-                            conversation?.started_at || null,
-                            conversation?.ended_at || null
-                          )}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="text-[#6325A9] flex items-center gap-2 ">
-                      <span className="text-[#000000] text-[8px]">🟣</span> <span>Analyzed with AI</span>
-                    </div>
-                  </div>
+                    ))}
                 </div>
+              ))}
+            </div>
+
+            {/* Tabs */}
+
+            <div className=" p-6 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[16px] ">
+              <div
+                className="flex gap-6 border-b overflow-x-auto"
+                style={{ borderBottomColor: "#E6E7EB" }}
+              >
+                {tabs.map(({ id, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTab(id as TabType)}
+                    className={`pb-3 transition-colors min-w-[160px] ${
+                      activeTab === id
+                        ? "text-[#6325A9] border-b-2 border-[#6325A9]"
+                        : "text-[#4C5564] hover:text-gray-700"
+                    }`}
+                    style={{
+                      fontFamily: "Figtree",
+                      fontWeight: 500,
+                      fontSize: "20px",
+                      lineHeight: "132%",
+                      letterSpacing: "0%",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-            )}
 
-            {/* Call Recording Tab */}
-            {activeTab === "recording" && (
-              <CallRecordingTab
-                conversation={conversation}
-                audioSrc={audioSrc}
-                isPlaying={isPlaying}
-                isStreaming={isStreaming}
-                handlePlayRecording={handlePlayRecording}
-                setIsPlaying={setIsPlaying}
-              />
-            )}
+              {/* Tab Content */}
+              <div className="mt-6">
+                {/* Call Transcript Tab */}
+                {activeTab === "transcript" && (
+                  <div className="space-y-4">
+                    <div
+                      ref={messagesContainerRef}
+                      className="min-h-[300px] max-h-[400px] overflow-y-auto pr-2"
+                    >
+                      <div className="space-y-3">
+                        {loadingMore && (
+                          <div className="flex justify-center py-2">
+                            <div className="flex space-x-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.1s" }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.2s" }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
+                        {loading ? (
+                          <>
+                            <div className="flex justify-start">
+                              <div
+                                className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                                style={{ background: "#E8E3FF" }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-end">
+                              <div
+                                className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                                style={{ background: "#E8E3FF" }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-start">
+                              <div
+                                className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                                style={{ background: "#E8E3FF" }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-end">
+                              <div
+                                className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                                style={{ background: "#E8E3FF" }}
+                              ></div>
+                            </div>
+                          </>
+                        ) : messages && messages.length > 0 ? (
+                          messages.map((message) => (
+                            <MessageItem
+                              key={message.id}
+                              message={message}
+                              patientName={conversation?.patient?.name || "Sarah Johnson"}
+                              formattedTime={formatTime(message.timestamp)}
+                            />
+                          ))
+                        ) : (
+                          <div className="flex justify-center">
+                            <div
+                              className="p-3 rounded-lg text-gray-500"
+                              style={{ background: "#F5F3FF" }}
+                            >
+                              <p>No chat transcript available</p>
+                            </div>
+                          </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    </div>
+                    <div className="mt-4 px-2 pt-2 border-t border-gray-200">
+                      <div className="flex justify-between items-center text-sm text-[#64748B]">
+                        <div className="w-1/3 flex items-center justify-between">
+                          <div>
+                            {" "}
+                            Total Messages: <span className="text-[#000000]">{messages.length}</span>
+                          </div>
+                          <span>
+                            Duration:{" "}
+                            <span className="text-[#000000]">
+                              {formatDuration(
+                                conversation?.started_at || null,
+                                conversation?.ended_at || null
+                              )}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="text-[#6325A9] flex items-center gap-2 ">
+                          <span className="text-[#000000] text-[8px]">🟣</span>{" "}
+                          <span>Analyzed with AI</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-            {/* AI Summary Tab */}
-            {activeTab === "summary" && <AISummaryTab summary={summary} messages={messages} />}
-          </div>
-        </div>
+                {/* Call Recording Tab */}
+                {activeTab === "recording" && (
+                  <CallRecordingTab
+                    conversation={conversation}
+                    audioSrc={audioSrc}
+                    isPlaying={isPlaying}
+                    isStreaming={isStreaming}
+                    handlePlayRecording={handlePlayRecording}
+                    setIsPlaying={setIsPlaying}
+                  />
+                )}
+
+                {/* AI Summary Tab */}
+                {activeTab === "summary" && <AISummaryTab summary={summary} messages={messages} />}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </aside>
   );

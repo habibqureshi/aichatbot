@@ -35,14 +35,14 @@ const navigation = [
   {
     name: "Doctors",
     href: "/doctors",
-    icon: "/assets/sideBarIcons/doctor_active.svg",
+    icon: "/assets/sideBarIcons/doctor.svg",
     showOnlyFor: "clinic",
   },
   {
     name: "Tables",
     href: "/tables",
-    icon: "/assets/sideBarIcons/booking_active.svg",
-    showOnlyFor: ["restaurant"],
+    icon: "/assets/sideBarIcons/table.svg",
+    // showOnlyFor: ["restaurant"],
   },
   // {
   //   name: "Specialities",

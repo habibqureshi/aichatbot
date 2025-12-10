@@ -9,6 +9,7 @@ import CallFilterDropdown from "@/components/dashboard/CallFilterDropdown";
 import Image from "next/image";
 import SearchInput from "@/components/common/SearchInput";
 import CallCard from "@/components/dashboard/CallCard";
+import CallCardSkeleton from "@/components/loading-skeletons/CallCardSkeleton";
 
 // StatusBadge and calculateDuration moved to CallCard and CallDetails; removed from page
 
@@ -205,9 +206,7 @@ export default function CallsPage() {
 
             <div ref={listRef} className="mt-4 space-y-1 max-h-[calc(100vh-280px)] overflow-y-auto ">
               {loading && conversations.length === 0 ? (
-                Array.from({ length: 4 }).map((_, idx) => (
-                  <div key={idx} className="rounded-lg animate-pulse bg-[#F5F3FF] h-24" />
-                ))
+                Array.from({ length: 4 }).map((_, idx) => <CallCardSkeleton key={idx} />)
               ) : conversations?.length > 0 ? (
                 conversations.map((conv) => (
                   <CallCard
@@ -221,31 +220,6 @@ export default function CallsPage() {
                 <div className="p-3 text-sm text-gray-500">No calls found.</div>
               )}
             </div>
-            {/* <DataTable
-            title="Recent Calls"
-            columns={columns}
-            data={conversations}
-            // searchKey="patient.name"
-            // searchPlaceholder="Search by patient name..."
-            showSearch={true}
-            loading={loading}
-            initialLoading={loading && conversations.length === 0}
-            externalSearchValue={searchQuery}
-            onExternalSearchChange={handleSearchChange}
-            externalStatusValue={statusFilter}
-            onExternalStatusChange={setStatusFilter}
-            statusOptions={statusOptions}
-            statusPlaceholder="All Status"
-            enablePagination={true}
-            externalPageIndex={currentPage - 1}
-            externalPageSize={pageSize}
-            totalPages={totalPages}
-            onExternalPageChange={handlePageChange}
-            onExternalPageSizeChange={handlePageSizeChange}
-            onRowClick={handleRowClick}
-            rowTooltipText="Click to view conversation details"
-            selectedRowId={selectedConversation?.id}
-          /> */}
           </div>
         </div>
 
@@ -269,7 +243,7 @@ export default function CallsPage() {
               </button>
             </div>
           </div>
-          <CallDetails conversation={selectedConversation} />
+          <CallDetails conversation={selectedConversation} loading={!selectedConversation} />
         </div>
       </div>
     </div>

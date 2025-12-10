@@ -12,32 +12,26 @@ export default function LiveCallActivity({
   agentTime?: string;
 }) {
   return (
-    <div className="bg-brand-card text-white rounded-[8px] p-4 shadow-md">
+    <div className="bg-brand-card text-white rounded-[8px] p-4 shadow-md h-[325px]">
       <div className="text-[24px] font-semibold leading[1.32] tracking-normal text-white">
         Live Call Activity
       </div>
       <div className="text-base font-medium leading[1.32] tracking-normal text-white mt-1">
         Real-time agent status
       </div>
-      <div className="mt-4 bg-[#9151DC] p-3 rounded-md flex flex-col items-start justify-between h-[69px]">
-        <div className="flex items-center gap-2text-base font-medium leading[1.32] tracking-normal text-white">
-          <Image src="/assets/activecall.svg" alt="call" width={24} height={24} className="mr-2" />{" "}
+      <div className="mt-8 bg-[#9151DC] py-2 px-4 rounded-md flex flex-col items-start justify-between h-[69px] border border-[#FFFFFF4D] shadow-[0px_2px_2px_0px_#23272E14]">
+        <div className="flex items-center gap-2 text-base font-medium leading[1.32] tracking-normal text-white">
+          <Image src="/assets/activecall.svg" alt="call" width={18} height={14} className="mr-2" />{" "}
           Active Calls
         </div>
         <div className="text-xl font-semibold leading[1.32] tracking-normal text-white">
           {activeCalls}
         </div>
       </div>
-      <div className="mt-4 bg-[#9151DC] p-3 rounded-md flex items-center justify-between">
+      <div className="mt-4 bg-[#9151DC] py-2 px-4 rounded-md flex items-center justify-between h-[69px] border border-[#FFFFFF4D] shadow-[0px_2px_2px_0px_#23272E14]">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-white/20 rounded-full">
-            <Image
-              src="/assets/images/user.png"
-              alt="agent"
-              width={34}
-              height={34}
-              className="rounded-full"
-            />
+          <div className="flex-shrink-0 w-[46px] h-[46px] rounded-full overflow-hidden bg-[#FFCB14] flex items-center justify-center">
+            <span className="text-white font-medium text-[22px]">A</span>
           </div>
           <div>
             <div className="text-base font-bold leading[1.32] tracking-normal text-white">

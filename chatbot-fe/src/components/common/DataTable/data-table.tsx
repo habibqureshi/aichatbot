@@ -311,10 +311,10 @@ export function DataTable<TData, TValue>({
             // scrollbarColor: "#E8E3FF #F5F3FF",
           }}
         >
-          <table className="min-w-[950px] table-auto w-full ">
-            <thead className="sticky top-0 z-20 bg-brand-light2">
+          <table className="min-w-[950px] table-auto w-full">
+            <thead className="sticky top-0 z-20">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+                <TableRow key={headerGroup.id} className="border-0">
                   {headerGroup.headers.map((header) => {
                     const columnDef = header.column.columnDef as ExtendedColumnDef<TData, TValue>;
                     const widthStyle = columnDef.width ? { width: columnDef.width } : {};
@@ -351,7 +351,7 @@ export function DataTable<TData, TValue>({
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      className={`${row.index % 2 === 0 ? "bg-white" : "bg-transparent"} ${
+                      className={`${row.index % 2 === 0 ? "bg-white rounded-lg border-0" : "border-0"} ${
                         onRowClick ? "cursor-pointer" : ""
                       }`}
                       onClick={onRowClick ? () => onRowClick(row.original) : undefined}

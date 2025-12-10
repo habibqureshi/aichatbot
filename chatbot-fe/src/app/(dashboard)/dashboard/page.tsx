@@ -1,57 +1,82 @@
 "use client";
-import React from "react";
-import { Conversation } from "@/app/actions/conversations";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Conversation, getConversationsList } from "@/app/actions/conversations";
 type MockConversation = Conversation & { summary?: string };
 
 import MetricCard from "@/components/dashboard/dashboard/MetricCard";
 import CallsAreaChart from "@/components/dashboard/dashboard/CallsAreaChart";
 import LiveCallActivity from "@/components/dashboard/dashboard/LiveCallActivity";
+import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
+import { StatusBadge, calculateDuration } from "@/lib/statusUtils";
+import SentimentBar from "@/components/dashboard/dashboard/SentimentBar";
 
 export default function DashboardPage() {
-  const mockCalls: MockConversation[] = [
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const router = useRouter();
+  console.log("conversations", conversations);
+  const columns: ExtendedColumnDef<Conversation>[] = [
     {
-      id: 1,
-      patient: {
-        id: 101,
-        name: "Brooklyn Simmons",
-        phone_number: "+1 234 567 891",
-        created_at: new Date().toISOString(),
-      },
-      started_at: new Date().toISOString(),
-      ended_at: new Date().toISOString(),
-      status: "completed",
-      call_sid: "SID123456",
-      summary: "Appointment scheduled, interested in consultation.",
+      accessorKey: "patient.name",
+      header: "Patient Information",
+      minWidth: "200px",
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium text-gray-900 truncate">{row.original.patient?.name || "N/A"}</div>
+          <div className="text-sm text-gray-500 truncate">
+            {row.original.patient?.phone_number || "N/A"}
+          </div>
+        </div>
+      ),
     },
     {
-      id: 2,
-      patient: {
-        id: 102,
-        name: "Marvin McKinney",
-        phone_number: "+1 234 999 999",
-        created_at: new Date().toISOString(),
-      },
-      started_at: new Date().toISOString(),
-      ended_at: "",
-      status: "ongoing",
-      call_sid: "SID234567",
-      summary: "Left voicemail with callback number.",
+      accessorKey: "started_at",
+      header: "Call Duration",
+      minWidth: "140px",
+      cell: ({ row }) => (
+        <div className="text-sm text-gray-600">
+          {calculateDuration(row.original.started_at, row.original.ended_at)}
+        </div>
+      ),
     },
     {
-      id: 3,
-      patient: {
-        id: 103,
-        name: "Guy Hawkins",
-        phone_number: "+1 234 888 111",
-        created_at: new Date().toISOString(),
-      },
-      started_at: new Date().toISOString(),
-      ended_at: new Date().toISOString(),
-      status: "completed",
-      call_sid: "SID345678",
-      summary: "Converted to sale, sending follow-up info.",
+      accessorKey: "status",
+      header: "Status",
+      minWidth: "80px",
+      cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
+    },
+    {
+      accessorKey: "id",
+      header: "Call ID",
+      minWidth: "100px",
+      cell: ({ row }) => <div className="text-sm text-gray-600">{row.original.id}</div>,
+    },
+    {
+      accessorKey: "call_sid",
+      header: "Call SID",
+      minWidth: "200px",
+      cell: ({ row }) => <div className="text-sm text-gray-600 truncate">{row.original.call_sid}</div>,
     },
   ];
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        setLoading(true);
+        const response = await getConversationsList(1, 3, user_timezone);
+        setConversations(response.data);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+        setConversations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConversations();
+  }, [user_timezone]);
+
   const metrics = [
     {
       title: "Total Calls",
@@ -71,7 +96,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-6">
       {/* Header / Title */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold">Dashboard</h1>
@@ -132,7 +157,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Legend - Vertical Layout */}
-          <div className="flex gap-6 mb-5 ">
+          <div className="flex gap-8 mb-6 pb-4 border-b border-gray-200">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-[#863ED8] inline-block" />
@@ -163,24 +188,33 @@ export default function DashboardPage() {
         <div className="lg:col-span-5">
           <LiveCallActivity />
         </div>
-        {/* Secondary grid: Recent Calls + Sentiment */}
-        {/* <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8">
-          <div className="bg-white rounded-[12px] p-6 shadow-sm border border-transparent">
-            <div className="flex items-center justify-between">
-              <div className="font-semibold text-base">Recent Calls</div>
-              <div className="text-sm text-brand-purple">View All</div>
-            </div>
-            <div className="mt-4 divide-y">
-              {mockCalls.map((c) => (
-                <CallCard key={c.id} conversation={c} />
-              ))}
-            </div>
+
+        <div className="lg:col-span-12">
+          <div className="mt-4">
+            <DataTable
+              title="Recent Calls"
+              columns={columns}
+              data={conversations}
+              loading={loading}
+              enablePagination={false}
+              showSearch={false}
+              actionButton={
+                <div
+                  className="text-sm text-brand-purple cursor-pointer"
+                  onClick={() => router.push("/calls")}
+                >
+                  View All
+                </div>
+              }
+              tableMinHeight="300px"
+              tableMaxHeight="500px"
+            />
           </div>
-        </div> */}
-        {/* <div className="lg:col-span-4">
-          <SentimentBar positive={2456} neutral={756} negative={266} />
-        </div> */}{" "}
+
+          {/* <div className="lg:col-span-4">
+            <SentimentBar positive={2456} neutral={756} negative={266} />
+          </div> */}
+        </div>
       </div>
     </div>
   );

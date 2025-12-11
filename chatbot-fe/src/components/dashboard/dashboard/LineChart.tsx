@@ -51,7 +51,7 @@ export default function CallsAreaChart({ className = "" }: { className?: string 
         >
           <CartesianGrid vertical={false} />
           <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
+          <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
           <Area
             dataKey="failed"
             type="natural"

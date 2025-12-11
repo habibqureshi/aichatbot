@@ -44,7 +44,7 @@ export async function getSpecialitiesList(
       params.append("name", name.trim());
     }
     const response = await API.get(`/api/v1/specialities/?${params.toString()}`);
-    console.log("api response", response?.data);
+    // console.log("api response", response?.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching specialities list:", error);

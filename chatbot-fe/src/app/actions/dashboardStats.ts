@@ -1,0 +1,29 @@
+import { API } from "@/app/http/axio";
+import { ENDPOINTS } from "@/app/http/endpoints";
+
+export interface TotalCallsResponse {
+  total: number;
+}
+
+export interface AverageDurationResponse {
+  average_seconds: number;
+}
+
+export interface ConversionRateResponse {
+  conversion_rate: number;
+}
+
+export async function getTotalCalls(start: string, end: string): Promise<TotalCallsResponse> {
+  const response = await API.get(ENDPOINTS.STATS.TOTAL_CALLS(start, end));
+  return response.data;
+}
+
+export async function getAverageDuration(start: string, end: string): Promise<AverageDurationResponse> {
+  const response = await API.get(ENDPOINTS.STATS.AVERAGE_DURATION(start, end));
+  return response.data;
+}
+
+export async function getConversionRate(start: string, end: string): Promise<ConversionRateResponse> {
+  const response = await API.get(ENDPOINTS.STATS.CONVERSION_RATE(start, end));
+  return response.data;
+}

@@ -5,71 +5,140 @@ import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 import { getRestaurantReservationsList, TableBooking } from "../../../app/actions/table-bookings";
 import { toast } from "react-toastify";
 import { StatusBadge } from "@/lib/statusUtils";
+import Image from "next/image";
+import { formatDate, formatTime } from "@/lib/utils";
+
+const getInitials = (name: string): string => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const colorPalette = [
+  { bg: "#CAD6F2", text: "#4318FF" },
+  { bg: "#E2FBE8", text: "#337F3F" },
+  { bg: "#F9E8F3", text: "#C64C7F" },
+  { bg: "#DFCEF3", text: "#6325A9" },
+  { bg: "#FBD693", text: "#BE800F" },
+];
+
+const getAvatarColors = (customerId: number): { bg: string; text: string } => {
+  const colorIndex = customerId % colorPalette.length;
+  return colorPalette[colorIndex];
+};
 
 const columns: ExtendedColumnDef<TableBooking>[] = [
   {
     accessorKey: "id",
-    header: "Booking ID",
-    width: "120px",
-    cell: ({ row }) => <div className="font-medium text-gray-900">TB-{row.original.id}</div>,
-  },
-  {
-    accessorKey: "customer.name",
-    header: "Customer Name",
-    width: "180px",
+    header: "ID",
+    width: "100px",
     cell: ({ row }) => (
-      <div className="font-medium text-gray-900">
-        {row.original.customer?.name || `Customer ${row.original.customer_id}`}
+      <div className="font-medium text-sm leading-[1.32] tracking-[0%] text-brand-dark1">
+        RES-{String(row.original.id).padStart(3, "0")}
       </div>
     ),
   },
   {
-    accessorKey: "customer.phone_number",
-    header: "Phone no",
-    width: "150px",
-    cell: ({ row }) => (
-      <div className="text-gray-600">{row.original.customer?.phone_number || "N/A"}</div>
-    ),
-  },
-  {
-    accessorKey: "table.table_number",
-    header: "Table",
-    width: "150px",
+    accessorKey: "customer_id",
+    header: "CUSTOMER",
+    width: "200px",
+    cell: ({ row }) => {
+      const customerName = row.original.customer?.name || `Customer ${row.original.customer_id}`;
+      const phoneNumber = row.original.customer?.phone_number || "N/A";
+      const initials = getInitials(customerName);
+      const avatarColors = getAvatarColors(row.original.customer_id);
 
-    cell: ({ row }) => (
-      <div className="text-gray-900">
-        {row.original.table?.table_number || `Table ${row.original.table_id}`}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "party_size",
-    header: "Party Size",
-    width: "150px",
-    cell: ({ row }) => <div className="text-gray-600">{row.original.party_size || "N/A"}</div>,
+      return (
+        <div className="flex items-start gap-3">
+          <div
+            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: avatarColors.bg }}
+          >
+            <span
+              className="text-sm leading-[1.32] tracking-[0%] font-medium"
+              style={{ color: avatarColors.text }}
+            >
+              {initials}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm leading-[1.32] tracking-[0%] font-medium text-brand-dark1 truncate">
+              {customerName}
+            </p>
+            <p className="text-sm leading-[1.32] tracking-[0%] text-brand-light truncate">
+              {phoneNumber}
+            </p>
+          </div>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "reservation_date",
-    header: "Reservation Date/Time",
-    width: "180px",
+    header: "RESERVATION DATE",
+    width: "200px",
+    cell: ({ row }) => {
+      const dateString = row.original.reservation_date;
+      const createdString = row.original.created_at;
+
+      return (
+        <div>
+          {dateString ? (
+            <>
+              {/* Reservation Date */}
+              <p className="flex items-center gap-1 text-sm font-medium text-brand-dark1">
+                <Image src="/assets/CalendarBlank.svg" alt="calendar" width={16} height={16} />
+                {formatDate(dateString)}
+              </p>
+
+              {/* Reservation Time */}
+              <p className="flex items-center gap-1 text-sm font-medium text-brand-dark1">
+                <Image src="/assets/Clock2.svg" alt="clock" width={16} height={16} />
+                {formatTime(dateString)}
+              </p>
+
+              {/* Booked Date */}
+              <p className="flex items-center gap-1 text-sm font-medium text-brand-light3">
+                Booked: {createdString ? formatDate(createdString) : "N/A"}
+              </p>
+            </>
+          ) : (
+            <p className="text-gray-600">N/A</p>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "party_size",
+    header: "GUESTS",
+    width: "120px",
     cell: ({ row }) => (
-      <div className="text-gray-900">
-        {row.original.reservation_date
-          ? new Date(row.original.reservation_date).toLocaleString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "N/A"}
+      <div className="flex items-center gap-2">
+        <Image src="/assets/Users.svg" alt="guests" width={16} height={16} />
+        <span className="font-medium text-brand-dark1">{row.original.party_size || "N/A"}</span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "table_id",
+    header: "TABLE NO",
+    width: "120px",
+    cell: ({ row }) => (
+      <div className="font-medium text-brand-dark1">
+        {row.original.table?.table_number
+          ? `T-${row.original.table.table_number}`
+          : `T-${row.original.table_id}`}
       </div>
     ),
   },
   {
     accessorKey: "status",
-    header: "Status",
-    width: "130px",
+    header: "STATUS",
+    width: "150px",
     cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
   },
 ];

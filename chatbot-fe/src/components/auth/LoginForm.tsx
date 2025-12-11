@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Error from "@/components/common/error";
+import { toast } from "react-toastify";
 
 export default function LoginForm() {
   const initialState: LoginActionResponse = { formData: { username: "", password: "" } };
@@ -13,10 +14,15 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (state.success) {
+      toast.success("Login successful!");
       router.push("/dashboard");
     }
   }, [state.success, router]);
-
+  useEffect(() => {
+    if (state.error) {
+      toast.error(state.error);
+    }
+  }, [state.error]);
   return (
     <form className="space-y-6" action={formAction}>
       <div className="space-y-2">
@@ -67,8 +73,6 @@ export default function LoginForm() {
           "Sign In"
         )}
       </Button>
-
-      {state.error && <Error error={state.error} />}
     </form>
   );
 }

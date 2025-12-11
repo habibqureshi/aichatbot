@@ -4,6 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useInstallation } from "@/app/contexts/InstallationContext";
+import { clearSession } from "@/app/actions/authSession";
+import { toast } from "react-toastify";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -11,11 +13,6 @@ interface SidebarProps {
 }
 
 const navigation = [
-  // {
-  //   name: "Chat",
-  //   href: "/chat",
-  //   icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z",
-  // },
   {
     name: "Dashboard",
     href: "/dashboard",
@@ -30,7 +27,6 @@ const navigation = [
     name: "Reservations",
     href: "/reservations",
     icon: "/assets/sideBarIcons/CalendarDots.svg",
-    // showOnlyFor: "restaurant",
   },
   {
     name: "Appointments",
@@ -39,11 +35,6 @@ const navigation = [
     showOnlyFor: "clinic",
   },
 
-  // {
-  //   name: "Train",
-  //   href: "/train",
-  //   icon: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z",
-  // },
   {
     name: "Doctors",
     href: "/doctors",
@@ -87,7 +78,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       onClose();
     }
   };
-
+  const handleLogoutClick = () => {
+    // Close sidebar on mobile when clicking a link
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
+    clearSession();
+    toast.success("Logout successful");
+  };
   // Filter navigation based on installation type
   const filteredNavigation = navigation.filter((item) => {
     if (isLoading) return true; // Show all items while loading
@@ -185,8 +183,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </h3>
             <div className="space-y-3">
               <Link
-                href="/auth/logout"
-                onClick={handleLinkClick}
+                href="/authentication"
+                onClick={handleLogoutClick}
                 className="group flex items-center w-[192px] sm:w-[248px] h-[56px] p-4 rounded-[16px] transition-all text-white hover:bg-gradient-to-r hover:from-[#A357F7]/20 hover:to-[#CE53B7]/20"
               >
                 <svg className="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

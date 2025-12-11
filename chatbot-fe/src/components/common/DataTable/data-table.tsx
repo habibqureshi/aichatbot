@@ -333,7 +333,7 @@ export function DataTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className="font-medium text-xs  text-[#8695AA] leading-[1.32] tracking-[0.24em] uppercase py-3 px-4 first:pl-6 last:pr-6"
+                        className="font-medium text-xs  text-[#8695AA] leading-[1.32] tracking-[0.24em] uppercase py-3 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6"
                         style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
                       >
                         {header.isPlaceholder

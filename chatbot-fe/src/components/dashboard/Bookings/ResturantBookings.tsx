@@ -40,7 +40,9 @@ const columns: ExtendedColumnDef<TableBooking>[] = [
     header: "Customer Name",
     width: "180px",
     cell: ({ row }) => (
-      <div className="font-medium text-gray-900">{row.original.customer?.name || "N/A"}</div>
+      <div className="font-medium text-gray-900">
+        {row.original.customer?.name || `Customer ${row.original.customer_id}`}
+      </div>
     ),
   },
   {
@@ -56,7 +58,11 @@ const columns: ExtendedColumnDef<TableBooking>[] = [
     header: "Table",
     width: "150px",
 
-    cell: ({ row }) => <div className="text-gray-900">{row.original.table?.table_number || "N/A"}</div>,
+    cell: ({ row }) => (
+      <div className="text-gray-900">
+        {row.original.table?.table_number || `Table ${row.original.table_id}`}
+      </div>
+    ),
   },
   {
     accessorKey: "party_size",

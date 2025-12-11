@@ -272,7 +272,7 @@ export default function CallDetails({
         className="rounded-xl shadow-sm overflow-y-auto"
         style={{
           minHeight: "calc(100vh - 320px)",
-          maxHeight: "calc(100vh - 220px)",
+          maxHeight: "calc(100vh - 185px)",
         }}
       >
         {/* Header */}

@@ -15,12 +15,12 @@ import {
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TableBody, TableCell, TableHead, TableRow } from "@/components/ui/table";
 
 import { LoadingSpinner } from "./loading-spinner";
 import { TableSkeleton } from "./table-skeleton";
+import SearchInput from "@/components/common/SearchInput";
 import Image from "next/image";
 
 // Extended ColumnDef with width properties
@@ -186,30 +186,20 @@ export function DataTable<TData, TValue>({
 
           {/* Search Input */}
           {showSearch && searchKey && (enableFiltering || onExternalSearchChange) && (
-            <div className="relative w-full sm:max-w-sm">
-              <Image
-                height={16}
-                width={16}
-                src="/assets/images/search_icon.svg"
-                alt="search"
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70 z-10"
-              />
-
-              <Input
-                placeholder={searchPlaceholder}
-                value={
-                  onExternalSearchChange
-                    ? externalSearchValue ?? ""
-                    : (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) => {
-                  if (onExternalSearchChange) onExternalSearchChange(event.target.value);
-                  else table.getColumn(searchKey)?.setFilterValue(event.target.value);
-                }}
-                className="h-[42px] w-full rounded-[8px] pl-10 pr-3 border ring-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-muted-foreground placeholder:text-muted-foreground text-[14px] font-normal leading-none tracking-[-0.04em] transition-colors hover:bg-brand-card/20"
-                style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E3FF" }}
-              />
-            </div>
+            <SearchInput
+              placeholder={searchPlaceholder}
+              value={
+                onExternalSearchChange
+                  ? externalSearchValue ?? ""
+                  : (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
+              }
+              onChange={(value) => {
+                if (onExternalSearchChange) onExternalSearchChange(value);
+                else table.getColumn(searchKey)?.setFilterValue(value);
+              }}
+              className="w-full sm:max-w-sm"
+              inputClassName="h-[42px] border text-muted-foreground placeholder:text-muted-foreground text-[14px] font-normal leading-none tracking-[-0.04em] transition-colors bg-[#FFFFFF]"
+            />
           )}
 
           {/* Status Filter */}

@@ -57,8 +57,8 @@ const SearchInput: React.FC<SearchInputProps> = ({
       
       ring-0 outline-none
       focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0
-      focus:bg-transparent
-      hover:bg-transparent
+      
+      hover:border-2 hover:border-gray-300
       
       transition-none
       ${inputClassName}

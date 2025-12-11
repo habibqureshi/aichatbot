@@ -210,9 +210,9 @@ export default function DoctorsPage() {
         columns={columns}
         data={doctors}
         title="Doctors List"
-        // searchKey="name"
-        // searchPlaceholder="Search doctors by name..."
-        // showSearch={true}
+        searchKey="name"
+        searchPlaceholder="Search doctors by name..."
+        showSearch={true}
         loading={loading}
         initialLoading={loading && doctors.length === 0}
         externalSearchValue={searchQuery}

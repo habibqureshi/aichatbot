@@ -65,6 +65,6 @@ export async function getConversationsList(
   name?: string
 ): Promise<ConversationsResponse> {
   const response = await API.get(ENDPOINTS.CONVERSATIONS.LIST(page, limit, user_timezone, status, name));
-  console.log("api response", response?.data);
+  // console.log("api response", response?.data);
   return response.data;
 }

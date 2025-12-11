@@ -84,7 +84,7 @@ export async function getRestaurantReservationsList(
     }
 
     const response = await API.get(`/api/v1/restaurant/reservations?${params.toString()}`);
-    console.log("api response", response?.data);
+    // console.log("api response", response?.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching restaurant reservations list:", error);
@@ -105,7 +105,7 @@ export async function getRestaurantTablesList(
     });
 
     const response = await API.get(`/api/v1/restaurant/tables?${params.toString()}`);
-    console.log("api response", response?.data);
+    // console.log("api response", response?.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching restaurant tables list:", error);
@@ -123,7 +123,7 @@ export async function getRestaurantTable(
     });
 
     const response = await API.get(`/api/v1/restaurant/tables/${table_id}?${params.toString()}`);
-    console.log("api response", response?.data);
+    // console.log("api response", response?.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching restaurant table:", error);
@@ -146,7 +146,7 @@ export async function createRestaurantTable(
     });
 
     const response = await API.post(`/api/v1/restaurant/tables?${params.toString()}`, data);
-    console.log("api response", response?.data);
+    // console.log("api response", response?.data);
     return response.data;
   } catch (error) {
     console.error("Error creating restaurant table:", error);
@@ -170,7 +170,7 @@ export async function updateRestaurantTable(
     });
 
     const response = await API.put(`/api/v1/restaurant/tables/${table_id}?${params.toString()}`, data);
-    console.log("api response", response?.data);
+    // console.log("api response", response?.data);
     return response.data;
   } catch (error) {
     console.error("Error updating restaurant table:", error);

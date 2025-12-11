@@ -28,15 +28,28 @@ const sentimentFromSummary = (summary?: string) => {
 const SentimentBadge = ({ sentiment }: { sentiment: string }) => {
   const styles: Record<string, string> = {
     Positive: "bg-[#F3FDF5D4] text-[#3E864A]",
-    Negative: "bg-red-100 text-red-700",
-    Neutral: "bg-yellow-100 text-yellow-800",
+    Negative: "bg-[#FAE3E3] text-[#B21D1B]",
+    Neutral: "bg-[#F3F4F6] text-[#3E864A]",
   };
+
+  const emojiPaths: Record<string, string> = {
+    Positive: "/assets/Heart-eyes.svg",
+    Negative: "/assets/Pensive.svg",
+    Neutral: "/assets/Smile-with-big-eyes.svg",
+  };
+
   return (
     <span
-      className={`inline-flex items-center text-xs font-semibold px-2 py-1 rounded-full ${
+      className={`inline-flex items-center gap-1 text-base font-medium leading[1.32] px-3 py-1 rounded-full ${
         styles[sentiment] || styles.Neutral
       }`}
     >
+      <Image
+        src={emojiPaths[sentiment] || emojiPaths.Neutral}
+        alt={`${sentiment} emoji`}
+        width={16}
+        height={16}
+      />
       {sentiment}
     </span>
   );
@@ -105,14 +118,14 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
         </div>
 
         <div className="flex flex-col items-start justify-between mt-4">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-[#64748B]">
             <div className="flex items-center gap-2">
               <Image src="/assets/Clock.svg" alt="clock" width={16} height={16} />
               <span className="inline-block">{formatTime(conversation.started_at)}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Image src="/assets/Phone.svg" alt="phone" width={16} height={16} />
-              <span className="font-mono text-[12px] text-gray-700">
+            <div className="flex items-center gap-1">
+              <Image src="/assets/Phone.svg" alt="phone" width={12} height={12} />
+              <span className="font-mono text-[12px] mt-1 text-[#64748B]">
                 {calculateDuration(conversation.started_at, conversation.ended_at)}
               </span>
             </div>
@@ -126,7 +139,7 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
           </div>
         </div>
 
-        <div className="mt-2 font-medium text-base leading-[132%] text-gray-600 max-w-full">
+        <div className="mt-2 font-medium text-base leading-[132%] text-gray-600 max-w-full line-clamp-3">
           {summary || "No summary available."}
         </div>
       </div>

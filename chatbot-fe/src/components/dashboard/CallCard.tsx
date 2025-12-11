@@ -4,6 +4,12 @@
 import React from "react";
 import { Conversation } from "@/app/actions/conversations";
 import Image from "next/image";
+import { StatusBadge } from "@/lib/statusUtils";
+
+const callStatusStyles: Record<string, { bg: string; text: string }> = {
+  completed: { bg: "#F4FBF6", text: "#3E864A" },
+  ongoing: { bg: "#FEF3C7", text: "#92400E" },
+};
 
 type Props = {
   conversation: Conversation;
@@ -32,23 +38,6 @@ const SentimentBadge = ({ sentiment }: { sentiment: string }) => {
       }`}
     >
       {sentiment}
-    </span>
-  );
-};
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const styles: Record<string, string> = {
-    Completed: "bg-[#F4FBF6] text-[#3E864A]",
-    Ongoing: "bg-yellow-100 text-yellow-800",
-  };
-  return (
-    <span
-      className={`inline-flex items-center text-xs font-semibold px-3 py-2 rounded-[8px] ${
-        styles[status] || styles.Ongoing
-      }`}
-    >
-      <span className="w-1 h-1 rounded-full bg-current mr-1"></span>
-      {status}
     </span>
   );
 };
@@ -129,7 +118,11 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
             </div>
           </div>
           <div className="text-xs mt-4">
-            <StatusBadge status={conversation.ended_at ? "Completed" : "Ongoing"} />
+            <StatusBadge
+              status={conversation.ended_at ? "completed" : "ongoing"}
+              statusStyles={callStatusStyles}
+              showDot={true}
+            />
           </div>
         </div>
 

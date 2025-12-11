@@ -10,7 +10,7 @@ import { toast } from "react-toastify";
 import MessageItem from "./MessageItem";
 import CallRecordingTab from "./CallRecordingTab";
 import AISummaryTab from "./AISummaryTab";
-import StatusBadge from "./StatusBadge";
+import { StatusBadge } from "@/lib/statusUtils";
 import { formatDuration, formatDate, formatTime } from "@/lib/utils";
 import CallInfoCardSkeleton from "@/components/loading-skeletons/CallInfoCardSkeleton";
 import CallTabsSkeleton from "@/components/loading-skeletons/CallTabsSkeleton";

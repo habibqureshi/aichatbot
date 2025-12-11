@@ -59,7 +59,7 @@ export default function DashboardPage() {
     {
       accessorKey: "call_sid",
       header: "Call SID",
-      minWidth: "200px",
+      minWidth: "150px",
       cell: ({ row }) => <div className="text-sm text-gray-600 truncate">{row.original.call_sid}</div>,
     },
   ];

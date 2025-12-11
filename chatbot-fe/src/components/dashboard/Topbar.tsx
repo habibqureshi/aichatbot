@@ -72,7 +72,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
               />
             </svg>
           </button> */}
-          <div className="relative group">
+          <div className="hidden lg:flex items-center relative group">
             <button className="flex items-center space-x-2">
               <Image
                 width={32}

@@ -61,9 +61,9 @@ const navigation = [
   // {
   //   name: "Restaurant Settings",
   //   href: "/restaurant-settings",
-  //   iconActive: "/assets/sideBarIcons/knowledge_active.svg", // Using knowledge icon as placeholder
-  //   iconInactive: "/assets/sideBarIcons/knowledge_inactive.svg",
-  //   showOnlyFor: ["restaurant", ],
+
+  //   icon: "/assets/sideBarIcons/Brain.svg",
+  //   // showOnlyFor: ["restaurant", ],
   //   // showOnlyFor: ["restaurant", "clinic"],
   // },
 ];

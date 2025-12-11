@@ -82,7 +82,7 @@ export default function Topbar({ onMenuClick, isSidebarOpen = false }: TopbarPro
                 className="h-8 w-8 rounded-full"
               />
               <span className="hidden sm:block text-sm font-medium text-gray-800">
-                {session?.user?.username || session?.user?.email}
+                {session?.user?.username || session?.user?.email} Admin
               </span>
             </button>
             {/* <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block hover:block z-50">

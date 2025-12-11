@@ -2,48 +2,21 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Conversation, getConversationsList } from "@/app/actions/conversations";
-import {
-  getTotalCalls,
-  getAverageDuration,
-  getConversionRate,
-  getTimeseries,
-  TimeseriesResponse,
-} from "@/app/actions/dashboardStats";
+import { getTimeseries, TimeseriesResponse } from "@/app/actions/dashboardStats";
 
 import MetricCard from "@/components/dashboard/dashboard/MetricCard";
 import CallsAreaChart from "@/components/dashboard/dashboard/CallsAreaChart";
 import LiveCallActivity from "@/components/dashboard/dashboard/LiveCallActivity";
 import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 import { StatusBadge, calculateDuration } from "@/lib/statusUtils";
-import SentimentBar from "@/components/dashboard/dashboard/SentimentBar";
+import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
 export default function DashboardPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [metricsLoading, setMetricsLoading] = useState({
-    totalCalls: true,
-    averageDuration: true,
-    conversionRate: true,
-  });
+  const metrics = useDashboardMetrics();
   const [timeseriesData, setTimeseriesData] = useState<TimeseriesResponse>([]);
   const [timeseriesLoading, setTimeseriesLoading] = useState(true);
-  const [metrics, setMetrics] = useState([
-    {
-      title: "Total Calls",
-      value: "0",
-      delta: "0%",
-    },
-    {
-      title: "Average Duration",
-      value: "0:00",
-      delta: "0%",
-    },
-    {
-      title: "Conversion Rate",
-      value: "0%",
-      delta: "0%",
-    },
-  ]);
   const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const router = useRouter();
   // console.log("conversations", conversations);
@@ -108,88 +81,6 @@ export default function DashboardPage() {
   }, [user_timezone]);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        // Set all metrics to loading initially
-        setMetricsLoading({
-          totalCalls: true,
-          averageDuration: true,
-          conversionRate: true,
-        });
-
-        // Get date range for last 30 days
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
-
-        const start = startDate.toISOString().split("T")[0];
-        const end = endDate.toISOString().split("T")[0];
-
-        // Fetch metrics individually to handle failures gracefully
-        const metricsData = [
-          {
-            title: "Total Calls",
-            value: "0",
-            delta: "0%",
-          },
-          {
-            title: "Average Duration",
-            value: "0:00",
-            delta: "0%",
-          },
-          {
-            title: "Conversion Rate",
-            value: "0%",
-            delta: "0%",
-          },
-        ];
-
-        // Fetch total calls
-        try {
-          const totalCallsRes = await getTotalCalls(start, end);
-          metricsData[0].value = totalCallsRes.total.toLocaleString();
-        } catch (error) {
-          console.error("Error fetching total calls:", error);
-        } finally {
-          setMetricsLoading((prev) => ({ ...prev, totalCalls: false }));
-        }
-
-        // Fetch average duration
-        try {
-          const avgDurationRes = await getAverageDuration(start, end);
-          metricsData[1].value = formatDuration(avgDurationRes.average_seconds);
-        } catch (error) {
-          console.error("Error fetching average duration:", error);
-        } finally {
-          setMetricsLoading((prev) => ({ ...prev, averageDuration: false }));
-        }
-
-        // Fetch conversion rate
-        try {
-          const conversionRateRes = await getConversionRate(start, end);
-          metricsData[2].value = `${Math.round(conversionRateRes.conversion_rate)}%`;
-        } catch (error) {
-          console.error("Error fetching conversion rate:", error);
-        } finally {
-          setMetricsLoading((prev) => ({ ...prev, conversionRate: false }));
-        }
-
-        setMetrics(metricsData);
-      } catch (error) {
-        console.error("Error in fetchMetrics:", error);
-
-        setMetricsLoading({
-          totalCalls: false,
-          averageDuration: false,
-          conversionRate: false,
-        });
-      }
-    };
-
-    fetchMetrics();
-  }, []);
-
-  useEffect(() => {
     const fetchTimeseries = async () => {
       try {
         setTimeseriesLoading(true);
@@ -215,12 +106,6 @@ export default function DashboardPage() {
     fetchTimeseries();
   }, []);
 
-  const formatDuration = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
-
   // Calculate totals from timeseries data
   const totalSuccessful = timeseriesData.reduce((sum, item) => sum + item.successful, 0);
   const totalFailed = timeseriesData.reduce((sum, item) => sum + item.failed, 0);
@@ -237,25 +122,15 @@ export default function DashboardPage() {
 
       {/* Summary metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {metrics.map((item, index) => {
-          let loading = false;
-          if (item.title === "Total Calls") {
-            loading = metricsLoading.totalCalls;
-          } else if (item.title === "Average Duration") {
-            loading = metricsLoading.averageDuration;
-          } else if (item.title === "Conversion Rate") {
-            loading = metricsLoading.conversionRate;
-          }
-          return (
-            <MetricCard
-              key={index}
-              title={item.title}
-              value={item.value}
-              delta={item.delta}
-              loading={loading}
-            />
-          );
-        })}
+        {metrics.map((item, index) => (
+          <MetricCard
+            key={index}
+            title={item.title}
+            value={item.value}
+            delta={item.delta}
+            loading={item.loading}
+          />
+        ))}
       </div>
 
       {/* Main grid */}

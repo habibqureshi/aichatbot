@@ -25,3 +25,5 @@ export async function updateSetting(id: number, value: string): Promise<Setting>
         throw error
     }
 } 
+
+

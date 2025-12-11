@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Conversation, getConversationsList } from "@/app/actions/conversations";
-type MockConversation = Conversation & { summary?: string };
 
 import MetricCard from "@/components/dashboard/dashboard/MetricCard";
 import CallsAreaChart from "@/components/dashboard/dashboard/CallsAreaChart";

@@ -30,6 +30,56 @@ async function getTokenFromCookie(): Promise<string | null> {
   }
 }
 
+// Helper function to get refresh token from cookie
+async function getRefreshTokenFromCookie(): Promise<string | null> {
+  const encryptedRefreshToken = getCookie("refresh_session");
+  if (!encryptedRefreshToken) return null;
+
+  try {
+    const { decrypt } = await import("@/lib/encryption");
+    const decryptedRefreshToken = await decrypt(encryptedRefreshToken);
+    return decryptedRefreshToken;
+  } catch (error) {
+    console.error("Error decrypting refresh token:", error);
+    return null;
+  }
+}
+
+// Helper function to update access token in cookies
+async function updateAccessToken(newAccessToken: string): Promise<void> {
+  try {
+    const { encrypt } = await import("@/lib/encryption");
+    const encryptedToken = await encrypt(newAccessToken);
+    const Cookies = await import("js-cookie").then((m) => m.default);
+    Cookies.set("auth_session", encryptedToken, { path: "/" });
+  } catch (error) {
+    console.error("Error updating access token:", error);
+  }
+}
+
+// Helper function to update refresh token in cookies
+async function updateRefreshToken(newRefreshToken: string): Promise<void> {
+  try {
+    const { encrypt } = await import("@/lib/encryption");
+    const encryptedRefreshToken = await encrypt(newRefreshToken);
+    const Cookies = await import("js-cookie").then((m) => m.default);
+    Cookies.set("refresh_session", encryptedRefreshToken, { path: "/", expires: 30 });
+  } catch (error) {
+    console.error("Error updating refresh token:", error);
+  }
+}
+
+// Helper function to clear session
+async function clearSessionCookies(): Promise<void> {
+  try {
+    const Cookies = await import("js-cookie").then((m) => m.default);
+    Cookies.remove("auth_session");
+    Cookies.remove("refresh_session");
+  } catch (error) {
+    console.error("Error clearing session:", error);
+  }
+}
+
 // Create axios instance
 const API = axios.create({
   baseURL: ENV.NEXT_PUBLIC_API_URL,
@@ -69,17 +119,61 @@ API.interceptors.response.use(
     return response;
   },
   async (error) => {
+    const originalRequest = error.config;
     console.log("Interceptors Error:", error);
 
+    // Handle 401 - Token expired, try to refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Get refresh token
+        const refreshToken = await getRefreshTokenFromCookie();
+        if (!refreshToken) {
+          // No refresh token available, redirect to login
+          if (typeof window !== "undefined") {
+            window.location.href = "/authentication";
+          }
+          return Promise.reject(error);
+        }
+
+        // Call refresh endpoint
+        const refreshResponse = await axios.post(`${ENV.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+
+        // Update access token in cookies
+        if (refreshResponse.data.access_token) {
+          await updateAccessToken(refreshResponse.data.access_token);
+
+          // Update refresh token if provided
+          if (refreshResponse.data.refresh_token) {
+            await updateRefreshToken(refreshResponse.data.refresh_token);
+          }
+
+          // Retry original request with new token
+          const newToken = refreshResponse.data.access_token;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return API(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
+        // Refresh failed, redirect to login
+        if (typeof window !== "undefined") {
+          window.location.href = "/authentication";
+        }
+        return Promise.reject(error);
+      }
+    }
+
     // Handle 403 authentication errors
-    // if (error.response?.status === 403) {
-    //   // Clear cookie on client side
-    //   if (typeof window !== "undefined") {
-    //     // Delete the auth_session cookie
-    //     document.cookie = "auth_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-    //     window.location.href = "/auth/login";
-    //   }
-    // }
+    if (error.response?.status === 403) {
+      // Clear session cookies
+      await clearSessionCookies();
+      if (typeof window !== "undefined") {
+        window.location.href = "/authentication";
+      }
+    }
 
     // Parse and format error messages uniformly
     if (error.response?.data) {

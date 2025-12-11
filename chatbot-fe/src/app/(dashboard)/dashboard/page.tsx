@@ -111,7 +111,6 @@ export default function DashboardPage() {
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Chart */}
         <div className="lg:col-span-7 bg-[#F6F7F9] rounded-[12px] p-6 pb-4 pt-4 shadow-sm border border-[#EEEFF2]">
           {/* Header with Title and Filter */}
           <div className="flex items-center justify-between mb-6">
@@ -184,44 +183,41 @@ export default function DashboardPage() {
           {/* Chart */}
           <CallsAreaChart />
         </div>
-        {/* Right: Live Call Activity */}
+
         <div className="lg:col-span-5">
           <LiveCallActivity />
         </div>
 
         <div className="lg:col-span-12">
-          <div className="mt-4">
-            <DataTable
-              title="Recent Calls"
-              columns={columns}
-              data={conversations}
-              loading={loading}
-              enablePagination={false}
-              showSearch={false}
-              actionButton={
-                <div
-                  className="text-sm text-brand-purple cursor-pointer"
-                  onClick={() => router.push("/calls")}
-                >
-                  View All
-                </div>
-              }
-              tableMinHeight="300px"
-              tableMaxHeight="500px"
-            />
-          </div>
-
-          <div className="lg:col-span-12  bg-[#F6F7F9] rounded-[12px]">
-            <SentimentBar
-              positive={2456}
-              neutral={756}
-              negative={266}
-              iconSize={44}
-              emojiSize={24}
-              fillColors={{ positive: "#337F3F", neutral: "#F9A307", negative: "#C61E12" }}
-              progressBarColors={["#984AF8", "#E34998", "#4318FF"]}
-            />
-          </div>
+          <DataTable
+            title="Recent Calls"
+            columns={columns}
+            data={conversations}
+            loading={loading}
+            enablePagination={false}
+            showSearch={false}
+            actionButton={
+              <div
+                className="text-sm text-brand-purple cursor-pointer"
+                onClick={() => router.push("/calls")}
+              >
+                View All
+              </div>
+            }
+            tableMinHeight="300px"
+            tableMaxHeight="500px"
+          />
+        </div>
+        <div className="lg:col-span-12  bg-[#F6F7F9] rounded-[12px]">
+          <SentimentBar
+            positive={2456}
+            neutral={756}
+            negative={266}
+            iconSize={44}
+            emojiSize={24}
+            fillColors={{ positive: "#337F3F", neutral: "#F9A307", negative: "#C61E12" }}
+            progressBarColors={["#984AF8", "#E34998", "#4318FF"]}
+          />
         </div>
       </div>
     </div>

@@ -56,73 +56,69 @@ export default function SentimentBar({
       <div className="flex flex-col gap-4 mt-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
-            <div
-              className="rounded-full flex items-center justify-center"
-              style={{
-                width: iconSize,
-                height: iconSize,
-                backgroundColor: fillColors.positive,
-                opacity: 1,
-              }}
-            >
-              <Image
-                src="/assets/Heart-eyes.svg"
-                alt="positive"
-                width={emojiSize}
-                height={emojiSize}
-                style={{ transform: `rotate(0deg)`, opacity: 1 }}
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className="rounded-full"
+                style={{
+                  width: iconSize,
+                  height: iconSize,
+                  backgroundColor: fillColors.positive,
+                  opacity: 1,
+                }}
               />
+              <Image src="/assets/Heart-eyes.svg" alt="positive" width={emojiSize} height={emojiSize} />
             </div>
-            <div className="text-sm font-medium">Positive</div>
-            <div className="text-xs text-gray-500 ml-2">{positive} Calls</div>
+            <div className="flex flex-col">
+              <div className="text-sm font-medium">Positive</div>
+              <div className="text-xs text-gray-500 ml-0">{positive} Calls</div>
+            </div>
           </div>
           <div className="text-sm font-semibold text-brand-purple ml-4">{pPct}%</div>
         </div>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
-            <div
-              className="rounded-full flex items-center justify-center"
-              style={{
-                width: iconSize,
-                height: iconSize,
-                backgroundColor: fillColors.neutral,
-                opacity: 1,
-              }}
-            >
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className="rounded-full"
+                style={{
+                  width: iconSize,
+                  height: iconSize,
+                  backgroundColor: fillColors.neutral,
+                  opacity: 1,
+                }}
+              />
               <Image
                 src="/assets/Smile-with-big-eyes.svg"
                 alt="neutral"
                 width={emojiSize}
                 height={emojiSize}
-                style={{ transform: `rotate(0deg)`, opacity: 1 }}
               />
             </div>
-            <div className="text-sm font-medium">Neutral</div>
-            <div className="text-xs text-gray-500 ml-2">{neutral} Calls</div>
+            <div className="flex flex-col">
+              <div className="text-sm font-medium">Neutral</div>
+              <div className="text-xs text-gray-500 ml-0">{neutral} Calls</div>
+            </div>
           </div>
           <div className="text-sm font-semibold text-brand-purple ml-4">{nPct}%</div>
         </div>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
-            <div
-              className="rounded-full flex items-center justify-center"
-              style={{
-                width: iconSize,
-                height: iconSize,
-                backgroundColor: fillColors.negative,
-                opacity: 1,
-              }}
-            >
-              <Image
-                src="/assets/Pensive.svg"
-                alt="negative"
-                width={emojiSize}
-                height={emojiSize}
-                style={{ transform: `rotate(0deg)`, opacity: 1 }}
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className="rounded-full"
+                style={{
+                  width: iconSize,
+                  height: iconSize,
+                  backgroundColor: fillColors.negative,
+                  opacity: 1,
+                }}
               />
+              <Image src="/assets/Pensive.svg" alt="negative" width={emojiSize} height={emojiSize} />
             </div>
-            <div className="text-sm font-medium">Negative</div>
-            <div className="text-xs text-gray-500 ml-2">{negative} Calls</div>
+            <div className="flex flex-col">
+              <div className="text-sm font-medium">Negative</div>
+              <div className="text-xs text-gray-500 ml-0">{negative} Calls</div>
+            </div>
           </div>
           <div className="text-sm font-semibold text-brand-purple ml-4">{negPct}%</div>
         </div>

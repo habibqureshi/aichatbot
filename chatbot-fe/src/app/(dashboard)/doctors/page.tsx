@@ -8,6 +8,28 @@ import { useRouter } from "next/navigation";
 import { getDoctorsList, Doctor, deleteDoctor } from "@/app/actions/doctors";
 import { toast } from "react-toastify";
 
+const getInitials = (name: string): string => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const colorPalette = [
+  { bg: "#CAD6F2", text: "#4318FF" },
+  { bg: "#E2FBE8", text: "#337F3F" },
+  { bg: "#F9E8F3", text: "#C64C7F" },
+  { bg: "#DFCEF3", text: "#6325A9" },
+  { bg: "#FBD693", text: "#BE800F" },
+];
+
+const getAvatarColors = (id: number): { bg: string; text: string } => {
+  const colorIndex = id % colorPalette.length;
+  return colorPalette[colorIndex];
+};
+
 export default function DoctorsPage() {
   const router = useRouter();
   const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -33,12 +55,27 @@ export default function DoctorsPage() {
       accessorKey: "name",
       header: "Doctor Information",
       width: "250px",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium text-gray-900">{row.original.name || ""}</div>
-          <div className="text-sm text-gray-500">{row.original?.specialty || "N/A"}</div>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const initials = getInitials(row.original.name || "");
+        const avatarColors = getAvatarColors(row.original.id);
+
+        return (
+          <div className="flex items-start gap-3">
+            <div
+              className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: avatarColors.bg }}
+            >
+              <span className="text-sm font-semibold" style={{ color: avatarColors.text }}>
+                {initials}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-gray-900">{row.original.name || ""}</div>
+              <div className="text-sm text-gray-500">{row.original?.specialty || "N/A"}</div>
+            </div>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "phone_number",
@@ -156,11 +193,6 @@ export default function DoctorsPage() {
     setSearchQuery(value);
   };
 
-  const handleDeleteClick = (doctor: Doctor) => {
-    setDoctorToDelete(doctor);
-    setDeleteDialogOpen(true);
-  };
-
   const handleConfirmDelete = async () => {
     if (!doctorToDelete) return;
 
@@ -190,7 +222,7 @@ export default function DoctorsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Doctors</h1>
           <p className="text-sm sm:text-base text-gray-600 mt-1">
-            Manage doctor profiles and availability 
+            Manage doctor profiles and availability
           </p>
         </div>
         <Link href="/doctors/manage" className="btn-primary-gradient">

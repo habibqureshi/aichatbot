@@ -312,13 +312,13 @@ export default function CallDetails({
                   {card.subtitle && (
                     <div className="text-xs text-gray-500 break-words">{card.subtitle}</div>
                   )}
-                  {card.extraContent && <div className="mt-3">{card.extraContent}</div>}
-                  {card.additionalText &&
+                  {card.extraContent && <div className="mt-1">{card.extraContent}</div>}
+                  {/* {card.additionalText &&
                     card.additionalText.map((text, textIndex) => (
                       <div key={textIndex} className="mt-2">
                         <div className="text-xs text-gray-400 break-words">{text}</div>
                       </div>
-                    ))}
+                    ))} */}
                 </div>
               ))}
             </div>

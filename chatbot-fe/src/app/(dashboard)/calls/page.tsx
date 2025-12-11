@@ -29,6 +29,7 @@ export default function CallsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [totalCount, setTotalCount] = useState<number>(0);
   const [showList, setShowList] = useState<boolean>(true);
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 
   // Status options passed from parent
   const statusOptions = [
@@ -153,15 +154,80 @@ export default function CallsPage() {
   };
 
   return (
-    <div className="">
+    <div className="relative">
+      {/* Drawer for small screens */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-lg transform transition-transform duration-300">
+            <div className="p-4 border-b">
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold text-brand-dark text-lg">Recent Calls</h3>
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="font-medium text-brand-light text-sm">
+                {totalCount.toLocaleString()} total calls
+              </p>
+            </div>
+            <div className="p-4">
+              <SearchInput
+                placeholder="Search calls by name, phone, or email"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="mb-4"
+              />
+              <CallFilterDropdown
+                options={statusOptions}
+                selectedValue={statusFilter}
+                onChange={(v: string | number | null) => setStatusFilter(String(v))}
+                trigger={
+                  <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer mb-4">
+                    <Image src="/assets/Funnel.svg" alt="filter" width={20} height={20} />
+                    <p className="font-medium text-brand-dark text-sm">Filter</p>
+                  </div>
+                }
+              />
+            </div>
+            <div className="overflow-y-auto max-h-[calc(100vh-200px)] space-y-1 px-4">
+              {loading && conversations.length === 0 ? (
+                Array.from({ length: 4 }).map((_, idx) => <CallCardSkeleton key={idx} />)
+              ) : conversations?.length > 0 ? (
+                conversations.map((conv) => (
+                  <CallCard
+                    key={conv.id}
+                    conversation={conv}
+                    onClick={() => {
+                      handleRowClick(conv);
+                      setDrawerOpen(false); // Close drawer after selection
+                    }}
+                    isSelected={selectedConversation?.id === conv.id}
+                  />
+                ))
+              ) : (
+                <div className="p-3 text-sm text-gray-500">No calls found.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-6">
+        {/* Calls List - Hidden on small screens, shown on large */}
         <div
-          className={`relative transition-all duration-300 ease-in-out ${
+          className={`hidden lg:block relative transition-all duration-300 ease-in-out ${
             showList ? "lg:w-4/12" : "lg:w-0"
           } overflow-hidden`}
         >
           <div className="h-full overflow-auto border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] py-4">
-            <div className="w-full flex justify-between items-center mb-4 px-4 ">
+            <div className="w-full flex justify-between items-center mb-4 px-4">
               <div className="flex flex-col">
                 <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
                   Recent Calls
@@ -190,7 +256,7 @@ export default function CallsPage() {
                 Showing <span className="font-medium">{conversations.length}</span> calls
               </div>
             </div>
-            <div className="flex flex-col gap-3 px-4 ">
+            <div className="flex flex-col gap-3 px-4">
               <div className="flex gap-2 items-center">
                 <div className="flex-1">
                   <SearchInput
@@ -200,11 +266,10 @@ export default function CallsPage() {
                     className="bg-[#F9FAFB] border border-[#E6E7EB] rounded-[8px]"
                   />
                 </div>
-                {/* Filter dropdown moved to header; no inline select here */}
               </div>
             </div>
 
-            <div ref={listRef} className="mt-4 space-y-1 max-h-[calc(100vh-280px)] overflow-y-auto ">
+            <div ref={listRef} className="mt-4 space-y-1 max-h-[calc(100vh-280px)] overflow-y-auto">
               {loading && conversations.length === 0 ? (
                 Array.from({ length: 4 }).map((_, idx) => <CallCardSkeleton key={idx} />)
               ) : conversations?.length > 0 ? (
@@ -223,14 +288,24 @@ export default function CallsPage() {
           </div>
         </div>
 
+        {/* Call Details */}
         <div
           className={`transition-all duration-300 ease-in-out ${showList ? "lg:w-8/12" : "lg:w-full"}`}
         >
           <div className="flex items-center justify-between mb-4">
-            <div>
+            <div className="flex items-center gap-4">
+              {/* Drawer toggle button for small screens */}
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="lg:hidden bg-white border rounded-md px-3 py-3 font-normal text-brand-button text-lg leading-[1.32] flex items-center gap-2"
+              >
+                <Image src="/assets/CaretLeft.svg" alt="Calls" width={16} height={16} />
+                Recent Calls
+              </button>
+              {/* Toggle button for large screens */}
               <button
                 onClick={() => setShowList(!showList)}
-                className="bg-white border rounded-md px-3 py-3 font-normal  text-brand-button text-lg leading-[1.32]   flex items-center gap-2"
+                className="hidden lg:flex bg-white border rounded-md px-3 py-3 font-normal text-brand-button text-lg leading-[1.32] items-center gap-2"
               >
                 <Image
                   src="/assets/CaretLeft.svg"

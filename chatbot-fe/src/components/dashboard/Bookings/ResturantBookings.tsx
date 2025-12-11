@@ -4,29 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 import { getRestaurantReservationsList, TableBooking } from "../../../app/actions/table-bookings";
 import { toast } from "react-toastify";
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<string, { bg: string; text: string }> = {
-    scheduled: { bg: "#10B981", text: "#FFFFFF" },
-    confirmed: { bg: "#10B981", text: "#FFFFFF" },
-    pending: { bg: "#FBBF24", text: "#FFFFFF" },
-    cancelled: { bg: "#EF4444", text: "#FFFFFF" },
-    canceled: { bg: "#EF4444", text: "#FFFFFF" },
-    completed: { bg: "#3B82F6", text: "#FFFFFF" },
-    rescheduled: { bg: "#3B82F6", text: "#FFFFFF" },
-  };
-
-  const style = statusStyles[status.toLowerCase()] || { bg: "#6B7280", text: "#FFFFFF" };
-
-  return (
-    <span
-      className="inline-flex px-3 py-1 text-xs font-medium rounded"
-      style={{ backgroundColor: style.bg, color: style.text }}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
+import { StatusBadge } from "@/lib/statusUtils";
 
 const columns: ExtendedColumnDef<TableBooking>[] = [
   {

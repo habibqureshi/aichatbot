@@ -1,20 +1,41 @@
 import React from "react";
 
-export const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<string, string> = {
-    completed: "bg-green-100 text-green-800",
-    "in-progress": "bg-blue-100 text-blue-800",
-    failed: "bg-red-100 text-red-800",
-    missed: "bg-yellow-100 text-yellow-800",
-    follow_up_needed: "bg-orange-100 text-orange-800",
+type StatusBadgeProps = {
+  status: string;
+  statusStyles?: Record<string, { bg: string; text: string }>;
+  showDot?: boolean;
+};
+
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, statusStyles, showDot = false }) => {
+  const defaultStatusStyles: Record<string, { bg: string; text: string }> = {
+    // Booking statuses
+    scheduled: { bg: "#10B981", text: "#FFFFFF" },
+    confirmed: { bg: "#10B981", text: "#FFFFFF" },
+    pending: { bg: "#FBBF24", text: "#FFFFFF" },
+    cancelled: { bg: "#EF4444", text: "#FFFFFF" },
+    canceled: { bg: "#EF4444", text: "#FFFFFF" },
+    completed: { bg: "#10B981", text: "#FFFFFF" },
+    rescheduled: { bg: "#3B82F6", text: "#FFFFFF" },
+    // Call statuses
+    "in-progress": { bg: "#3B82F6", text: "#FFFFFF" },
+    failed: { bg: "#EF4444", text: "#FFFFFF" },
+    missed: { bg: "#FBBF24", text: "#FFFFFF" },
+    follow_up_needed: { bg: "#F97316", text: "#FFFFFF" },
+    ongoing: { bg: "#FEF3C7", text: "#92400E" },
+    // Default fallback
+    default: { bg: "#6B7280", text: "#FFFFFF" },
   };
+
+  const styles = statusStyles || defaultStatusStyles;
+  const cleanStatus = status?.trim().toLowerCase().replace(/_/g, "-");
+  const style = styles[cleanStatus] || styles.default;
 
   return (
     <span
-      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-        statusStyles[status] || "bg-gray-100 text-gray-800"
-      }`}
+      className="inline-flex items-center px-3 py-1 text-xs font-medium rounded"
+      style={{ backgroundColor: style.bg, color: style.text }}
     >
+      {showDot && <span className="w-1 h-1 rounded-full bg-current mr-1"></span>}
       {status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
     </span>
   );

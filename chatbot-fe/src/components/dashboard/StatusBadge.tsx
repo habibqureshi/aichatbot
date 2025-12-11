@@ -2,10 +2,11 @@ import React from "react";
 
 type StatusBadgeProps = {
   status: string;
+  statusStyles?: Record<string, { bg: string; text: string }>;
 };
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const statusStyles: Record<string, { bg: string; text: string }> = {
+const StatusBadge: React.FC<StatusBadgeProps> = ({ status, statusStyles }) => {
+  const defaultStatusStyles: Record<string, { bg: string; text: string }> = {
     active: { bg: "#06A35A", text: "#FFFFFF" },
     confirmed: { bg: "#10B981", text: "#FFFFFF" },
     pending: { bg: "#FBBF24", text: "#FFFFFF" },
@@ -15,8 +16,9 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     rescheduled: { bg: "#3B82F6", text: "#FFFFFF" },
   };
 
+  const styles = statusStyles || defaultStatusStyles;
   const cleanStatus = status?.trim().toLowerCase();
-  const style = statusStyles[cleanStatus] || { bg: "#6B7280", text: "#FFFFFF" };
+  const style = styles[cleanStatus] || { bg: "#6B7280", text: "#FFFFFF" };
 
   return (
     <span

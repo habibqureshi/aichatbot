@@ -94,7 +94,7 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
     <div
       role="button"
       onClick={() => onClick && onClick(conversation)}
-      className={`cursor-pointer flex items-start gap-1 p-6 min-h-[200px] transition-shadow 
+      className={`cursor-pointer flex items-start gap-1 p-6 min-h-[150px] transition-shadow 
     border-b border-gray-200
     ${
       isSelected
@@ -117,7 +117,7 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
           </div>
         </div>
 
-        <div className="flex flex-col items-start justify-between mt-4">
+        <div className="flex flex-col items-start justify-between mt-2">
           <div className="flex items-center gap-2 text-xs text-[#64748B]">
             <div className="flex items-center gap-2">
               <Image src="/assets/Clock.svg" alt="clock" width={16} height={16} />
@@ -130,7 +130,7 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
               </span>
             </div>
           </div>
-          <div className="text-xs mt-4">
+          <div className="text-xs mt-2">
             <StatusBadge
               status={conversation.ended_at ? "completed" : "ongoing"}
               statusStyles={callStatusStyles}
@@ -139,7 +139,7 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
           </div>
         </div>
 
-        <div className="mt-2 font-medium text-base leading-[132%] text-gray-600 max-w-full line-clamp-3">
+        <div className="mt-1 font-medium text-base leading-[132%] text-gray-600 max-w-full line-clamp-3">
           {summary || "No summary available."}
         </div>
       </div>

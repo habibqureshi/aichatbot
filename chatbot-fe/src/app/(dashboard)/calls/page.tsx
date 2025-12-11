@@ -223,7 +223,7 @@ export default function CallsPage() {
         {/* Calls List - Hidden on small screens, shown on large */}
         <div
           className={`hidden lg:block relative transition-all duration-300 ease-in-out ${
-            showList ? "lg:w-4/12" : "lg:w-0"
+            showList ? "lg:w-3/12" : "lg:w-0"
           } overflow-hidden`}
         >
           <div className="h-full overflow-auto border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] py-4">
@@ -290,7 +290,7 @@ export default function CallsPage() {
 
         {/* Call Details */}
         <div
-          className={`transition-all duration-300 ease-in-out ${showList ? "lg:w-8/12" : "lg:w-full"}`}
+          className={`transition-all duration-300 ease-in-out ${showList ? "lg:w-9/12" : "lg:w-full"}`}
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">

@@ -24,6 +24,15 @@ export interface LiveActivityResponse {
   }>;
 }
 
+export interface TimeseriesData {
+  label: string;
+  successful: number;
+  failed: number;
+  total: number;
+}
+
+export type TimeseriesResponse = TimeseriesData[];
+
 export async function getTotalCalls(start: string, end: string): Promise<TotalCallsResponse> {
   const response = await API.get(ENDPOINTS.STATS.TOTAL_CALLS(start, end));
   return response.data;
@@ -41,5 +50,14 @@ export async function getConversionRate(start: string, end: string): Promise<Con
 
 export async function getLiveActivity(): Promise<LiveActivityResponse> {
   const response = await API.get(ENDPOINTS.STATS.LIVE());
+  return response.data;
+}
+
+export async function getTimeseries(
+  start: string,
+  end: string,
+  interval: string = "month"
+): Promise<TimeseriesResponse> {
+  const response = await API.get(ENDPOINTS.STATS.TIMESERIES(start, end, interval));
   return response.data;
 }

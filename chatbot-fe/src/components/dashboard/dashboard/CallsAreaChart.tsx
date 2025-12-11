@@ -4,21 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
 
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
-
-const chartData = [
-  { month: "Apr", successful: 50, failed: 80 },
-  { month: "May", successful: 80, failed: 60 },
-  { month: "Jun", successful: 70, failed: 75 },
-  { month: "Jul", successful: 120, failed: 40 },
-  { month: "Aug", successful: 100, failed: 55 },
-  { month: "Sep", successful: 140, failed: 35 },
-  { month: "Oct", successful: 130, failed: 50 },
-  { month: "Nov", successful: 150, failed: 30 },
-  { month: "Dec", successful: 160, failed: 45 },
-  { month: "Jan", successful: 140, failed: 55 },
-  { month: "Feb", successful: 130, failed: 50 },
-  { month: "Mar", successful: 170, failed: 25 },
-];
+import { TimeseriesData } from "@/app/actions/dashboardStats";
 
 const chartConfig = {
   successful: {
@@ -31,7 +17,17 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export default function CallsAreaChart({ className = "" }: { className?: string }) {
+interface CallsAreaChartProps {
+  data?: TimeseriesData[];
+  loading?: boolean;
+  className?: string;
+}
+
+export default function CallsAreaChart({
+  data = [],
+  loading = false,
+  className = "",
+}: CallsAreaChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [chartWidth, setChartWidth] = useState(680);
 
@@ -46,6 +42,78 @@ export default function CallsAreaChart({ className = "" }: { className?: string 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Transform API data to chart format and add dummy data for better visualization
+  //TODO: remove dummy data when real data is sufficient
+  const transformChartData = (apiData: TimeseriesData[]) => {
+    // Create a base dataset with dummy data for a full year
+    const baseData = [
+      { month: "Jan", successful: 45, failed: 12 },
+      { month: "Feb", successful: 52, failed: 15 },
+      { month: "Mar", successful: 48, failed: 11 },
+      { month: "Apr", successful: 91, failed: 18 },
+      { month: "May", successful: 55, failed: 14 },
+      { month: "Jun", successful: 67, failed: 20 },
+      { month: "Jul", successful: 72, failed: 22 },
+      { month: "Aug", successful: 68, failed: 19 },
+      { month: "Sep", successful: 75, failed: 21 },
+      { month: "Oct", successful: 82, failed: 24 },
+      { month: "Nov", successful: 78, failed: 23 },
+      { month: "Dec", successful: 85, failed: 25 },
+    ];
+
+    // If we have API data, replace the corresponding months with real data
+    if (apiData.length > 0) {
+      apiData.forEach((item) => {
+        const monthNum = parseInt(item.label.split("-")[1]);
+        const monthNames = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        const monthName = monthNames[monthNum - 1];
+
+        if (monthName) {
+          const index = baseData.findIndex((d) => d.month === monthName);
+          if (index !== -1) {
+            baseData[index] = {
+              month: monthName,
+              successful: item.successful,
+              failed: item.failed,
+            };
+          }
+        }
+      });
+    }
+
+    return baseData;
+  };
+
+  const chartData = transformChartData(data);
+  // const chartData = data.map(item => ({
+  //   month: item.label,
+  //   successful: item.successful,
+  //   failed: item.failed,
+  // }));
+
+  // Calculate max value for Y-axis
+  const maxValue = Math.max(
+    ...chartData.map((item) => Math.max(item.successful, item.failed)),
+    200 // minimum
+  );
+
+  if (loading) {
+    return <div ref={containerRef} className="w-full h-[160px] bg-gray-50 animate-pulse rounded"></div>;
+  }
 
   return (
     <div ref={containerRef} className="w-full">
@@ -85,7 +153,7 @@ export default function CallsAreaChart({ className = "" }: { className?: string 
             axisLine={false}
             tick={{ fill: "#A8ACBA", fontSize: 11 }}
             width={40}
-            domain={[0, 200]}
+            domain={[0, maxValue]}
           />
           <Tooltip
             cursor={{ fill: "rgba(134, 62, 216, 0.1)" }}

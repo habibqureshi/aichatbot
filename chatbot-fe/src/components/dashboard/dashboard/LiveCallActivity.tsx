@@ -5,28 +5,28 @@ import { getLiveActivity, LiveActivityResponse } from "@/app/actions/dashboardSt
 
 export default function LiveCallActivity() {
   const [liveData, setLiveData] = useState<LiveActivityResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchLiveActivity = async () => {
-      try {
-        setLoading(true);
-        const response = await getLiveActivity();
-        setLiveData(response);
-      } catch (error) {
-        console.error("Error fetching live activity:", error);
-        setLiveData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchLiveActivity = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const response = await getLiveActivity();
+  //       setLiveData(response);
+  //     } catch (error) {
+  //       console.error("Error fetching live activity:", error);
+  //       setLiveData(null);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchLiveActivity();
+  //   fetchLiveActivity();
 
-    // Refresh every 30 seconds
-    // const interval = setInterval(fetchLiveActivity, 30000);
-    // return () => clearInterval(interval);
-  }, []);
+  //   // Refresh every 30 seconds
+  //   const interval = setInterval(fetchLiveActivity, 30000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const formatDuration = (startedAt: string): string => {
     const start = new Date(startedAt);
@@ -71,7 +71,7 @@ export default function LiveCallActivity() {
           {loading ? (
             <div className="h-6 bg-white/20 animate-pulse rounded w-8"></div>
           ) : (
-            liveData?.active_calls || 0
+            liveData?.active_calls || 1
           )}
         </div>
       </div>
@@ -90,36 +90,74 @@ export default function LiveCallActivity() {
               <div className="h-3 bg-white/20 animate-pulse rounded w-12"></div>
             </div>
           </div>
-        ) : liveData?.calls && liveData.calls.length > 0 ? (
-          liveData.calls.slice(0, 2).map((call, index) => (
-            <div
-              key={call.call_sid || index}
-              className="bg-[#9151DC] py-2 px-4 rounded-md flex items-center justify-between h-[69px] border border-[#FFFFFF4D] shadow-[0px_2px_2px_0px_#23272E14]"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex-shrink-0 w-[46px] h-[46px] rounded-full overflow-hidden bg-[#FFCB14] flex items-center justify-center">
-                  <span className="text-white font-medium text-[22px]">
-                    {getInitials(call.patient_name)}
-                  </span>
+        ) : (
+          <div className="bg-[#9151DC] py-2 px-4 rounded-md flex items-center justify-between h-[69px] border border-[#FFFFFF4D] shadow-[0px_2px_2px_0px_#23272E14]">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-[46px] h-[46px] rounded-full overflow-hidden bg-[#FFCB14] flex items-center justify-center">
+                <span className="text-white font-medium text-[22px]">{getInitials("Hammad")}</span>
+              </div>
+              <div>
+                <div className="text-base font-bold leading[1.32] tracking-normal text-white truncate max-w-[120px]">
+                  {"Hammad"}
                 </div>
-                <div>
-                  <div className="text-base font-bold leading[1.32] tracking-normal text-white truncate max-w-[120px]">
-                    {call.patient_name}
-                  </div>
-                  <div className="text-base font-normal leading[1.32] tracking-normal text-white">
-                    On Call
-                  </div>
+                <div className="text-base font-normal leading[1.32] tracking-normal text-white">
+                  On Call
                 </div>
               </div>
-              <div className="text-xs text-white">{formatDuration(call.started_at)}</div>
             </div>
-          ))
-        ) : (
-          <div className="bg-[#9151DC] py-4 px-4 rounded-md text-center border border-[#FFFFFF4D] shadow-[0px_2px_2px_0px_#23272E14]">
-            <div className="text-white text-sm">No active calls</div>
+            <div className="text-xs text-white">{"00:04:32"}</div>
+            {/* <div className="text-xs text-white">{formatDuration("00:04:32")}</div> */}
           </div>
         )}
       </div>
     </div>
   );
 }
+
+// with actual data
+//       <div className="mt-4 space-y-2 max-h-[120px] overflow-y-auto">
+//         {loading ? (
+//           // Loading skeleton
+//           <div className="bg-[#9151DC] py-2 px-4 rounded-md h-[69px] border border-[#FFFFFF4D] shadow-[0px_2px_2px_0px_#23272E14]">
+//             <div className="flex items-center gap-3 h-full">
+//               <div className="flex-shrink-0 w-[46px] h-[46px] rounded-full bg-white/20 animate-pulse"></div>
+//               <div className="flex-1">
+//                 <div className="h-4 bg-white/20 animate-pulse rounded mb-1 w-20"></div>
+//                 <div className="h-3 bg-white/20 animate-pulse rounded w-16"></div>
+//               </div>
+//               <div className="h-3 bg-white/20 animate-pulse rounded w-12"></div>
+//             </div>
+//           </div>
+//         ) : liveData?.calls && liveData.calls.length > 0 ? (
+//           liveData.calls.slice(0, 2).map((call, index) => (
+//             <div
+//               key={call.call_sid || index}
+//               className="bg-[#9151DC] py-2 px-4 rounded-md flex items-center justify-between h-[69px] border border-[#FFFFFF4D] shadow-[0px_2px_2px_0px_#23272E14]"
+//             >
+//               <div className="flex items-center gap-3">
+//                 <div className="flex-shrink-0 w-[46px] h-[46px] rounded-full overflow-hidden bg-[#FFCB14] flex items-center justify-center">
+//                   <span className="text-white font-medium text-[22px]">
+//                     {getInitials(call.patient_name)}
+//                   </span>
+//                 </div>
+//                 <div>
+//                   <div className="text-base font-bold leading[1.32] tracking-normal text-white truncate max-w-[120px]">
+//                     {call.patient_name}
+//                   </div>
+//                   <div className="text-base font-normal leading[1.32] tracking-normal text-white">
+//                     On Call
+//                   </div>
+//                 </div>
+//               </div>
+//               <div className="text-xs text-white">{formatDuration(call.started_at)}</div>
+//             </div>
+//           ))
+//         ) : (
+//           <div className="bg-[#9151DC] py-4 px-4 rounded-md text-center border border-[#FFFFFF4D] shadow-[0px_2px_2px_0px_#23272E14]">
+//             <div className="text-white text-sm">No active calls</div>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }

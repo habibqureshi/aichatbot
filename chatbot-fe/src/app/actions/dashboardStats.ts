@@ -13,6 +13,17 @@ export interface ConversionRateResponse {
   conversion_rate: number;
 }
 
+export interface LiveActivityResponse {
+  active_calls: number;
+  calls: Array<{
+    call_sid: string;
+    conversation_id: number;
+    patient_name: string;
+    patient_phone: string;
+    started_at: string;
+  }>;
+}
+
 export async function getTotalCalls(start: string, end: string): Promise<TotalCallsResponse> {
   const response = await API.get(ENDPOINTS.STATS.TOTAL_CALLS(start, end));
   return response.data;
@@ -25,5 +36,10 @@ export async function getAverageDuration(start: string, end: string): Promise<Av
 
 export async function getConversionRate(start: string, end: string): Promise<ConversionRateResponse> {
   const response = await API.get(ENDPOINTS.STATS.CONVERSION_RATE(start, end));
+  return response.data;
+}
+
+export async function getLiveActivity(): Promise<LiveActivityResponse> {
+  const response = await API.get(ENDPOINTS.STATS.LIVE());
   return response.data;
 }

@@ -150,5 +150,7 @@ export const ENDPOINTS = {
     CONVERSION_RATE: (start: string, end: string) =>
       `/api/v1/stats/conversion_rate?start=${start}&end=${end}`,
     LIVE: () => `/api/v1/stats/live`,
+    TIMESERIES: (start: string, end: string, interval: string = "month") =>
+      `/api/v1/stats/timeseries?start=${start}&end=${end}&interval=${interval}`,
   },
 };

@@ -2,7 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Conversation, getConversationsList } from "@/app/actions/conversations";
-import { getTotalCalls, getAverageDuration, getConversionRate } from "@/app/actions/dashboardStats";
+import {
+  getTotalCalls,
+  getAverageDuration,
+  getConversionRate,
+  getTimeseries,
+  TimeseriesResponse,
+} from "@/app/actions/dashboardStats";
 
 import MetricCard from "@/components/dashboard/dashboard/MetricCard";
 import CallsAreaChart from "@/components/dashboard/dashboard/CallsAreaChart";
@@ -19,6 +25,8 @@ export default function DashboardPage() {
     averageDuration: true,
     conversionRate: true,
   });
+  const [timeseriesData, setTimeseriesData] = useState<TimeseriesResponse>([]);
+  const [timeseriesLoading, setTimeseriesLoading] = useState(true);
   const [metrics, setMetrics] = useState([
     {
       title: "Total Calls",
@@ -181,11 +189,44 @@ export default function DashboardPage() {
     fetchMetrics();
   }, []);
 
+  useEffect(() => {
+    const fetchTimeseries = async () => {
+      try {
+        setTimeseriesLoading(true);
+
+        // Get date range for last year
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(startDate.getFullYear() - 1);
+
+        const start = startDate.toISOString().split("T")[0];
+        const end = endDate.toISOString().split("T")[0];
+
+        const response = await getTimeseries(start, end, "month");
+        setTimeseriesData(response);
+      } catch (error) {
+        console.error("Error fetching timeseries:", error);
+        setTimeseriesData([]);
+      } finally {
+        setTimeseriesLoading(false);
+      }
+    };
+
+    fetchTimeseries();
+  }, []);
+
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
+
+  // Calculate totals from timeseries data
+  const totalSuccessful = timeseriesData.reduce((sum, item) => sum + item.successful, 0);
+  const totalFailed = timeseriesData.reduce((sum, item) => sum + item.failed, 0);
+  const totalCalls = timeseriesData.reduce((sum, item) => sum + item.total, 0);
+  const successfulPercentage = totalCalls > 0 ? Math.round((totalSuccessful / totalCalls) * 100) : 0;
+  const failedPercentage = totalCalls > 0 ? Math.round((totalFailed / totalCalls) * 100) : 0;
 
   return (
     <div className="space-y-6 px-6">
@@ -231,7 +272,7 @@ export default function DashboardPage() {
             <div className="relative group">
               <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
                 <span>Last Year</span>
-                <svg
+                {/* <svg
                   className="w-4 h-4 transform group-hover:rotate-180 transition-transform"
                   fill="none"
                   stroke="currentColor"
@@ -243,7 +284,7 @@ export default function DashboardPage() {
                     strokeWidth={2}
                     d="M19 14l-7 7m0 0l-7-7m7 7V3"
                   />
-                </svg>
+                </svg> */}
               </button>
               {/* Dropdown Menu */}
               {/* <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
@@ -271,8 +312,20 @@ export default function DashboardPage() {
                 <span className="text-xs text-gray-600 font-medium">Successful Calls</span>
               </div>
               <div className="flex items-center gap-2 ml-5">
-                <span className="text-base font-bold text-gray-900">4532</span>
-                <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded">55%</span>
+                <span className="text-base font-bold text-gray-900">
+                  {timeseriesLoading ? (
+                    <div className="h-5 bg-gray-200 animate-pulse rounded w-12"></div>
+                  ) : (
+                    totalSuccessful.toLocaleString()
+                  )}
+                </span>
+                <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded">
+                  {timeseriesLoading ? (
+                    <div className="h-4 bg-gray-200 animate-pulse rounded w-6"></div>
+                  ) : (
+                    `${successfulPercentage}%`
+                  )}
+                </span>
               </div>
             </div>
 
@@ -282,14 +335,26 @@ export default function DashboardPage() {
                 <span className="text-xs text-gray-600 font-medium">Failed Calls</span>
               </div>
               <div className="flex items-center gap-2 ml-5">
-                <span className="text-base font-bold text-gray-900">600</span>
-                <span className="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded">24%</span>
+                <span className="text-base font-bold text-gray-900">
+                  {timeseriesLoading ? (
+                    <div className="h-5 bg-gray-200 animate-pulse rounded w-12"></div>
+                  ) : (
+                    totalFailed.toLocaleString()
+                  )}
+                </span>
+                <span className="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded">
+                  {timeseriesLoading ? (
+                    <div className="h-4 bg-gray-200 animate-pulse rounded w-6"></div>
+                  ) : (
+                    `${failedPercentage}%`
+                  )}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Chart */}
-          <CallsAreaChart />
+          <CallsAreaChart data={timeseriesData} loading={timeseriesLoading} />
         </div>
 
         <div className="lg:col-span-5">
@@ -316,7 +381,7 @@ export default function DashboardPage() {
             tableMaxHeight="500px"
           />
         </div>
-        <div className="lg:col-span-12  bg-[#F6F7F9] rounded-[12px]">
+        {/* <div className="lg:col-span-12  bg-[#F6F7F9] rounded-[12px]">
           <SentimentBar
             positive={2456}
             neutral={756}
@@ -326,7 +391,7 @@ export default function DashboardPage() {
             fillColors={{ positive: "#337F3F", neutral: "#F9A307", negative: "#C61E12" }}
             progressBarColors={["#984AF8", "#E34998", "#4318FF"]}
           />
-        </div>
+        </div> */}
       </div>
     </div>
   );

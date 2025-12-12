@@ -27,6 +27,7 @@ const navigation = [
     name: "Reservations",
     href: "/reservations",
     icon: "/assets/sideBarIcons/CalendarDots.svg",
+    showOnlyFor: "restaurant",
   },
   {
     name: "Appointments",
@@ -45,7 +46,7 @@ const navigation = [
     name: "Tables",
     href: "/tables",
     icon: "/assets/sideBarIcons/table.svg",
-    // showOnlyFor: ["restaurant"],
+    showOnlyFor: ["restaurant"],
   },
   // {
   //   name: "Specialities",

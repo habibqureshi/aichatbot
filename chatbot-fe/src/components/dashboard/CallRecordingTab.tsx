@@ -115,7 +115,11 @@ const CallRecordingTab: React.FC<Props> = ({
             </div>
           </div>
 
-          {!audioSrc ? (
+          {conversation?.recording_available === false ? (
+            <div className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 text-gray-500 bg-gray-100">
+              No recording available
+            </div>
+          ) : !audioSrc ? (
             <button
               onClick={handlePlayRecording}
               disabled={isStreaming || !conversation?.id}

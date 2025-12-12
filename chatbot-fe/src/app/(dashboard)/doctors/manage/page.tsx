@@ -282,7 +282,7 @@ function AddDoctorPageContent() {
                 ) : (
                   <>
                     <SingleSelect
-                      title="Specialty"
+                      title="Speciality"
                       options={specialities.map((specialty, index) => ({
                         id: index.toString(),
                         label: specialty,
@@ -292,7 +292,8 @@ function AddDoctorPageContent() {
                       onChange={(value) =>
                         setFormData((prev) => ({ ...prev, specialty: value as string }))
                       }
-                      placeholder="Select Specialty"
+                      placeholder="Select Speciality"
+                      searchable
                     />
                   </>
                 )}

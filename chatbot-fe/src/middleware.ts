@@ -1,42 +1,45 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-// import { getSession } from './app/actions/session'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-    // return NextResponse.redirect(new URL('/dashboard', request.url))
-    const path = request.nextUrl.pathname
-    // const publicPaths = ['/auth/login', '/auth/register']
-    // console.log('middleware called')
-    // const isPublicPath = publicPaths.includes(path)
+  const path = request.nextUrl.pathname;
 
-    // // Get token from request cookies
-    // const session = await getSession()
-    // const token = session?.token || null
+  // Public paths that don't require authentication
+  const publicPaths = ["/authentication", "/auth/login", "/auth/register"];
+  const isPublicPath = publicPaths.includes(path);
 
-    // // Redirect to login if accessing protected route without token
-    // if (!isPublicPath && !token) {
-    //     return NextResponse.redirect(new URL('/auth/login', request.url))
-    // }
+  // Check if user has auth token in cookies
+  const authToken = request.cookies.get("auth_session")?.value;
+  const hasToken = !!authToken;
 
-    // // Redirect to dashboard OR related to the user's role if accessing auth pages with valid token
-    if (path === '/') {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
+  // Redirect root to dashboard
+  if (path === "/") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
-    return NextResponse.next();
+  // If user has token and tries to access auth pages, redirect to dashboard
+  if (hasToken && isPublicPath) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // If user doesn't have token and tries to access protected route, redirect to authentication
+  if (!hasToken && !isPublicPath) {
+    return NextResponse.redirect(new URL("/authentication", request.url));
+  }
+
+  return NextResponse.next();
 }
 
 // Configure which routes to run middleware on
 export const config = {
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - api (API routes)
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * - public files (e.g. robots.txt)
-         */
-        '/((?!api|_next/static|_next/image|favicon.ico).*)',
-    ]
-} 
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - anything with a file extension (static assets)
+     * - api (API routes)
+     */
+    "/((?!_next|.*\\..*|api).*)",
+  ],
+};

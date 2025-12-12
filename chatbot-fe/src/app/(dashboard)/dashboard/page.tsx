@@ -241,7 +241,7 @@ export default function DashboardPage() {
             title="Recent Calls"
             columns={columns}
             data={conversations}
-            loading={loading}
+            initialLoading={loading}
             enablePagination={false}
             showSearch={false}
             actionButton={

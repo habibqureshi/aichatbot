@@ -7,22 +7,21 @@ interface CallTabsSkeletonProps {
 export default function CallTabsSkeleton({
   tabs = ["Call Transcript", "Call Recording", "AI Summary"],
 }: CallTabsSkeletonProps) {
-  // treat the first tab as the active/tab-selected skeleton (chat)
-  const activeIndex = 0;
+  // const activeIndex = 0;
 
   return (
     <div className="p-6 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[16px]">
       {/* Tabs - show actual tab names as muted skeleton text, highlight first tab */}
       <div className="flex gap-6 border-b border-gray-200 pb-3 items-end">
         {tabs.map((tab, index) => {
-          const isActive = index === activeIndex;
+          // const isActive = index === activeIndex;
           return (
             <button
               key={index}
               className={`pb-3 transition-colors min-w-[160px] ${
-                isActive
-                  ? "text-[#6325A9] border-b-2 border-[#6325A9]"
-                  : "text-[#4C5564] hover:text-gray-700"
+                // isActive
+                //   ? "text-[#6325A9] border-b-2 border-[#6325A9]":
+                "text-[#4C5564] hover:text-gray-700"
               }`}
               style={{
                 fontFamily: "Figtree",

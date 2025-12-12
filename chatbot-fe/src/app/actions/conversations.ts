@@ -4,7 +4,7 @@ import { ENDPOINTS } from "@/app/http/endpoints";
 export interface Conversation {
   id: number;
   started_at: string;
-  ended_at: string;
+  ended_at: string | null;
   status: string;
   call_sid: string;
   patient: {
@@ -13,6 +13,8 @@ export interface Conversation {
     name: string;
     created_at: string;
   };
+  summary: string | null;
+  recording_available: boolean;
 }
 
 export interface ConversationsResponse {

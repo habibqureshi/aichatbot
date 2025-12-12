@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getDoctorsList, Doctor, deleteDoctor } from "@/app/actions/doctors";
 import { toast } from "react-toastify";
+import { getInitials, getAvatarColors } from "@/lib/avatarUtils";
 
 export default function DoctorsPage() {
   const router = useRouter();
@@ -33,12 +34,27 @@ export default function DoctorsPage() {
       accessorKey: "name",
       header: "Doctor Information",
       width: "250px",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium text-gray-900">{row.original.name || ""}</div>
-          <div className="text-sm text-gray-500">{row.original?.specialty || "N/A"}</div>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const initials = getInitials(row.original.name || "");
+        const avatarColors = getAvatarColors(row.original.id);
+
+        return (
+          <div className="flex items-start gap-3">
+            <div
+              className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: avatarColors.bg }}
+            >
+              <span className="text-sm font-semibold" style={{ color: avatarColors.text }}>
+                {initials}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-gray-900">{row.original.name || ""}</div>
+              <div className="text-sm text-gray-500">{row.original?.specialty || "N/A"}</div>
+            </div>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "phone_number",
@@ -156,11 +172,6 @@ export default function DoctorsPage() {
     setSearchQuery(value);
   };
 
-  const handleDeleteClick = (doctor: Doctor) => {
-    setDoctorToDelete(doctor);
-    setDeleteDialogOpen(true);
-  };
-
   const handleConfirmDelete = async () => {
     if (!doctorToDelete) return;
 
@@ -190,7 +201,7 @@ export default function DoctorsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Doctors</h1>
           <p className="text-sm sm:text-base text-gray-600 mt-1">
-            Manage doctor profiles and availability ({totalDoctors} total)
+            Manage doctor profiles and availability
           </p>
         </div>
         <Link href="/doctors/manage" className="btn-primary-gradient">
@@ -222,6 +233,7 @@ export default function DoctorsPage() {
         totalPages={totalPages}
         onExternalPageChange={handlePageChange}
         onExternalPageSizeChange={handlePageSizeChange}
+        totalCount={totalDoctors}
       />
 
       <ConfirmDialog

@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 
 interface SingleSelectProps {
   options: { id: string | number; label: string; value: string | number }[];
   selectedValue: string | number | null;
   onChange: (value: string | number | null) => void;
   placeholder?: string;
-  label?: string;
+  title?: string;
+  required?: boolean;
   emptyMessage?: string;
   searchable?: boolean;
 }
@@ -15,10 +17,12 @@ export default function SingleSelect({
   selectedValue,
   onChange,
   placeholder = "Select option",
-  label,
+  title,
+  required = false,
   emptyMessage = "No data available",
-  searchable = false,
+  searchable,
 }: SingleSelectProps) {
+  const effectiveSearchable = searchable !== undefined ? searchable : options.length > 6;
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,14 +66,14 @@ export default function SingleSelect({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
-    if (!isOpen && searchable) {
+    if (!isOpen && effectiveSearchable) {
       setIsOpen(true);
     }
   };
 
   // Handle input focus
   const handleInputFocus = () => {
-    if (searchable) {
+    if (effectiveSearchable) {
       setIsOpen(true);
     }
   };
@@ -109,28 +113,52 @@ export default function SingleSelect({
 
   return (
     <div className="relative single-select-container">
-      {label && <label className="block text-sm font-medium text-gray-900 mb-2">{label}</label>}
+      {title && (
+        <label className="flex items-baseline gap-1 mb-2 font-semibold text-[16px] leading-[132%] text-black">
+          <span>{title}</span>
+          {required && (
+            <Image
+              src="/assets/starIcon.svg"
+              alt="Required"
+              width={10}
+              height={10}
+              className="self-start -mt-1"
+            />
+          )}
+        </label>
+      )}
       <div className="mt-1 relative">
         <div
-          className={`w-full border rounded-lg shadow-sm bg-white text-gray-900 flex items-center transition-colors ${
-            isOpen ? "border-blue-500 ring-2 ring-blue-500" : "border-gray-300 hover:border-gray-400"
+          className={`w-full rounded-[8px] bg-white flex items-center transition-colors cursor-pointer ${
+            isOpen ? "ring-2 ring-blue-500" : ""
           }`}
+          onClick={() => {
+            if (!isOpen) {
+              setIsOpen(true);
+              if (effectiveSearchable) {
+                setTimeout(() => inputRef.current?.focus(), 0);
+              }
+            }
+          }}
         >
           <input
             ref={inputRef}
             type="text"
-            className="flex-1 px-4 py-3 text-sm border-none outline-none bg-transparent"
+            className="flex-1 h-[42px] pt-1 pr-[19px] pb-1 pl-[19px] bg-transparent text-black font-normal text-[16px] leading-[132%] focus:outline-none placeholder:text-[#00000059] border-none rounded-[8px]"
             placeholder={placeholder}
             value={inputValue}
             onChange={handleInputChange}
             onFocus={handleInputFocus}
             onKeyDown={handleKeyDown}
-            readOnly={!searchable}
+            readOnly={!effectiveSearchable}
           />
           <button
             type="button"
-            onClick={handleToggle}
-            className="px-3 py-3 flex items-center justify-center hover:bg-gray-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggle();
+            }}
+            className="px-3 py-3 flex items-center justify-center hover:bg-gray-50 rounded-r-[8px]"
           >
             <svg
               className={`h-5 w-5 text-gray-400 transform transition-transform ${

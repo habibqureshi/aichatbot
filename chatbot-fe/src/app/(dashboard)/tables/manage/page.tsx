@@ -3,12 +3,19 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SingleSelect from "@/components/common/SingleSelect";
+import InputField from "@/components/common/InputField";
 import { toast } from "react-toastify";
+import {
+  getRestaurantTable,
+  createRestaurantTable,
+  updateRestaurantTable,
+  RestaurantTable,
+} from "../../../actions/table-bookings";
 
 interface TableData {
   table_number: string;
   capacity: number;
-  location: "front" | "corner" | "roof" | "indoor" | "outdoor";
+  location: "front" | "corner" | "roof" | "indoor" | "outdoor" | null;
   is_active: boolean;
 }
 
@@ -29,35 +36,30 @@ function AddTablePageContent() {
   const [formData, setFormData] = useState<TableData>({
     table_number: "",
     capacity: 2,
-    location: "indoor",
+    location: null,
     is_active: true,
   });
   const [loading, setLoading] = useState(isEditMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isFormValid = () => {
-    return formData.table_number.trim() !== "" && formData.capacity > 0;
+    return formData.table_number.trim() !== "" && formData.capacity > 0 && formData.location !== null;
   };
 
   // Fetch table data on component mount if editing
   useEffect(() => {
     if (isEditMode && tableId) {
-      // Simulate fetching table data
       const fetchTable = async () => {
         try {
           setLoading(true);
-          // Simulate API call
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
-          // Mock data for editing
-          const mockTableData: TableData = {
-            table_number: "T001",
-            capacity: 4,
-            location: "front",
-            is_active: true,
-          };
-
-          setFormData(mockTableData);
+          const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const tableData = await getRestaurantTable(Number(tableId), user_timezone);
+          setFormData({
+            table_number: tableData.table_number,
+            capacity: tableData.capacity,
+            location: tableData.location as TableData["location"],
+            is_active: tableData.is_active,
+          });
           setLoading(false);
         } catch (error) {
           console.error("Error fetching table:", error);
@@ -91,15 +93,16 @@ function AddTablePageContent() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const submitData = { ...formData, location: formData.location as string };
       if (isEditMode && tableId) {
         // Update existing table
+        await updateRestaurantTable(Number(tableId), submitData, user_timezone);
         toast.success("Table updated successfully!");
         router.push("/tables");
       } else {
         // Create new table
+        await createRestaurantTable(submitData, user_timezone);
         toast.success("Table created successfully!");
         router.push("/tables");
       }
@@ -109,7 +112,7 @@ function AddTablePageContent() {
         setFormData({
           table_number: "",
           capacity: 2,
-          location: "indoor",
+          location: null,
           is_active: true,
         });
       }
@@ -165,64 +168,48 @@ function AddTablePageContent() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Table Information Card */}
           <div
-            className="border rounded-xl p-4 sm:p-6 shadow-sm"
+            className=" rounded-xl p-4 sm:p-6 "
             style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
+              background: "#F6F7F9",
             }}
           >
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Table Information</h2>
               <p className="text-sm text-gray-600 mt-1">Enter the table details</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label htmlFor="table_number" className="block text-sm font-medium text-gray-900 mb-2">
-                  Table ID
-                </label>
-                <input
-                  type="text"
-                  id="table_number"
-                  name="table_number"
-                  value={formData.table_number}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter table ID (e.g., T001)"
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4 sm:gap-6">
+              <InputField
+                title="Table ID"
+                name="table_number"
+                value={formData.table_number}
+                onChange={handleChange}
+                required
+                placeholder="Enter table ID (e.g., T001)"
+              />
 
-              <div>
-                <label htmlFor="capacity" className="block text-sm font-medium text-gray-900 mb-2">
-                  Capacity
-                </label>
-                <input
-                  type="number"
-                  id="capacity"
-                  name="capacity"
-                  value={formData.capacity}
-                  onChange={handleChange}
-                  required
-                  min="1"
-                  max="20"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter number of seats"
-                />
-              </div>
+              <InputField
+                title="Capacity"
+                name="capacity"
+                value={formData.capacity}
+                onChange={handleChange}
+                type="number"
+                required
+                min={1}
+                max={20}
+                placeholder="Enter number of seats"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">Location</label>
-                <SingleSelect
-                  options={LOCATIONS.map((location) => ({
-                    id: location.id,
-                    label: location.label,
-                    value: location.value,
-                  }))}
-                  selectedValue={formData.location}
-                  onChange={handleLocationChange}
-                  placeholder="Select location"
-                />
-              </div>
+              <SingleSelect
+                title="Location"
+                options={LOCATIONS.map((location) => ({
+                  id: location.id,
+                  label: location.label,
+                  value: location.value,
+                }))}
+                selectedValue={formData.location}
+                onChange={handleLocationChange}
+                placeholder="Select location"
+              />
 
               <div className="flex items-center">
                 <input

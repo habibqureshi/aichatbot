@@ -109,7 +109,7 @@ export async function getDoctorsList(
     const response = await API.get(
       ENDPOINTS.DOCTORS.LIST(page, limit, user_timezone, specialty_id, name)
     );
-    console.log("api responsex", response?.data);
+    // console.log("api responsex", response?.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching doctors list:", error);

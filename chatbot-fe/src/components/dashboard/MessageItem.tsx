@@ -8,6 +8,16 @@ type Props = {
   formattedTime: string;
 };
 
+const getInitials = (name: string) => {
+  if (!name) return "";
+  const parts = name
+    .trim()
+    .split(" ")
+    .filter((part) => part.length > 0);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
+
 const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) => {
   const isUser = message.role === "user";
   const displayName = isUser ? patientName || "User" : "AI Agent";
@@ -68,14 +78,8 @@ const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) =
       {/* AI avatar + name on top */}
       {!isUser && (
         <div className="flex items-center gap-2 mb-1">
-          <Image
-            src={avatarSrc}
-            alt={displayName}
-            width={39}
-            height={39}
-            className="rounded-full"
-          />
-          <div style={nameStyle} className="text-sm text-brand-dark">
+          <Image src={avatarSrc} alt={displayName} width={39} height={39} className="rounded-full" />
+          <div style={nameStyle} className="text-sm text-brand-dark ">
             {displayName}
           </div>
         </div>
@@ -87,13 +91,19 @@ const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) =
           <div style={nameStyle} className="text-sm text-brand-dark">
             {displayName}
           </div>
-          <Image
-            src={avatarSrc}
-            alt={displayName}
-            width={39}
-            height={39}
-            className="rounded-full"
-          />
+          <div className="flex-shrink-0 w-[40px] h-[40px] rounded-full overflow-hidden bg-[#6C54C4] flex items-center justify-center">
+            {getInitials(patientName) ? (
+              <span className="text-white font-medium text-[22px]">{getInitials(patientName)}</span>
+            ) : (
+              <Image
+                src="/assets/person.svg"
+                alt="user"
+                width={36}
+                height={36}
+                className="text-white mb-1"
+              />
+            )}
+          </div>
         </div>
       )}
 

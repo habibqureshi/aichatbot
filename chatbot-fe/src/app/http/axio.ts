@@ -1,20 +1,9 @@
 import axios from "axios";
 import { ENV } from "@/app/utils/env";
 
-// Prevents multiple refresh requests and queues pending requests
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+// Prevents multiple refresh requests and queues pending requests using a promise
+let refreshingToken: Promise<string> | null = null;
 
-function subscribeTokenRefresh(callback: (token: string) => void) {
-  refreshSubscribers.push(callback);
-}
-
-function onRefreshed(token: string) {
-  refreshSubscribers.forEach((callback) => callback(token));
-  refreshSubscribers = [];
-}
-
-// Helper function to get cookie value on client side
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
 
@@ -27,13 +16,11 @@ function getCookie(name: string): string | null {
   return null;
 }
 
-// Helper function to decrypt and decode token on client side
 async function getTokenFromCookie(): Promise<string | null> {
   const encryptedToken = getCookie("auth_session");
   if (!encryptedToken) return null;
 
   try {
-    // Import decrypt function dynamically
     const { decrypt } = await import("@/lib/encryption");
     const decryptedToken = await decrypt(encryptedToken);
     return decryptedToken;
@@ -43,7 +30,6 @@ async function getTokenFromCookie(): Promise<string | null> {
   }
 }
 
-// Helper function to get refresh token from cookie
 async function getRefreshTokenFromCookie(): Promise<string | null> {
   const encryptedRefreshToken = getCookie("refresh_session");
   if (!encryptedRefreshToken) return null;
@@ -58,7 +44,6 @@ async function getRefreshTokenFromCookie(): Promise<string | null> {
   }
 }
 
-// Helper function to update access token in cookies
 async function updateAccessToken(newAccessToken: string): Promise<void> {
   try {
     const { encrypt } = await import("@/lib/encryption");
@@ -70,7 +55,6 @@ async function updateAccessToken(newAccessToken: string): Promise<void> {
   }
 }
 
-// Helper function to update refresh token in cookies
 async function updateRefreshToken(newRefreshToken: string): Promise<void> {
   try {
     const { encrypt } = await import("@/lib/encryption");
@@ -82,7 +66,6 @@ async function updateRefreshToken(newRefreshToken: string): Promise<void> {
   }
 }
 
-// Helper function to clear session
 async function clearSessionCookies(): Promise<void> {
   try {
     const Cookies = await import("js-cookie").then((m) => m.default);
@@ -96,9 +79,9 @@ async function clearSessionCookies(): Promise<void> {
 // Create axios instance
 const API = axios.create({
   baseURL: ENV.NEXT_PUBLIC_API_URL,
-  // headers: {
-  //     'Content-Type': 'application/json',
-  // },
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 // Request interceptor
@@ -133,69 +116,40 @@ API.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    console.log("Interceptors Error:", error);
 
     // Handle 401 - Token expired, try to refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      // If already refreshing, queue this request
-      if (isRefreshing) {
-        console.log("[REFRESH QUEUE] Request queued, waiting for token refresh...");
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token: string) => {
-            console.log("[REFRESH QUEUE] Retrying queued request with new token");
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(API(originalRequest));
-          });
-        });
-      }
-
-      // Start the refresh process
-      isRefreshing = true;
-      console.log("[TOKEN REFRESH] Starting token refresh...");
-
-      try {
-        // Get refresh token
+      if (!refreshingToken) {
         const refreshToken = await getRefreshTokenFromCookie();
         if (!refreshToken) {
-          // No refresh token available, redirect to login
-          isRefreshing = false;
           if (typeof window !== "undefined") {
             window.location.href = "/authentication";
           }
           return Promise.reject(error);
         }
 
-        // Call refresh endpoint
-        const refreshResponse = await axios.post(`${ENV.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`, {
-          refresh_token: refreshToken,
-        });
+        refreshingToken = axios
+          .post(`${ENV.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`, { refresh_token: refreshToken })
+          .then(async (res) => {
+            await updateAccessToken(res.data.access_token);
+            if (res.data.refresh_token) await updateRefreshToken(res.data.refresh_token);
+            return res.data.access_token;
+          })
+          .catch((refreshError) => {
+            throw refreshError;
+          })
+          .finally(() => (refreshingToken = null));
+      } else {
+        // console.log("[REFRESH QUEUE] Request queued, waiting for token refresh...");
+      }
 
-        // Update access token in cookies
-        if (refreshResponse.data.access_token) {
-          await updateAccessToken(refreshResponse.data.access_token);
-
-          // Update refresh token if provided
-          if (refreshResponse.data.refresh_token) {
-            await updateRefreshToken(refreshResponse.data.refresh_token);
-          }
-
-          // Notify all queued requests with the new token
-          const newToken = refreshResponse.data.access_token;
-          onRefreshed(newToken);
-          isRefreshing = false;
-
-          console.log("[TOKEN REFRESH] ✅ Token refreshed successfully");
-
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return API(originalRequest);
-        }
-      } catch (refreshError) {
-        console.error("[TOKEN REFRESH] ❌ Token refresh failed:", refreshError);
-        isRefreshing = false;
-        // Refresh failed, redirect to login
+      try {
+        const newToken = await refreshingToken;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return API(originalRequest);
+      } catch {
         if (typeof window !== "undefined") {
           window.location.href = "/authentication";
         }
@@ -203,9 +157,7 @@ API.interceptors.response.use(
       }
     }
 
-    // Handle 403 authentication errors
     if (error.response?.status === 403) {
-      // Clear session cookies
       await clearSessionCookies();
       if (typeof window !== "undefined") {
         window.location.href = "/authentication";
@@ -223,7 +175,6 @@ API.interceptors.response.use(
           const text = decoder.decode(responseData);
           const parsed = JSON.parse(text);
 
-          // Replace the ArrayBuffer with parsed JSON for easier handling
           error.response.data = parsed;
 
           // Format the error message

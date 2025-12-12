@@ -6,6 +6,7 @@ import { useInstallationType } from "@/app/hooks/useInstallationType";
 interface InstallationContextType {
   installationType: string;
   isLoading: boolean;
+  clearInstallation: () => void;
 }
 
 const InstallationContext = createContext<InstallationContextType | undefined>(undefined);
@@ -17,14 +18,14 @@ export function InstallationProvider({ children }: { children: ReactNode }) {
   const [installationType, setInstallationType] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
+  const clearInstallation = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setInstallationType("");
+  };
+
   useEffect(() => {
-    // Try to get from localStorage first
-    const storedValue = localStorage.getItem(STORAGE_KEY);
-    if (storedValue) {
-      setInstallationType(storedValue);
-      setIsLoading(false);
-    } else if (!hookIsLoading) {
-      // If no stored value and hook has finished loading, use hook value and save to localStorage
+    if (!hookIsLoading) {
+      // Always use the latest from hook and update localStorage
       setInstallationType(hookInstallationType);
       localStorage.setItem(STORAGE_KEY, hookInstallationType);
       setIsLoading(false);
@@ -32,7 +33,7 @@ export function InstallationProvider({ children }: { children: ReactNode }) {
   }, [hookInstallationType, hookIsLoading]);
 
   return (
-    <InstallationContext.Provider value={{ installationType, isLoading }}>
+    <InstallationContext.Provider value={{ installationType, isLoading, clearInstallation }}>
       {children}
     </InstallationContext.Provider>
   );

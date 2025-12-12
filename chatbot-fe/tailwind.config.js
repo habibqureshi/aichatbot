@@ -8,6 +8,7 @@ const config = {
     extend: {
       screens: {
         custom930: "930px",
+        xl2: "1350px",
       },
       fontFamily: {
         sans: ["var(--font-figtree)", "Figtree", "sans-serif"],
@@ -59,8 +60,7 @@ const config = {
         "brand-gray": "#2A2A2A",
         "brand-card": "#7D2ADD",
         "brand-button": "#384152",
-        "topbar": "#ECEEF2",
-     
+        topbar: "#ECEEF2",
       },
       borderRadius: {
         lg: "var(--radius)",

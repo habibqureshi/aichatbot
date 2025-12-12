@@ -107,12 +107,12 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start flex-col xl2:flex-row justify-between gap-2">
           <div className="min-w-0 ml-2">
             <p className="font-semibold text-base leading-[100%] text-black truncate">{caller}</p>
             <p className="font-medium text-xs leading-[132%] text-[#64748B] truncate">{phone}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center ">
             <SentimentBadge sentiment={sentiment} />
           </div>
         </div>

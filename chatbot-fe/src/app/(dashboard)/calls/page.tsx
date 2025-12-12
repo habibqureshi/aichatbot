@@ -156,34 +156,36 @@ export default function CallsPage() {
   return (
     <div className="relative">
       {/* Drawer for small screens */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black bg-opacity-50"
-            onClick={() => setDrawerOpen(false)}
-          />
-          <div className="absolute left-0 top-20 h-full w-80 bg-white shadow-lg transform transition-transform duration-300">
-            <div className="p-4 border-b">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold text-brand-dark text-lg">Recent Calls</h3>
-                <button
-                  onClick={() => setDrawerOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
-              <p className="font-medium text-brand-light text-sm">
-                {totalCount.toLocaleString()} total calls
-              </p>
+      <div
+        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${
+          drawerOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setDrawerOpen(false)} />
+        <div
+          className={`absolute left-0 top-20 h-full w-80 bg-white shadow-lg transform transition-transform duration-300 ${
+            drawerOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="p-4 border-b">
+            <div className="flex justify-between items-center">
+              <h3 className="font-semibold text-brand-dark text-lg">Recent Calls</h3>
+              <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700">
+                ✕
+              </button>
             </div>
-            <div className="p-4">
-              <SearchInput
-                placeholder="Search calls by name, phone, or email"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="mb-4"
-              />
+            <p className="font-medium text-brand-light text-sm">
+              {totalCount.toLocaleString()} total calls
+            </p>
+          </div>
+          <div className="p-4">
+            <SearchInput
+              placeholder="Search calls by name, phone, or email"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="mb-4"
+            />
+            <div className="relative z-40">
               <CallFilterDropdown
                 options={statusOptions}
                 selectedValue={statusFilter}
@@ -196,28 +198,28 @@ export default function CallsPage() {
                 }
               />
             </div>
-            <div className="overflow-y-auto max-h-[calc(100vh-200px)] space-y-1 px-4">
-              {loading && conversations.length === 0 ? (
-                Array.from({ length: 4 }).map((_, idx) => <CallCardSkeleton key={idx} />)
-              ) : conversations?.length > 0 ? (
-                conversations.map((conv) => (
-                  <CallCard
-                    key={conv.id}
-                    conversation={conv}
-                    onClick={() => {
-                      handleRowClick(conv);
-                      setDrawerOpen(false); // Close drawer after selection
-                    }}
-                    isSelected={selectedConversation?.id === conv.id}
-                  />
-                ))
-              ) : (
-                <div className="p-3 text-sm text-gray-500">No calls found.</div>
-              )}
-            </div>
+          </div>
+          <div className="overflow-y-auto max-h-[calc(100vh-200px)] space-y-1 px-4">
+            {loading && conversations.length === 0 ? (
+              Array.from({ length: 4 }).map((_, idx) => <CallCardSkeleton key={idx} />)
+            ) : conversations?.length > 0 ? (
+              conversations.map((conv) => (
+                <CallCard
+                  key={conv.id}
+                  conversation={conv}
+                  onClick={() => {
+                    handleRowClick(conv);
+                    setDrawerOpen(false); // Close drawer after selection
+                  }}
+                  isSelected={selectedConversation?.id === conv.id}
+                />
+              ))
+            ) : (
+              <div className="p-3 text-sm text-gray-500">No calls found.</div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Calls List - Hidden on small screens, shown on large */}
@@ -245,7 +247,7 @@ export default function CallsPage() {
                 selectedValue={statusFilter}
                 onChange={(v: string | number | null) => setStatusFilter(String(v))}
                 trigger={
-                  <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer xl2:items-start mt-4 xl2:mt-0">
+                  <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer xl2:items-start mt-4 xl2:mt-0 relative z-40">
                     <Image src="/assets/Funnel.svg" alt="search" width={20} height={20} />
                     <p className="font-medium text-brand-dark text-[12px] md:text-[14px] leading-[1.32]">
                       Filter

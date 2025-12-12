@@ -162,7 +162,7 @@ export default function CallsPage() {
             className="absolute inset-0 bg-black bg-opacity-50"
             onClick={() => setDrawerOpen(false)}
           />
-          <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-lg transform transition-transform duration-300">
+          <div className="absolute left-0 top-20 h-full w-80 bg-white shadow-lg transform transition-transform duration-300">
             <div className="p-4 border-b">
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold text-brand-dark text-lg">Recent Calls</h3>
@@ -223,11 +223,15 @@ export default function CallsPage() {
         {/* Calls List - Hidden on small screens, shown on large */}
         <div
           className={`hidden lg:block relative transition-all duration-300 ease-in-out ${
-            showList ? "lg:w-3/12" : "lg:w-0"
+            showList ? "lg:w-4/12" : "lg:w-0"
           } overflow-hidden`}
         >
           <div className="h-full overflow-auto border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] py-4">
-            <div className="w-full flex justify-between items-center mb-4 px-4">
+            <div
+              className="w-full flex flex-col xl2:flex-row 
+                xl2:justify-between justify-start 
+                xl2:items-start items-start mb-4 px-4"
+            >
               <div className="flex flex-col">
                 <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
                   Recent Calls
@@ -241,7 +245,7 @@ export default function CallsPage() {
                 selectedValue={statusFilter}
                 onChange={(v: string | number | null) => setStatusFilter(String(v))}
                 trigger={
-                  <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer">
+                  <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer xl2:items-start mt-4 xl2:mt-0">
                     <Image src="/assets/Funnel.svg" alt="search" width={20} height={20} />
                     <p className="font-medium text-brand-dark text-[12px] md:text-[14px] leading-[1.32]">
                       Filter
@@ -290,7 +294,7 @@ export default function CallsPage() {
 
         {/* Call Details */}
         <div
-          className={`transition-all duration-300 ease-in-out ${showList ? "lg:w-9/12" : "lg:w-full"}`}
+          className={`transition-all duration-300 ease-in-out ${showList ? "lg:w-8/12" : "lg:w-full"}`}
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">

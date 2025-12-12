@@ -5,7 +5,12 @@ from db.models import Appointment
 from schemas.twilio import TwilioIncoming
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.datastructures import URL
-from services import patient_service, conversation_service, message_service
+from services import (
+    patient_service,
+    conversation_service,
+    message_service,
+    app_setting_service,
+)
 from graph.bot_graph import get_graph
 from langgraph.graph.state import CompiledStateGraph
 from langchain_core.messages import HumanMessage
@@ -28,11 +33,13 @@ async def greeting(
     conversation = await conversation_service.find_or_create(
         data=data, patient=patient, db=db
     )
-    greenting_message = (
-        "Hi! You've reached Vogue Clinic. Are you looking to book, cancel, or reschedule?"
-        if patient.name is None
-        else f"Hello! {patient.name}, How can i help you today?"
+    greeting_message_saved = await app_setting_service.get_app_setting_by_key(
+        db=db, key="GREETING"
     )
+    if greeting_message_saved and greeting_message_saved.value:
+        greenting_message = greeting_message_saved.value
+    else:
+        greenting_message = "Hi! How i can help you today"
     message = await message_service.create(
         conversation=conversation,
         content=greenting_message,
@@ -104,7 +111,7 @@ async def process_speech(
     await message_service.create(
         conversation=conversation, content=data.SpeechResult, role="user", db=db
     )
-    graph: CompiledStateGraph = await get_graph(data.CallSid, data.From)
+    graph: CompiledStateGraph = await get_graph(data.CallSid, data.From, db)
     ai_response = await graph.ainvoke(
         AppointmentState(
             messages=lc_messages + [HumanMessage(content=data.SpeechResult)],
@@ -118,8 +125,14 @@ async def process_speech(
         resp.say(final_message)
         resp.hangup()
         await conversation_service.end(conversation=conversation, db=db)
-    elif final_message.strip().endswith("**FINISH_CONVERSATION**"):
-        final_message = final_message.replace("**FINISH_CONVERSATION**", "").strip()
+    elif final_message.strip().endswith(
+        "FINISH_CONVERSATION"
+    ) or final_message.strip().endswith("**FINISH_CONVERSATION**"):
+        final_message = (
+            final_message.replace("FINISH_CONVERSATION", "")
+            .replace("**FINISH_CONVERSATION**", "")
+            .strip()
+        )
         resp.say(final_message)
         resp.pause(1)
         gather = Gather(
@@ -136,10 +149,15 @@ async def process_speech(
         resp.append(gather)
         resp.redirect(url=str(feedback_url), method="POST")
         await conversation_service.end(conversation=conversation, db=db)
-    elif final_message.strip().endswith("**NEEDS_HUMAN_INTERVENTION**"):
-        final_message = final_message.replace(
-            "**NEEDS_HUMAN_INTERVENTION**", ""
-        ).strip()
+    elif final_message.strip().endswith(
+        "NEEDS_HUMAN_INTERVENTION"
+    ) or final_message.strip().endswith("**NEEDS_HUMAN_INTERVENTION**"):
+        final_message = (
+            final_message.replace("NEEDS_HUMAN_INTERVENTION", "")
+            .replace("**NEEDS_HUMAN_INTERVENTION**", "")
+            .strip()
+            or "Our representative will get in touch with you shortly."
+        )
         resp.say(final_message)
         resp.hangup()
         await conversation_service.needs_human(conversation=conversation, db=db)

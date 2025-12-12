@@ -18,7 +18,6 @@ router = APIRouter(
 @router.post("/upload-file")
 async def upload_file(
     file: UploadFile = File(...),
-    name: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -35,7 +34,9 @@ async def upload_file(
             )
         filename = f"{str(uuid())}.{ext}"
         try:
-            await knowledge_service.create(name=name, blob_name=filename, db=db)
+            await knowledge_service.create(
+                name=file.filename, blob_name=filename, db=db
+            )
         except IntegrityError:
             await db.rollback()
             raise HTTPException(
@@ -69,18 +70,18 @@ async def get(
     return await knowledge_service.get(db=db, page=page, limit=limit)
 
 
-@router.patch("/activate/{knowledge_id}")
-async def activate_knowledge(knowledge_id: int, db: AsyncSession = Depends(get_db)):
-    await knowledge_service.activate_knowledge(db=db, knowledge_id=knowledge_id)
-    return {"message": "Knowledge activated successfully."}
+# @router.patch("/activate/{knowledge_id}")
+# async def activate_knowledge(knowledge_id: int, db: AsyncSession = Depends(get_db)):
+#     await knowledge_service.activate_knowledge(db=db, knowledge_id=knowledge_id)
+#     return {"message": "Knowledge activated successfully."}
 
 
-@router.get("/activate")
-async def get_active_knowledge(db: AsyncSession = Depends(get_db)):
-    knowledge = await knowledge_service.get_active_knowledge(db=db)
-    if not knowledge:
-        raise HTTPException(status_code=404, detail="No active knowledge found.")
-    return knowledge
+# @router.get("/activate")
+# async def get_active_knowledge(db: AsyncSession = Depends(get_db)):
+#     knowledge = await knowledge_service.get_active_knowledge(db=db)
+#     if not knowledge:
+#         raise HTTPException(status_code=404, detail="No active knowledge found.")
+#     return knowledge
 
 
 @router.get("/{knowledge_id}/link")
@@ -89,8 +90,13 @@ async def generate_knowledge_link(
 ):
     knowledge = await db.get(Knowledge, knowledge_id)
     if not knowledge:
-        raise HTTPException(status_code=404, detail="Knowledge not found.")
+        raise HTTPException(status_code=400, detail="Knowledge not found.")
     link = cloud_storage_service.generate_presigned_url(
         f"knowledge/{knowledge.blob_name}", expiration=600
     )
     return link
+
+
+@router.delete("/{knowledge_id}")
+async def delete_knowledge(knowledge_id: int, db: AsyncSession = Depends(get_db)):
+    return await knowledge_service.delete_knowledge(knowledge_id, db)

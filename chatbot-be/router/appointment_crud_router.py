@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.db import get_db
 from schemas.appointment import Appointment, AppointmentCreate, AppointmentUpdate
 from schemas.common import PaginatedResponse
-from services import appointment_crud_service
+from services import appointment_crud_service, auth_service
 
 router = APIRouter(prefix="/api/v1/appointments", tags=["appointments"])
 
@@ -17,6 +17,7 @@ async def list_appointments(
     user_timezone: str = Query("UTC"),
     doctor_id: int | None = Query(None),
     status_filter: str | None = Query(None, alias="status"),
+    current_user=Depends(auth_service.get_current_user),
 ) -> PaginatedResponse[Appointment]:
     return await appointment_crud_service.list_appointments(
         db=db,

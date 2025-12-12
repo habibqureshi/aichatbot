@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from twilio.rest import Client
 
 from src.db.db import get_db
-from src.db.models import Appointment, Availability, Doctor, Patient, Specialty
+from src.db.models import Appointment, Availability, Doctor, Patient
 from src.services import appointment_service, patient_service
 from src.configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
 
@@ -19,8 +19,7 @@ async def _get_random_doctors_by_specialty(
 ) -> List[Doctor]:
     result = await db.execute(
         select(Doctor)
-        .join(Specialty, isouter=True)
-        .where(func.lower(Specialty.name) == func.lower(speciality))
+        .where(func.lower(Doctor.specialty) == func.lower(speciality))
         .order_by(func.rand())
         .limit(limit)
     )
@@ -32,9 +31,7 @@ async def _resolve_doctor_by_name(
 ) -> Doctor | None:
     query = select(Doctor).where(func.lower(Doctor.name) == func.lower(doctor_name))
     if speciality:
-        query = query.join(Specialty, isouter=True).where(
-            func.lower(Specialty.name) == func.lower(speciality)
-        )
+        query = query.where(func.lower(Doctor.specialty) == func.lower(speciality))
     result = await db.execute(query.limit(1))
     return result.scalars().first()
 
@@ -71,7 +68,7 @@ async def _load_future_appointments(
 
 
 def register_tools(mcp: FastMCP):
-    @mcp.tool()
+    @mcp.tool(tags=["clinic"])
     async def booking_appointment(
         patient_name: str,
         preferred_date: str,
@@ -158,7 +155,7 @@ def register_tools(mcp: FastMCP):
                 print(f"Error while booking appointment: {e}")
                 return "Something went wrong while booking your appointment."
 
-    @mcp.tool()
+    @mcp.tool(tags=["clinic"])
     async def cancel_appointment(appointment_date: str, duration: int, ctx: Context):
         """Cancel an existing appointment.
 
@@ -192,7 +189,7 @@ def register_tools(mcp: FastMCP):
             await db.commit()
             return f"Appointment on {date.strftime('%A, %B %d, %Y at %I:%M %p')} has been cancelled. Confirmation will be sent by sms."
 
-    @mcp.tool()
+    @mcp.tool(tags=["clinic"])
     async def reschedule_appointment(
         current_date: str, new_date: str, duration: int, ctx: Context
     ):
@@ -251,7 +248,7 @@ def register_tools(mcp: FastMCP):
                 print(f"Error while booking appointment: {e}")
                 return "Something went wrong while booking your appointment."
 
-    @mcp.tool()
+    @mcp.tool(tags=["clinic"])
     async def find_random_doctors_by_speciality(
         speciality: str, k: int = 3
     ) -> list[dict[str, Any]] | str:
@@ -273,7 +270,7 @@ def register_tools(mcp: FastMCP):
                 for doctor in doctors
             ]
 
-    @mcp.tool()
+    @mcp.tool(tags=["clinic"])
     async def find_doctor_empty_slots(
         doctor_name: str,
         preferred_date: str,

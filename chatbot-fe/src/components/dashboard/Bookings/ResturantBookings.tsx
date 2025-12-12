@@ -2,87 +2,122 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
-import { getTableBookingsList, TableBooking } from "../../../app/actions/table-bookings";
+import { getRestaurantReservationsList, TableBooking } from "../../../app/actions/table-bookings";
 import { toast } from "react-toastify";
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<string, { bg: string; text: string }> = {
-    scheduled: { bg: "#10B981", text: "#FFFFFF" },
-    confirmed: { bg: "#10B981", text: "#FFFFFF" },
-    pending: { bg: "#FBBF24", text: "#FFFFFF" },
-    cancelled: { bg: "#EF4444", text: "#FFFFFF" },
-    canceled: { bg: "#EF4444", text: "#FFFFFF" },
-    completed: { bg: "#3B82F6", text: "#FFFFFF" },
-    rescheduled: { bg: "#3B82F6", text: "#FFFFFF" },
-  };
-
-  const style = statusStyles[status.toLowerCase()] || { bg: "#6B7280", text: "#FFFFFF" };
-
-  return (
-    <span
-      className="inline-flex px-3 py-1 text-xs font-medium rounded"
-      style={{ backgroundColor: style.bg, color: style.text }}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
+import { StatusBadge } from "@/lib/statusUtils";
+import Image from "next/image";
+import { formatDate, formatTime } from "@/lib/utils";
+import { getInitials, getAvatarColors } from "@/lib/avatarUtils";
 
 const columns: ExtendedColumnDef<TableBooking>[] = [
   {
     accessorKey: "id",
-    header: "Booking ID",
-    width: "120px",
-    cell: ({ row }) => <div className="font-medium text-gray-900">TB-{row.original.id}</div>,
-  },
-  {
-    accessorKey: "customer.name",
-    header: "Customer Name",
-    width: "180px",
+    header: "ID",
+    width: "100px",
     cell: ({ row }) => (
-      <div className="font-medium text-gray-900">{row.original.customer?.name || "N/A"}</div>
+      <div className="font-medium text-sm leading-[1.32] tracking-[0%] text-brand-dark1">
+        RES-{String(row.original.id).padStart(3, "0")}
+      </div>
     ),
   },
   {
-    accessorKey: "customer.phone_number",
-    header: "Phone no",
-    width: "150px",
-    cell: ({ row }) => (
-      <div className="text-gray-600">{row.original.customer?.phone_number || "N/A"}</div>
-    ),
-  },
-  {
-    accessorKey: "table.table_number",
-    header: "Table",
-    width: "150px",
+    accessorKey: "customer_id",
+    header: "CUSTOMER",
+    width: "200px",
+    cell: ({ row }) => {
+      const customerName = row.original.customer?.name || `Customer ${row.original.customer_id}`;
+      const phoneNumber = row.original.customer?.phone_number || "N/A";
+      const initials = getInitials(customerName);
+      const avatarColors = getAvatarColors(row.original.customer_id);
 
-    cell: ({ row }) => <div className="text-gray-900">{row.original.table?.table_number || "N/A"}</div>,
+      return (
+        <div className="flex items-start gap-3">
+          <div
+            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: avatarColors.bg }}
+          >
+            <span
+              className="text-sm leading-[1.32] tracking-[0%] font-medium"
+              style={{ color: avatarColors.text }}
+            >
+              {initials}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm leading-[1.32] tracking-[0%] font-medium text-brand-dark1 truncate">
+              {customerName}
+            </p>
+            <p className="text-sm leading-[1.32] tracking-[0%] text-brand-light truncate">
+              {phoneNumber}
+            </p>
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "reservation_date",
+    header: "RESERVATION DATE",
+    width: "200px",
+    cell: ({ row }) => {
+      const dateString = row.original.reservation_date;
+      const createdString = row.original.created_at;
+
+      return (
+        <div>
+          {dateString ? (
+            <>
+              {/* Reservation Date */}
+              <p className="flex items-center gap-1 text-sm font-medium text-brand-dark1">
+                <Image src="/assets/CalendarBlank.svg" alt="calendar" width={16} height={16} />
+                {formatDate(dateString)}
+              </p>
+
+              {/* Reservation Time */}
+              <p className="flex items-center gap-1 text-sm font-medium text-brand-dark1">
+                <Image src="/assets/Clock2.svg" alt="clock" width={16} height={16} />
+                {formatTime(dateString)}
+              </p>
+
+              {/* Booked Date */}
+              <p className="flex items-center gap-1 text-sm font-medium text-brand-light3">
+                Booked: {createdString ? formatDate(createdString) : "N/A"}
+              </p>
+            </>
+          ) : (
+            <p className="text-gray-600">N/A</p>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "party_size",
-    header: "Party Size",
-    width: "150px",
-    cell: ({ row }) => <div className="text-gray-600">{row.original.party_size || "N/A"}</div>,
+    header: "GUESTS",
+    width: "120px",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <Image src="/assets/Users.svg" alt="guests" width={16} height={16} />
+        <span className="font-medium text-brand-dark1">{row.original.party_size || "N/A"}</span>
+      </div>
+    ),
   },
   {
-    accessorKey: "booking_date",
-    header: "Booking Date/Time",
-    width: "180px",
+    accessorKey: "table_id",
+    header: "TABLE NO",
+    width: "120px",
     cell: ({ row }) => (
-      <div className="text-gray-900">
-        {row.original.booking_date && row.original.booking_time
-          ? `${new Date(row.original.booking_date).toLocaleDateString("en-US", {
-              day: "numeric",
-              month: "short",
-            })}, ${row.original.booking_time.slice(0, 5)}`
-          : "N/A"}
+      <div className="font-medium text-brand-dark1">
+        {row.original.table?.table_number
+          ? `T-${row.original.table.table_number}`
+          : `T-${row.original.table_id}`}
       </div>
     ),
   },
   {
     accessorKey: "status",
-    header: "Status",
-    width: "130px",
+    header: "STATUS",
+    width: "150px",
     cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
   },
 ];
@@ -94,7 +129,6 @@ export default function ResturantBookings() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalBookings, setTotalBookings] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Debounced search value
@@ -114,7 +148,7 @@ export default function ResturantBookings() {
     async (page: number = 1, limit: number = 10, name: string = "") => {
       try {
         setLoading(true);
-        const response = await getTableBookingsList(
+        const response = await getRestaurantReservationsList(
           page,
           limit,
           user_timezone,
@@ -125,7 +159,6 @@ export default function ResturantBookings() {
         );
         setBookings(response.data);
         setTotalPages(response.metadata.total_pages);
-        setTotalBookings(response.metadata.total);
         setCurrentPage(response.metadata.page);
       } catch (error: unknown) {
         console.error("Error fetching table bookings:", error);
@@ -136,7 +169,6 @@ export default function ResturantBookings() {
         }
         setBookings([]);
         setTotalPages(0);
-        setTotalBookings(0);
       } finally {
         setLoading(false);
       }

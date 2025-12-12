@@ -54,7 +54,7 @@ export async function getAppointmentsList(
     const response = await API.get(
       ENDPOINTS.APPOINTMENTS.LIST(page, limit, user_timezone, doctor_id, patient_id, status, name)
     );
-    console.log("api response", response?.data);
+    // console.log("api response", response?.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching appointments list:", error);

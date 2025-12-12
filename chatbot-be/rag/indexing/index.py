@@ -15,10 +15,10 @@ from indexing.store import add_to_store
 
 async def index_file_from_stream(f: UploadFile, index_name: str):
     try:
-        documents = await load_file_from_stream(f)
+        documents = await load_file_from_stream(f, index_name)
         print(f"Loaded {documents} documents from stream")
         split_chunks = recursive_split(documents, chunk_size=1000, chunk_overlap=200)
-        return add_to_store(split_chunks, index_name)
+        return add_to_store(split_chunks)
     except Exception as e:
         print(f"Error in index_file_from_stream: {e}")
         raise

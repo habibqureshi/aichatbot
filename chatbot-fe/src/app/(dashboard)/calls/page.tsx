@@ -1,44 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
+import { useState, useEffect, useCallback, useRef } from "react";
+// DataTable unused since cards were implemented; kept imports minimal
 import CallDetails from "@/components/dashboard/CallDetails";
 import { getConversationsList, Conversation } from "@/app/actions/conversations";
 import { toast } from "react-toastify";
+import CallFilterDropdown from "@/components/dashboard/CallFilterDropdown";
+import Image from "next/image";
+import SearchInput from "@/components/common/SearchInput";
+import CallCard from "@/components/dashboard/CallCard";
+import CallCardSkeleton from "@/components/loading-skeletons/CallCardSkeleton";
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<string, string> = {
-    completed: "bg-green-100 text-green-800",
-    "in-progress": "bg-blue-100 text-blue-800",
-    failed: "bg-red-100 text-red-800",
-    missed: "bg-yellow-100 text-yellow-800",
-  };
-
-  return (
-    <span
-      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-        statusStyles[status] || "bg-gray-100 text-gray-800"
-      }`}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
-
-const calculateDuration = (startedAt: string, endedAt: string | null): string => {
-  if (!endedAt) return "00:00";
-
-  const start = new Date(startedAt);
-  const end = new Date(endedAt);
-  const diffMs = end.getTime() - start.getTime();
-
-  if (diffMs <= 0) return "00:00";
-
-  const minutes = Math.floor(diffMs / 60000);
-  const seconds = Math.floor((diffMs % 60000) / 1000);
-
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-};
+// StatusBadge and calculateDuration moved to CallCard and CallDetails; removed from page
 
 export default function CallsPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -46,116 +19,30 @@ export default function CallsPage() {
   const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const pageSize = 10;
   const [totalPages, setTotalPages] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const isFetchingRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [showList, setShowList] = useState<boolean>(true);
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 
   // Status options passed from parent
   const statusOptions = [
-    { value: "all", label: "All Status" },
-    { value: "active", label: "Active" },
-    { value: "ended", label: "Ended" },
-    { value: "follow_up_needed", label: "Follow Up Needed" },
+    { id: "all", label: "All Status", value: "all" },
+    { id: "active", label: "Active", value: "active" },
+    { id: "ended", label: "Ended", value: "ended" },
+    { id: "follow_up_needed", label: "Follow Up Needed", value: "follow_up_needed" },
   ];
 
   // Debounced search value
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   // Define columns inside the component
-  const columns: ExtendedColumnDef<Conversation>[] = [
-    {
-      accessorKey: "patient.name",
-      header: "Patient Information",
-      minWidth: "200px",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium text-gray-900 truncate">{row.original.patient?.name || "N/A"}</div>
-          <div className="text-sm text-gray-500 truncate">
-            {row.original.patient?.phone_number || "N/A"}
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "started_at",
-      header: "Call Duration",
-      minWidth: "140px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600">
-          {calculateDuration(row.original.started_at, row.original.ended_at)}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      minWidth: "80px",
-      cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
-    },
-    {
-      accessorKey: "call_sid",
-      header: "Call SID",
-      minWidth: "140px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600 font-mono truncate">{row.original.call_sid || "N/A"}</div>
-      ),
-    },
-    {
-      id: "started_at_display",
-      header: "Started At",
-      minWidth: "140px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600">
-          {row.original.started_at ? new Date(row.original.started_at).toLocaleString() : "N/A"}
-        </div>
-      ),
-    },
-    {
-      id: "ended_at_display",
-      header: "Ended At",
-      minWidth: "140px",
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600">
-          {row.original.ended_at ? new Date(row.original.ended_at).toLocaleString() : "Ongoing"}
-        </div>
-      ),
-    },
-    // {
-    //   id: "actions",
-    //   header: "Actions",
-    //   minWidth: "80px",
-    //   cell: ({ row }) => (
-    //     <ActionsMenu
-    //       actions={[
-    //         {
-    //           label: "View",
-    //           icon: (
-    //             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //               <path
-    //                 strokeLinecap="round"
-    //                 strokeLinejoin="round"
-    //                 strokeWidth={2}
-    //                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-    //               />
-    //               <path
-    //                 strokeLinecap="round"
-    //                 strokeLinejoin="round"
-    //                 strokeWidth={2}
-    //                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-    //               />
-    //             </svg>
-    //           ),
-    //           onClick: () => {
-    //             // Set selected conversation in right pane
-    //             handleRowClick(row.original);
-    //           },
-    //         },
-    //       ]}
-    //     />
-    //   ),
-    // },
-  ];
 
   // Debounce search query
   useEffect(() => {
@@ -168,9 +55,10 @@ export default function CallsPage() {
   }, [searchQuery]);
 
   const fetchConversations = useCallback(
-    async (page: number = 1, limit: number = 10, name: string = "") => {
+    async (page: number = 1, limit: number = 10, name: string = "", append: boolean = false) => {
       try {
-        setLoading(true);
+        if (!append) setLoading(true);
+        else setLoadingMore(true);
         const response = await getConversationsList(
           page,
           limit,
@@ -178,10 +66,16 @@ export default function CallsPage() {
           statusFilter === "all" ? undefined : statusFilter || undefined,
           name
         );
-        setConversations(response.data);
+        if (append) {
+          setConversations((prev) => [...prev, ...(response.data || [])]);
+        } else {
+          setConversations(response.data);
+          const firstConversation = response.data?.[0];
+          setSelectedConversation(firstConversation || null);
+        }
+        setTotalCount(response.metadata.total);
         setTotalPages(response.metadata.total_pages);
-        const firstConversation = response.data?.[0];
-        setSelectedConversation(firstConversation || null);
+        setHasMore(response.metadata.page < response.metadata.total_pages);
       } catch (error: unknown) {
         console.error("Error fetching conversations:", error);
 
@@ -196,6 +90,7 @@ export default function CallsPage() {
         setTotalPages(0);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     },
     [user_timezone, statusFilter]
@@ -207,17 +102,48 @@ export default function CallsPage() {
   }, [statusFilter]);
 
   useEffect(() => {
-    fetchConversations(currentPage, pageSize, debouncedSearchQuery);
-  }, [fetchConversations, currentPage, pageSize, debouncedSearchQuery]);
+    // Reset and fetch the first page when search or status changes
+    setConversations([]);
+    setCurrentPage(1);
+    fetchConversations(1, pageSize, debouncedSearchQuery, false);
+  }, [fetchConversations, pageSize, debouncedSearchQuery]);
 
-  const handlePageChange = (pageIndex: number) => {
-    setCurrentPage(pageIndex + 1); // DataTable uses 0-based indexing, API uses 1-based
-  };
+  // Attach scroll listener for infinite scroll
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
 
-  const handlePageSizeChange = (newPageSize: number) => {
-    setPageSize(newPageSize);
-    setCurrentPage(1); // Reset to first page when page size changes
-  };
+    const onScroll = () => {
+      if (isFetchingRef.current || loadingMore || loading || !hasMore) return;
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      if (scrollTop + clientHeight >= scrollHeight - 120) {
+        // close to bottom, load next page
+        if (currentPage < totalPages) {
+          isFetchingRef.current = true;
+          fetchConversations(currentPage + 1, pageSize, debouncedSearchQuery, true).finally(() => {
+            isFetchingRef.current = false;
+          });
+          setCurrentPage((p) => p + 1);
+        }
+      }
+    };
+
+    container.addEventListener("scroll", onScroll);
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [
+    currentPage,
+    pageSize,
+    debouncedSearchQuery,
+    hasMore,
+    loadingMore,
+    loading,
+    totalPages,
+    fetchConversations,
+  ]);
+
+  // loadNextPage handled inside scroll handler
+
+  // handlePageSizeChange removed in favor of infinite scroll; pageSize can be set via a future UI
 
   const handleRowClick = async (conversation: Conversation) => {
     setSelectedConversation(conversation);
@@ -228,40 +154,177 @@ export default function CallsPage() {
   };
 
   return (
-    <div className="p-2 sm:p-4 lg:p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="col-span-1 lg:col-span-8">
-          <div className="h-full overflow-auto">
-            <DataTable
-              title="Recent Calls"
-              columns={columns}
-              data={conversations}
-              // searchKey="patient.name"
-              // searchPlaceholder="Search by patient name..."
-              showSearch={true}
-              loading={loading}
-              initialLoading={loading && conversations.length === 0}
-              externalSearchValue={searchQuery}
-              onExternalSearchChange={handleSearchChange}
-              externalStatusValue={statusFilter}
-              onExternalStatusChange={setStatusFilter}
-              statusOptions={statusOptions}
-              statusPlaceholder="All Status"
-              enablePagination={true}
-              externalPageIndex={currentPage - 1}
-              externalPageSize={pageSize}
-              totalPages={totalPages}
-              onExternalPageChange={handlePageChange}
-              onExternalPageSizeChange={handlePageSizeChange}
-              onRowClick={handleRowClick}
-              rowTooltipText="Click to view conversation details"
-              selectedRowId={selectedConversation?.id}
+    <div className="relative">
+      {/* Drawer for small screens */}
+      <div
+        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${
+          drawerOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setDrawerOpen(false)} />
+        <div
+          className={`absolute left-0 top-20 h-full w-80 bg-white shadow-lg transform transition-transform duration-300 ${
+            drawerOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="p-4 border-b">
+            <div className="flex justify-between items-center">
+              <h3 className="font-semibold text-brand-dark text-lg">Recent Calls</h3>
+              <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700">
+                ✕
+              </button>
+            </div>
+            <p className="font-medium text-brand-light text-sm">
+              {totalCount.toLocaleString()} total calls
+            </p>
+          </div>
+          <div className="p-4">
+            <SearchInput
+              placeholder="Search calls by name, phone, or email"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="mb-4"
             />
+            <div className="relative z-40">
+              <CallFilterDropdown
+                options={statusOptions}
+                selectedValue={statusFilter}
+                onChange={(v: string | number | null) => setStatusFilter(String(v))}
+                trigger={
+                  <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer mb-4">
+                    <Image src="/assets/Funnel.svg" alt="filter" width={20} height={20} />
+                    <p className="font-medium text-brand-dark text-sm">Filter</p>
+                  </div>
+                }
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto max-h-[calc(100vh-200px)] space-y-1 px-4">
+            {loading && conversations.length === 0 ? (
+              Array.from({ length: 4 }).map((_, idx) => <CallCardSkeleton key={idx} />)
+            ) : conversations?.length > 0 ? (
+              conversations.map((conv) => (
+                <CallCard
+                  key={conv.id}
+                  conversation={conv}
+                  onClick={() => {
+                    handleRowClick(conv);
+                    setDrawerOpen(false); // Close drawer after selection
+                  }}
+                  isSelected={selectedConversation?.id === conv.id}
+                />
+              ))
+            ) : (
+              <div className="p-3 text-sm text-gray-500">No calls found.</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Calls List - Hidden on small screens, shown on large */}
+        <div
+          className={`hidden lg:block relative transition-all duration-300 ease-in-out ${
+            showList ? "lg:w-4/12" : "lg:w-0"
+          } overflow-hidden`}
+        >
+          <div className="h-full overflow-auto border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] py-4">
+            <div
+              className="w-full flex flex-col xl2:flex-row 
+                xl2:justify-between justify-start 
+                xl2:items-start items-start mb-4 px-4"
+            >
+              <div className="flex flex-col">
+                <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
+                  Recent Calls
+                </h3>
+                <p className="font-medium text-brand-light text-[12px] md:text-[16px] leading-[1.32]">
+                  {totalCount.toLocaleString()} total calls
+                </p>
+              </div>
+              <CallFilterDropdown
+                options={statusOptions}
+                selectedValue={statusFilter}
+                onChange={(v: string | number | null) => setStatusFilter(String(v))}
+                trigger={
+                  <div className="border border-[#D5D9E2] p-2 rounded-md flex items-center gap-2 cursor-pointer xl2:items-start mt-4 xl2:mt-0 relative z-40">
+                    <Image src="/assets/Funnel.svg" alt="search" width={20} height={20} />
+                    <p className="font-medium text-brand-dark text-[12px] md:text-[14px] leading-[1.32]">
+                      Filter
+                    </p>
+                  </div>
+                }
+              />
+            </div>
+
+            <div className="mt-3 flex items-center justify-between px-4 py-2">
+              <div className="text-sm text-gray-600">
+                Showing <span className="font-medium">{conversations.length}</span> calls
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 px-4">
+              <div className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <SearchInput
+                    placeholder="Search calls by name, phone, or email"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    className="bg-[#F9FAFB] border border-[#E6E7EB] rounded-[8px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div ref={listRef} className="mt-4 space-y-1 max-h-[calc(100vh-280px)] overflow-y-auto">
+              {loading && conversations.length === 0 ? (
+                Array.from({ length: 4 }).map((_, idx) => <CallCardSkeleton key={idx} />)
+              ) : conversations?.length > 0 ? (
+                conversations.map((conv) => (
+                  <CallCard
+                    key={conv.id}
+                    conversation={conv}
+                    onClick={() => handleRowClick(conv)}
+                    isSelected={selectedConversation?.id === conv.id}
+                  />
+                ))
+              ) : (
+                <div className="p-3 text-sm text-gray-500">No calls found.</div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="col-span-1 lg:col-span-4">
-          <CallDetails conversation={selectedConversation} />
+        {/* Call Details */}
+        <div
+          className={`transition-all duration-300 ease-in-out ${showList ? "lg:w-8/12" : "lg:w-full"}`}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              {/* Drawer toggle button for small screens */}
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="lg:hidden bg-white border rounded-md px-3 py-3 font-normal text-brand-button text-lg leading-[1.32] flex items-center gap-2"
+              >
+                <Image src="/assets/CaretLeft.svg" alt="Calls" width={16} height={16} />
+                Recent Calls
+              </button>
+              {/* Toggle button for large screens */}
+              <button
+                onClick={() => setShowList(!showList)}
+                className="hidden lg:flex bg-white border rounded-md px-3 py-3 font-normal text-brand-button text-lg leading-[1.32] items-center gap-2"
+              >
+                <Image
+                  src="/assets/CaretLeft.svg"
+                  alt="Calls"
+                  width={16}
+                  height={16}
+                  className={`transition-transform duration-300 ${showList ? "" : "rotate-180"}`}
+                />
+                {showList ? "Hide Calls List" : "Show Calls List"}
+              </button>
+            </div>
+          </div>
+          <CallDetails conversation={selectedConversation} loading={!selectedConversation} />
         </div>
       </div>
     </div>

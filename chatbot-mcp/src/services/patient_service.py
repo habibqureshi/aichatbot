@@ -15,7 +15,8 @@ async def find_or_create(phone_number: str, db: AsyncSession) -> Patient:
     db.add(patient)
     try:
         await db.commit()
-        return await db.refresh(patient)
+        await db.refresh(patient)
+        return patient
     except IntegrityError:
         await db.rollback()
         result = await db.execute(

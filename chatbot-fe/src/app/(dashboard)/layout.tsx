@@ -19,8 +19,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
           {/* Main content area */}
-          <div className="flex-1 flex flex-col w-full lg:pl-64">
-            <main className="flex-1 p-1 sm:p-4 overflow-auto">
+          <div className="bg-topbar flex-1 flex flex-col w-full lg:pl-[300px] ">
+            <main className="flex-1 p-1 sm:p-4 overflow-auto bg-[#FFFFFF] rounded-tl-[16px]">
               <div className="w-full h-full relative z-10">{children}</div>
             </main>
             {/* <Bottombar /> */}

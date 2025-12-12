@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from db.models import Availability as AvailabilityModel, Doctor, Specialty
+from db.models import Availability as AvailabilityModel, Doctor
 from schemas.availability import AvailabilitySlotCreate
 from schemas.common import PaginatedResponse
 from schemas.doctor import Doctor as DoctorSchema, DoctorCreate, DoctorUpdate
@@ -44,19 +44,19 @@ async def list_doctors(
     page: int,
     limit: int,
     user_timezone: str,
-    specialty_id: int | None = None,
+    specialty: str | None = None,
     name_filter: str | None = None,
 ) -> PaginatedResponse[DoctorSchema]:
     query = (
         select(Doctor)
-        .options(joinedload(Doctor.specialty), joinedload(Doctor.availabilities))
+        .options(joinedload(Doctor.availabilities))
         .order_by(Doctor.created_at.desc())
     )
     count_query = select(func.count(Doctor.id))
 
-    if specialty_id is not None:
-        query = query.where(Doctor.specialty_id == specialty_id)
-        count_query = count_query.where(Doctor.specialty_id == specialty_id)
+    if specialty is not None:
+        query = query.where(Doctor.specialty == specialty)
+        count_query = count_query.where(Doctor.specialty == specialty)
     if name_filter is not None:
         query = query.where(Doctor.name.ilike(f"%{name_filter}%"))
         count_query = count_query.where(Doctor.name.ilike(f"%{name_filter}%"))
@@ -79,21 +79,16 @@ async def list_doctors(
 async def get_doctor(db: AsyncSession, doctor_id: int) -> Doctor | None:
     result = await db.execute(
         select(Doctor)
-        .options(joinedload(Doctor.specialty), joinedload(Doctor.availabilities))
+        .options(joinedload(Doctor.availabilities))
         .where(Doctor.id == doctor_id)
     )
     return result.unique().scalar_one_or_none()
 
 
 async def create_doctor(db: AsyncSession, payload: DoctorCreate) -> Doctor:
-    if payload.specialty_id is not None:
-        specialty = await db.get(Specialty, payload.specialty_id)
-        if specialty is None:
-            raise HTTPException(status_code=404, detail="Speciality not found")
-
     doctor = Doctor(
         name=payload.name,
-        specialty_id=payload.specialty_id,
+        specialty=payload.specialty,
         phone_number=payload.phone_number,
     )
     db.add(doctor)
@@ -120,10 +115,7 @@ async def update_doctor(
     update_data = payload.model_dump(exclude_unset=True)
     availabilities = update_data.pop("availabilities", None)
 
-    if "specialty_id" in update_data and update_data["specialty_id"] is not None:
-        specialty = await db.get(Specialty, update_data["specialty_id"])
-        if specialty is None:
-            raise HTTPException(status_code=404, detail="Speciality not found")
+    # no foreign-key validation required; specialty is a simple string
 
     for field, value in update_data.items():
         setattr(doctor, field, value)

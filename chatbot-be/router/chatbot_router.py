@@ -10,7 +10,9 @@ import json
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 from uuid import uuid4 as uuid
-from graph.bot_graph import get_chat_graph
+from db.db import get_db
+from graph.bot_graph import get_chat_graph, get_graph
+from sqlalchemy.ext.asyncio import AsyncSession
 from graph_state import ChatState
 
 router = APIRouter(
@@ -24,6 +26,7 @@ async def chat(
     query: str,
     id: Optional[str] = None,
     graph: CompiledStateGraph = Depends(get_chat_graph),
+    # db: AsyncSession = Depends(get_db),
 ):
 
     print(f"Query: {query}, ID: {id}")

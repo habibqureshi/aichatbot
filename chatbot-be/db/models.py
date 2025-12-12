@@ -10,6 +10,7 @@ from sqlalchemy import (
     Enum,
     Time,
     Date,
+    Boolean,
 )
 from datetime import datetime, timezone
 from sqlalchemy import UniqueConstraint
@@ -86,8 +87,26 @@ class Knowledge(Base):
     __tablename__ = "knowledges"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), index=True, unique=True)
+    name = Column(String(100), index=True)
     blob_name = Column(String(255))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class AppSetting(Base):
+    __tablename__ = "app_settings"
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), unique=True)
+    value = Column(Text, nullable=False)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(150), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(200), nullable=True)
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -106,26 +125,16 @@ class ActiveKnowledge(Base):
     knowledge = relationship("Knowledge", backref="active_entry")
 
 
-class Specialty(Base):
-    __tablename__ = "specialties"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), index=True, unique=True)
-    description = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    doctors = relationship("Doctor", back_populates="specialty")
-
-
 class Doctor(Base):
     __tablename__ = "doctors"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    specialty_id = Column(Integer, ForeignKey("specialties.id"), nullable=True)
+    # store specialty as a string (name/code) instead of a foreign key
+    specialty = Column(String(100), nullable=True)
     phone_number = Column(String(100), unique=True, index=True)
     duration = Column(Integer, nullable=True, default=30)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    specialty = relationship("Specialty", back_populates="doctors")
     appointments = relationship("Appointment", back_populates="doctor")
     availabilities = relationship("Availability", back_populates="doctor")
 
@@ -153,3 +162,63 @@ class Availability(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     doctor = relationship("Doctor", back_populates="availabilities")
+
+
+class RestaurantTable(Base):
+    __tablename__ = "restaurant_tables"
+    id = Column(Integer, primary_key=True, index=True)
+    capacity = Column(Integer, nullable=False)
+    table_number = Column(String(20), nullable=False)
+    location = Column(String(50), nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class Reservation(Base):
+    __tablename__ = "reservations"
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("patients.id"))
+    table_id = Column(Integer, ForeignKey("restaurant_tables.id"))
+    reservation_date = Column(DateTime, nullable=False)
+    party_size = Column(Integer, nullable=False)
+    status = Column(
+        Enum(
+            "pending",
+            "confirmed",
+            "cancelled",
+            "completed",
+            "no_show",
+            name="reservation_status_enum",
+        ),
+        default="pending",
+        index=True,
+    )
+    special_request = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    cancelled_at = Column(DateTime, nullable=True)
+
+
+class RestaurantSetting(Base):
+    __tablename__ = "restaurant_settings"
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), nullable=False)
+    value = Column(Text, nullable=False)
+    description = Column(String(255))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token = Column(String(255), unique=True, index=True, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    revoked = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", backref="refresh_tokens")

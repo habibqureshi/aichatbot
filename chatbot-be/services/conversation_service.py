@@ -7,7 +7,7 @@ from sqlalchemy.future import select
 from datetime import datetime, timezone
 from sqlalchemy.orm import joinedload
 from schemas.common import PaginatedResponse
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from pydantic import HttpUrl
 from schemas.conversation import Conversation as ConversationSchema
 
@@ -59,6 +59,7 @@ async def get_all_conversations(
     page: int = 1,
     user_timezone: str = "UTC",
     status: str = None,
+    q: str = None,
 ) -> PaginatedResponse[ConversationSchema]:
     offset = (page - 1) * limit
     query = (
@@ -68,6 +69,11 @@ async def get_all_conversations(
     )
     if status is not None and status != "all":
         query = query.where(Conversation.status == status)
+    if q:
+        search = f"%{q}%"
+        query = query.where(
+            or_(Patient.name.ilike(search), Patient.phone_number.ilike(search)),
+        )
     result = await db.execute(query.limit(limit).offset(offset))
     conversations = [
         ConversationSchema.model_validate(c, context={"timezone": user_timezone})

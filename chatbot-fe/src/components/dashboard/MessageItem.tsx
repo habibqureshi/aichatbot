@@ -10,7 +10,7 @@ type Props = {
 
 const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) => {
   const isUser = message.role === "user";
-  const displayName = isUser ? patientName || "Sarah Johnson" : "AI Agent";
+  const displayName = isUser ? patientName || "User" : "AI Agent";
   const avatarSrc = isUser ? "/assets/calls/avatar.svg" : "/assets/calls/aiAgent.svg";
 
   const bubbleStyle: React.CSSProperties = isUser

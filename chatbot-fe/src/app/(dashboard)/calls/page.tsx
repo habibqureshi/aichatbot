@@ -88,6 +88,7 @@ export default function CallsPage() {
 
         setConversations([]);
         setTotalPages(0);
+        setSelectedConversation(null);
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -324,7 +325,7 @@ export default function CallsPage() {
               </button>
             </div>
           </div>
-          <CallDetails conversation={selectedConversation} loading={!selectedConversation} />
+          <CallDetails conversation={selectedConversation} loading={loading} />
         </div>
       </div>
     </div>

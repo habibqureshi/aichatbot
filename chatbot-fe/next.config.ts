@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb", // Increase limit from 1MB to 10MB
     },
   },
-  
+  staticPageGenerationTimeout: 120,
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

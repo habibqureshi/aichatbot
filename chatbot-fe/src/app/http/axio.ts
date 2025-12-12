@@ -1,6 +1,19 @@
 import axios from "axios";
 import { ENV } from "@/app/utils/env";
 
+// Prevents multiple refresh requests and queues pending requests
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function subscribeTokenRefresh(callback: (token: string) => void) {
+  refreshSubscribers.push(callback);
+}
+
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach((callback) => callback(token));
+  refreshSubscribers = [];
+}
+
 // Helper function to get cookie value on client side
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -126,11 +139,28 @@ API.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      // If already refreshing, queue this request
+      if (isRefreshing) {
+        console.log("[REFRESH QUEUE] Request queued, waiting for token refresh...");
+        return new Promise((resolve) => {
+          subscribeTokenRefresh((token: string) => {
+            console.log("[REFRESH QUEUE] Retrying queued request with new token");
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(API(originalRequest));
+          });
+        });
+      }
+
+      // Start the refresh process
+      isRefreshing = true;
+      console.log("[TOKEN REFRESH] Starting token refresh...");
+
       try {
         // Get refresh token
         const refreshToken = await getRefreshTokenFromCookie();
         if (!refreshToken) {
           // No refresh token available, redirect to login
+          isRefreshing = false;
           if (typeof window !== "undefined") {
             window.location.href = "/authentication";
           }
@@ -151,13 +181,20 @@ API.interceptors.response.use(
             await updateRefreshToken(refreshResponse.data.refresh_token);
           }
 
-          // Retry original request with new token
+          // Notify all queued requests with the new token
           const newToken = refreshResponse.data.access_token;
+          onRefreshed(newToken);
+          isRefreshing = false;
+
+          console.log("[TOKEN REFRESH] ✅ Token refreshed successfully");
+
+          // Retry original request with new token
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return API(originalRequest);
         }
       } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
+        console.error("[TOKEN REFRESH] ❌ Token refresh failed:", refreshError);
+        isRefreshing = false;
         // Refresh failed, redirect to login
         if (typeof window !== "undefined") {
           window.location.href = "/authentication";

@@ -71,26 +71,30 @@ const AISummaryTab: React.FC<Props> = ({ summary, messages }) => {
               <div className="text-base leading-[1.32] text-[#4C5564] font-medium">Average response</div>
             </div>
             <div className="font-semibold text-brand-dark text-lg">1.2s</div>
-             <div className="text-sm leading-[1.32] text-[#4C5564] font-medium">AI agent response time</div>
+            <div className="text-sm leading-[1.32] text-[#4C5564] font-medium">
+              AI agent response time
+            </div>
           </div>
         </div>
 
         <div className="mt-4 pt-6 border-t" style={{ borderColor: "#E8E3FF" }}>
-        <div className="text-base leading-[1.32] text-[#4C5564] font-medium">Speaking Distribution</div>
-          <div className="space-y-2">
+          <div className="text-base leading-[1.32] text-[#4C5564] font-medium">
+            Speaking Distribution
+          </div>
+          <div className="space-y-2 mt-4">
             <div className="flex items-center justify-between">
               <span className="text-sm leading-[1.32] text-black font-medium">AI Agent</span>
-              <span className="text-xs font-semibold text-brand-dark">55%</span>
+              <span className="text-sm leading-[1.32] text-black font-medium">55%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-brand-button h-2 rounded-full" style={{ width: "55%" }}></div>
+            <div className="w-full bg-[#D9D9D9] rounded-full h-[10px]">
+              <div className="bg-[#6325A9] h-[10px] rounded-full" style={{ width: "55%" }}></div>
             </div>
             <div className="flex items-center justify-between mt-3">
-              <span className="text-xs text-gray-600">Customer</span>
-              <span className="text-xs font-semibold text-brand-dark">45%</span>
+              <span className="text-sm leading-[1.32] text-black font-medium">Customer</span>
+              <span className="text-sm leading-[1.32] text-black font-medium">45%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-gray-400 h-2 rounded-full" style={{ width: "45%" }}></div>
+            <div className="w-full bg-[#D9D9D9] rounded-full h-[10px]">
+              <div className="bg-[#6B7281] h-[10px] rounded-full" style={{ width: "45%" }}></div>
             </div>
           </div>
         </div>

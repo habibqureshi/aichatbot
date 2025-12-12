@@ -90,7 +90,7 @@ export const ENDPOINTS = {
         params.append("status", status.trim());
       }
       if (name && name.trim()) {
-        params.append("name", name.trim());
+        params.append("q", name.trim());
       }
       return `/api/v1/conversation/?${params.toString()}`;
     },

@@ -25,7 +25,7 @@ async def receive_call(
     return Response(content=str(resp), media_type="application/xml")
 
 
-@router.post("/process/vioce")
+@router.post("/process/voice")
 async def process_voice(
     req: Request,
     data: TwilioIncoming = Depends(parse_webhook),

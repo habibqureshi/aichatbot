@@ -5,6 +5,7 @@ from nodes import ask_user, route, route_after_ask, reasoner_node_builder
 from graph_state import ChatState
 from langgraph.prebuilt import ToolNode
 import asyncmy
+from db.db import init_db
 from langgraph.checkpoint.mysql.asyncmy import AsyncMySaver
 from configs import DB_HOST, DB_PASS, DB_PORT, DB_USER, DB, MCP_URL
 from dotenv import load_dotenv
@@ -12,6 +13,7 @@ from utils.mcp_client import MCPClient
 from langchain_mcp_adapters.tools import (
     convert_mcp_tool_to_langchain_tool,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 from aimodels import llm
 from graph.appointmnet_graph import create_appointment_graph
 
@@ -76,6 +78,7 @@ async def lifespan(app: FastAPI):
 
         # my_checkpointer = AsyncMySaver(conn=checkpointer_conn)
         # await my_checkpointer.setup()
+        await init_db()
         print("LangGraph and MySQL Checkpointer initialized successfully.")
         yield
     except Exception as e:
@@ -83,7 +86,7 @@ async def lifespan(app: FastAPI):
         raise
 
 
-async def get_graph(call_id: str, patient_number: str) -> StateGraph:
+async def get_graph(call_id: str, patient_number: str, db: AsyncSession) -> StateGraph:
     global my_checkpointer
     mcp_client = MCPClient()
     success = await mcp_client.connect(
@@ -91,7 +94,7 @@ async def get_graph(call_id: str, patient_number: str) -> StateGraph:
     )
     if not success:
         raise ConnectionError("Error during setup. Contact administrator!")
-    graph = await create_appointment_graph(mcp_client)
+    graph = await create_appointment_graph(mcp_client, db)
     # compiled_graph = graph.compile(checkpointer=my_checkpointer)
     return graph
 

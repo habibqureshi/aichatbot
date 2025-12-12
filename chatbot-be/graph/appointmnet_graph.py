@@ -3,6 +3,7 @@ from typing import List, Optional, Annotated
 from langgraph.graph.message import BaseMessage, add_messages
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
+from services import app_setting_service
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage, AIMessage
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -10,6 +11,8 @@ from utils.mcp_client import MCPClient
 from langchain_mcp_adapters.tools import (
     convert_mcp_tool_to_langchain_tool,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone
 
 
 class AppointmentState(BaseModel):
@@ -18,43 +21,63 @@ class AppointmentState(BaseModel):
     patient_phone: Optional[str] = None
 
 
-async def create_appointment_graph(mcp_client: MCPClient) -> CompiledStateGraph:
+async def create_appointment_graph(
+    mcp_client: MCPClient, db: AsyncSession
+) -> CompiledStateGraph:
     """
     Creates and returns a LangGraph StateGraph for appointment scheduling.
     """
+    menu_setting = await app_setting_service.get_app_setting_by_key_value(
+        db=db, key="MENU"
+    )
+    business_setting = await app_setting_service.get_app_setting_by_key_value(
+        db=db, key="INSTALLED_FOR"
+    )
+    tags = ["common", business_setting]
     tools = [
         convert_mcp_tool_to_langchain_tool(session=mcp_client.session, tool=tool)
         for tool in await mcp_client.client.list_tools()
+        if not tags or set(tool.meta.get("_fastmcp", {}).get("tags", [])) & set(tags)
     ]
     llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0).bind_tools(tools=tools)
 
     def classify_intent(state: AppointmentState):
         print(state)
         prompt = f"""
-        You are an inbound calling assistant for a clinic.
+        You are an inbound calling assistant. The business type is {business_setting or "clinic"}. The system includes core capabilities (schedule/reserve, reschedule, cancel) and may include additional custom capabilities defined in App Settings.
+        Your responsibilities:
+        Understand what the caller needs.
+        Collect any missing information conversationally and naturally (this is a voice call).
+        When all information is available, call the correct tool:
+        • schedule/reserve → scheduling tool
+        • reschedule → rescheduling tool
+        • cancel → cancellation tool
 
-        Your main tasks:
-        1. Understand what the patient needs (schedule, cancel, reschedule, or general knowledge)
-        2. Gather required information conversationally
-        3. Once you have all needed info, call the appropriate tool
-        4. Confirm the action and ask if they need anything else
-        5. If the user wants to end the call return **FINISH_CONVERSATION** only.
-        6. For all factual or general questions about the clinic (e.g., timings, services, holidays, doctors, etc.),
-        7. call tools when needed and check responss before answering. don't call same tool multiple times for same question.
-        8. If the user wants to talk with a human return **NEEDS_HUMAN_INTERVENTION**.
-        you must use the retriever tool to find accurate information.
-        Do not answer such questions directly from your own memory.
+        For custom capabilities (capabilities without a tool) or any factual/general questions about the business:
+        • Always call the retriever with the caller's query first.
+        • Use only the retrieved information to answer.
+        • Never answer factual/business questions from your own memory.
+        • Never call the same tool more than once for the same question.
 
-        Always call retriever with the user's query before answering any factual question.
+        If the caller wants to talk to a human, return **NEEDS_HUMAN_INTERVENTION** only.
+        If the caller wants to end the call, return **FINISH_CONVERSATION** only.
 
-        Guidelines:
-        - Be conversational and brief (this is a phone call, not a chat)
-        - Ask for missing info naturally,
-        - Don't repeat information back unless confirming an action
-        - When the patient wants to end the call (says bye, that's all, etc.), thank them warmly
-        - After completing an action, ask if there's anything else you can help with
-
-        Remember: You're on a voice call, so keep responses concise and natural."""
+        Conversation style:
+            Keep responses brief, clear, and conversational.
+            Ask for missing details naturally.
+            Do not repeat information unless confirming an action.
+            After completing any action, ask if they need anything else.
+        General rules:
+            Do not invent or assume information.
+            Do not rely on your own memory for factual details.
+            Always use the retriever for factual/general questions and custom capabilities.
+            Call tools only when all required details have been collected.
+           ---------------------- 
+        {f"Custom capabilities: {menu_setting}" if menu_setting else ""}
+        ----------------
+        Remember: this is a phone call.
+        current date and time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
+        """
         response = llm.invoke(
             [
                 message

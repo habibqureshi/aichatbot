@@ -90,7 +90,7 @@ export const ENDPOINTS = {
         params.append("status", status.trim());
       }
       if (name && name.trim()) {
-        params.append("name", name.trim());
+        params.append("q", name.trim());
       }
       return `/api/v1/conversation/?${params.toString()}`;
     },
@@ -142,5 +142,15 @@ export const ENDPOINTS = {
   APP_SETTINGS: {
     GET_BY_KEY: (key: string) => `/api/v1/app-settings/key/${key}`,
     UPDATE: (settingId: number) => `/api/v1/app-settings/${settingId}`,
+  },
+  STATS: {
+    TOTAL_CALLS: (start: string, end: string) => `/api/v1/stats/total_calls?start=${start}&end=${end}`,
+    AVERAGE_DURATION: (start: string, end: string) =>
+      `/api/v1/stats/average_duration?start=${start}&end=${end}`,
+    CONVERSION_RATE: (start: string, end: string) =>
+      `/api/v1/stats/conversion_rate?start=${start}&end=${end}`,
+    LIVE: () => `/api/v1/stats/live`,
+    TIMESERIES: (start: string, end: string, interval: string = "month") =>
+      `/api/v1/stats/timeseries?start=${start}&end=${end}&interval=${interval}`,
   },
 };

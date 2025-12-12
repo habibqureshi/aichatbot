@@ -38,15 +38,14 @@ def load_local_txt_file(file_path: str) -> list:
         raise
 
 
-async def load_file_from_stream(f: UploadFile) -> list:
+async def load_file_from_stream(f: UploadFile, src: str) -> list:
     """
     Loads a local .txt file and returns its content as a list of Document objects
     with 'page_content' and 'metadata' fields, similar to GCSFileLoader output.
     """
     try:
         content = await f.read()
-        name = f.filename
-        doc = Document(page_content=content, metadata={"source": name})
+        doc = Document(page_content=content, metadata={"source": src})
         return [doc]
     except Exception as e:
         print(f"Failed to load local txt file: {e}")

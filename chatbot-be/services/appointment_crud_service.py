@@ -26,7 +26,7 @@ async def list_appointments(
         select(AppointmentModel)
         .options(
             joinedload(AppointmentModel.patient),
-            joinedload(AppointmentModel.doctor).options(joinedload(Doctor.specialty)),
+            joinedload(AppointmentModel.doctor),
         )
         .order_by(AppointmentModel.appointment_date.desc())
     )

@@ -15,12 +15,12 @@ import {
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TableBody, TableCell, TableHead, TableRow } from "@/components/ui/table";
 
 import { LoadingSpinner } from "./loading-spinner";
 import { TableSkeleton } from "./table-skeleton";
+import SearchInput from "@/components/common/SearchInput";
 import Image from "next/image";
 
 // Extended ColumnDef with width properties
@@ -71,6 +71,10 @@ interface DataTableProps<TData, TValue> {
   rowTooltipText?: string;
   // Selected row ID for highlighting
   selectedRowId?: string | number;
+  totalCount?: number;
+  actionButton?: React.ReactNode;
+  tableMinHeight?: string;
+  tableMaxHeight?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -107,6 +111,10 @@ export function DataTable<TData, TValue>({
   onRowClick,
   rowTooltipText,
   selectedRowId,
+  totalCount,
+  actionButton,
+  tableMinHeight,
+  tableMaxHeight,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -155,14 +163,18 @@ export function DataTable<TData, TValue>({
   // const [firstWord, ...rest] = (title ?? "").split(" ");
   // const restTitle = rest.join(" ");
   return (
-    <div
-      className="bg-brand-white border rounded-xl p-4 px-6 shadow-sm"
-      style={{ borderColor: "#F0EEFF" }}
-    >
+    <div className="bg-brand-light2  rounded-xl p-4 px-6 ">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 mt-1">
         <div className="flex items-center space-x-2 px-2">
-          <h2 className="text-xl font-semibold tracking-tight text-brand-dark font-inter">{title}</h2>
+          <h2 className="font-figtree text-[24px] font-semibold tracking-tight text-brand-dark leading-[1.32] ">
+            {title}
+          </h2>
+          {totalCount !== undefined && totalCount > 0 && (
+            <span className="h-7 w-12 bg-white flex items-center justify-center text-[16px] font-inter font-semibold text-black rounded-[8px] p-4">
+              {totalCount !== undefined ? totalCount : ""}
+            </span>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto px-2 sm:px-0">
           {/* Loading Spinner */}
@@ -174,30 +186,20 @@ export function DataTable<TData, TValue>({
 
           {/* Search Input */}
           {showSearch && searchKey && (enableFiltering || onExternalSearchChange) && (
-            <div className="relative w-full sm:max-w-sm">
-              <Image
-                height={16}
-                width={16}
-                src="/assets/images/search_icon.svg"
-                alt="search"
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70 z-10"
-              />
-
-              <Input
-                placeholder={searchPlaceholder}
-                value={
-                  onExternalSearchChange
-                    ? externalSearchValue ?? ""
-                    : (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) => {
-                  if (onExternalSearchChange) onExternalSearchChange(event.target.value);
-                  else table.getColumn(searchKey)?.setFilterValue(event.target.value);
-                }}
-                className="h-[42px] w-full rounded-[8px] pl-10 pr-3 border ring-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-muted-foreground placeholder:text-muted-foreground text-[14px] font-normal leading-none tracking-[-0.04em] transition-colors hover:bg-brand-card/20"
-                style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E3FF" }}
-              />
-            </div>
+            <SearchInput
+              placeholder={searchPlaceholder}
+              value={
+                onExternalSearchChange
+                  ? externalSearchValue ?? ""
+                  : (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
+              }
+              onChange={(value) => {
+                if (onExternalSearchChange) onExternalSearchChange(value);
+                else table.getColumn(searchKey)?.setFilterValue(value);
+              }}
+              className="w-full sm:max-w-sm"
+              inputClassName="h-[42px] border text-muted-foreground placeholder:text-muted-foreground text-[14px] font-normal leading-none tracking-[-0.04em] transition-colors bg-[#FFFFFF]"
+            />
           )}
 
           {/* Status Filter */}
@@ -237,7 +239,7 @@ export function DataTable<TData, TValue>({
               </Select>
             </div>
           )}
-
+          {actionButton && actionButton}
           {/* Department Filter */}
           {onExternalDepartmentChange && departmentOptions && (
             <Select
@@ -299,33 +301,20 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div
-        className="bg-brand-card border rounded-sm overflow-hidden"
-        style={{ borderColor: "#E8E3FF" }}
-      >
+      <div className="rounded-sm overflow-hidden">
         <div
           className="overflow-auto table-scroll"
           style={{
-            minHeight: "calc(100vh - 318px)",
-            maxHeight: "calc(100vh - 220px)",
-            scrollbarWidth: "thin",
-            scrollbarColor: "#E8E3FF #F5F3FF",
+            minHeight: tableMinHeight || "calc(100vh - 400px)",
+            maxHeight: tableMaxHeight || "calc(100vh - 350px)",
+            // scrollbarWidth: "thin",
+            // scrollbarColor: "#E8E3FF #F5F3FF",
           }}
         >
-          <table className="min-w-[950px] table-auto w-full border-collapse">
-            <thead
-              className="sticky top-0 z-20"
-              style={{
-                background: "linear-gradient(to right, #F0EEFD 0%, #D9D6FE 100%)",
-                borderBottom: "1px solid #E8E3FF",
-              }}
-            >
+          <table className="min-w-[950px] table-auto w-full">
+            <thead className="sticky top-0 z-20">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow
-                  key={headerGroup.id}
-                  className="border-b"
-                  style={{ background: "transparent", borderColor: "#E8E3FF" }}
-                >
+                <TableRow key={headerGroup.id} className="border-0">
                   {headerGroup.headers.map((header) => {
                     const columnDef = header.column.columnDef as ExtendedColumnDef<TData, TValue>;
                     const widthStyle = columnDef.width ? { width: columnDef.width } : {};
@@ -334,7 +323,7 @@ export function DataTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className="font-medium text-xs sm:text-sm text-brand-dark py-3 px-4 first:pl-6 last:pr-6 border-0"
+                        className="font-medium text-xs  text-[#8695AA] leading-[1.32] tracking-[0.24em] uppercase py-3 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6"
                         style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}
                       >
                         {header.isPlaceholder
@@ -362,10 +351,9 @@ export function DataTable<TData, TValue>({
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      className={`bg-brand-white hover:bg-gradient-to-r hover:from-[#F7F5FF] hover:to-[#F4F2FF] transition-colors duration-150 ${
-                        isSelected ? "bg-gradient-to-r from-[#F6F4FF] to-[#F4F1FF]" : ""
-                      } ${onRowClick ? "cursor-pointer" : ""}`}
-                      style={{ borderBottom: "1px solid #F3F0FF" }}
+                      className={`${row.index % 2 === 0 ? "bg-white rounded-lg border-0" : "border-0"} ${
+                        onRowClick ? "cursor-pointer" : ""
+                      }`}
                       onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                       title={onRowClick && rowTooltipText ? rowTooltipText : undefined}
                     >
@@ -386,7 +374,7 @@ export function DataTable<TData, TValue>({
                             key={cell.id}
                             className={`text-xs sm:text-sm ${
                               isSelected ? "text-brand-dark" : "text-muted-foreground"
-                            } py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 border-0 ${
+                            } py-3 sm:py-4 px-2 sm:px-3 first:pl-3 sm:first:pl-6 last:pr-2 sm:last:pr-6 ${
                               isSimpleTextCell ? "font-medium break-words whitespace-pre-wrap" : ""
                             }`}
                             style={{ ...widthStyle, ...minWidthStyle, ...maxWidthStyle }}

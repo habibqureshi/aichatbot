@@ -4,12 +4,13 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.engine import URL
 from google.cloud.sql.connector import Connector
+from sqlalchemy import create_engine
 
 Base = declarative_base()
 
 engine = None
 async_session = None
-connector = None
+connector = Connector()
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -23,22 +24,26 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db():
+
     global engine, async_session, connector
     if engine is None:
-        connector = Connector
 
         def getconn_async():
             """Returns an asynchronous connection using the Cloud SQL Connector."""
-            # The 'asyncmy' driver uses 'mysqlclient' as its synchronous DBAPI
-            # when used with the connector, or you can explicitly use 'pymysql'.
-            # We use 'pymysql' here for explicit compatibility with the connector.
-            return connector.connect_async(
-                INSTANCE_CONNECTION_NAME,
-                "pymysql",  # The DBAPI to use for the MySQL connection
+            return connector.connect(
+                instance_connection_string=INSTANCE_CONNECTION_NAME,
+                driver="pymysql",
                 user=DB_USER,
                 password=DB_PASS,
                 db=DB,
             )
+
+        sync_engine = create_engine(
+            "mysql+pymysql://",
+            creator=getconn_async,
+        )
+        Base.metadata.create_all(sync_engine)
+        sync_engine.dispose()
 
         engine = create_async_engine(
             "mysql+asyncmy://",
@@ -50,5 +55,3 @@ async def init_db():
         async_session = sessionmaker(
             bind=engine, class_=AsyncSession, expire_on_commit=False
         )
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)

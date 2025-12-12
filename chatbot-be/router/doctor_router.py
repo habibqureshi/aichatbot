@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.db import get_db
 from schemas.common import PaginatedResponse
 from schemas.doctor import Doctor, DoctorCreate, DoctorUpdate
-from services import doctor_service
+from services import doctor_service, auth_service
 
 router = APIRouter(prefix="/api/v1/doctors", tags=["doctors"])
 
@@ -15,15 +15,16 @@ async def list_doctors(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
     user_timezone: str = Query("UTC"),
-    specialty_id: int | None = Query(None),
+    specialty: str | None = Query(None),
     name_filter: str | None = Query(None, alias="name"),
+    current_user=Depends(auth_service.get_current_user),
 ) -> PaginatedResponse[Doctor]:
     return await doctor_service.list_doctors(
         db=db,
         page=page,
         limit=limit,
         user_timezone=user_timezone,
-        specialty_id=specialty_id,
+        specialty=specialty,
         name_filter=name_filter,
     )
 
@@ -33,6 +34,7 @@ async def create_doctor(
     payload: DoctorCreate,
     db: AsyncSession = Depends(get_db),
     user_timezone: str = Query("UTC"),
+    current_user=Depends(auth_service.get_current_user),
 ) -> Doctor:
     doctor = await doctor_service.create_doctor(db=db, payload=payload)
     return Doctor.model_validate(doctor, context={"timezone": user_timezone})
@@ -43,6 +45,7 @@ async def get_doctor(
     doctor_id: int,
     db: AsyncSession = Depends(get_db),
     user_timezone: str = Query("UTC"),
+    current_user=Depends(auth_service.get_current_user),
 ) -> Doctor:
     doctor = await doctor_service.get_doctor(db=db, doctor_id=doctor_id)
     if doctor is None:
@@ -56,6 +59,7 @@ async def update_doctor(
     payload: DoctorUpdate,
     db: AsyncSession = Depends(get_db),
     user_timezone: str = Query("UTC"),
+    current_user=Depends(auth_service.get_current_user),
 ) -> Doctor:
     doctor = await doctor_service.get_doctor(db=db, doctor_id=doctor_id)
     if doctor is None:
@@ -69,6 +73,7 @@ async def update_doctor(
 async def delete_doctor(
     doctor_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user=Depends(auth_service.get_current_user),
 ) -> Response:
     doctor = await doctor_service.get_doctor(db=db, doctor_id=doctor_id)
     if doctor is None:

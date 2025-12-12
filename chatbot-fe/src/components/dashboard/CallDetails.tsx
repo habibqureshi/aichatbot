@@ -7,35 +7,22 @@ import {
   getConversationMessages,
 } from "@/app/actions/conversations";
 import { toast } from "react-toastify";
+import MessageItem from "./MessageItem";
+import CallRecordingTab from "./CallRecordingTab";
+import AISummaryTab from "./AISummaryTab";
+import { StatusBadge } from "@/lib/statusUtils";
+import { formatDuration, formatDate, formatTime } from "@/lib/utils";
+import CallInfoCardSkeleton from "@/components/loading-skeletons/CallInfoCardSkeleton";
+import CallTabsSkeleton from "@/components/loading-skeletons/CallTabsSkeleton";
 
 type Props = {
   conversation?: Conversation | null;
   messages?: Message[]; // Not used - we fetch messages internally
   loading?: boolean;
 };
-const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<string, { bg: string; text: string }> = {
-    active: { bg: "#06A35A", text: "#FFFFFF" },
-    confirmed: { bg: "#10B981", text: "#FFFFFF" },
-    pending: { bg: "#FBBF24", text: "#FFFFFF" },
-    cancelled: { bg: "#EF4444", text: "#FFFFFF" },
-    canceled: { bg: "#EF4444", text: "#FFFFFF" },
-    completed: { bg: "#3B82F6", text: "#FFFFFF" },
-    rescheduled: { bg: "#3B82F6", text: "#FFFFFF" },
-  };
 
-  const cleanStatus = status?.trim().toLowerCase();
-  const style = statusStyles[cleanStatus] || { bg: "#6B7280", text: "#FFFFFF" };
+type TabType = "transcript" | "recording" | "summary";
 
-  return (
-    <span
-      className="inline-flex px-3 py-1 text-xs font-medium rounded"
-      style={{ backgroundColor: style.bg, color: style.text }}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
 export default function CallDetails({
   conversation,
   messages: initialMessages = [],
@@ -44,7 +31,7 @@ export default function CallDetails({
   const [isStreaming, setIsStreaming] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("transcript");
 
   // Pagination state
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -60,8 +47,9 @@ export default function CallDetails({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(false);
   const previousScrollHeightRef = useRef(0);
-
+  // debug: conversation and messages
   // Load initial messages
+
   const loadInitialMessages = useCallback(async () => {
     if (!conversation?.id) return;
 
@@ -248,235 +236,240 @@ export default function CallDetails({
     }
   };
 
+  // Info cards configuration
+  const infoCards = [
+    {
+      title: "Customer Name",
+      icon: "/assets/calls/User.svg",
+      mainContent: caller,
+      subtitle: phone,
+    },
+    {
+      title: "Call Duration",
+      icon: "/assets/calls/Clock.svg",
+      mainContent: formatDuration(conversation?.started_at || null, conversation?.ended_at || null),
+      extraContent: <StatusBadge status={status} />,
+    },
+    {
+      title: "Call Date & Time",
+      icon: "/assets/calls/Clock.svg",
+      mainContent: formatDate(conversation?.started_at),
+      subtitle: formatTime(conversation?.started_at),
+      additionalText: ["Resolution", "Recorded Follow-up scheduled"],
+    },
+  ];
+
+  // Tabs configuration
+  const tabs = [
+    { id: "transcript", label: "Call Transcript" },
+    { id: "recording", label: "Call Recording" },
+    { id: "summary", label: "AI Summary" },
+  ] as const;
+  // console.log("messages", messages);
   return (
     <aside className="w-full h-fit">
       <div
-        className="backdrop-blur-sm border rounded-xl p-4 shadow-sm"
+        className="rounded-xl shadow-sm overflow-y-auto"
         style={{
-          background: "#FFFFFF",
-          borderColor: "#F0EEFF",
           minHeight: "calc(100vh - 320px)",
-          maxHeight: "calc(100vh -220px)",
+          maxHeight: "calc(100vh - 185px)",
         }}
       >
-        <div
-          className="flex items-center justify-between cursor-pointer mb-6 group"
-          onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-        >
-          <h3 className="calldetails-title">Call Details</h3>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 opacity-100  transition-opacity duration-200">
-              {isDetailsOpen ? "Hide" : "View"}
-            </span>
-            <svg
-              className={`w-5 h-5 transition-transform duration-200 ${
-                isDetailsOpen ? "rotate-180" : ""
-              }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+        {/* Header */}
+        <div className="py-6">
+          <h3 className="font-semibold text-brand-dark text-lg md:text-[32px] leading-[1.32]">
+            Call Details
+          </h3>
         </div>
-        <div className="h-[0.5px] mt-4 mb-2" style={{ background: "#E8E3FF" }} />
-        <div className="space-y-2">
-          <div
-            className={`transition-[max-height,opacity] duration-500 ease-in-out origin-top overflow-hidden ${
-              isDetailsOpen ? "opacity-100 max-h-48" : "opacity-0 max-h-0"
-            }`}
-          >
-            <div className="space-y-5">
-              <div>
-                <div className="calldetails-label mb-1">Caller</div>
-                <div className="calldetails-value">{caller}</div>
-              </div>
 
-              <div>
-                <div className="calldetails-label mb-1">Phone no</div>
-                <div className="calldetails-value">{phone}</div>
-              </div>
-
-              <div>
-                <div className="calldetails-label mb-2">Status</div>
-                <div className="mt-2 inline-block">
-                  <StatusBadge status={status} />
-                </div>
-              </div>
+        {loading ? (
+          <>
+            {/* Info Cards Skeleton */}
+            <div className="pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <CallInfoCardSkeleton title="Customer Name" />
+              <CallInfoCardSkeleton title="Call Duration" />
+              <CallInfoCardSkeleton title="Call Date & Time" />
             </div>
-          </div>
-
-          <div className="rounded-lg p-4" style={{ background: "#F5F3FF" }}>
-            <div className="calldetails-section-title mb-2">Summary</div>
-            <div
-              className="rounded-lg border p-3 min-h-[70px]"
-              style={{ background: "#FFFFFF", borderColor: "#E8E3FF" }}
-            >
-              <p className="calldetails-summary-text">{summary}</p>
-            </div>
-          </div>
-          <div className="rounded-lg p-4" style={{ background: "#F5F3FF" }}>
-            <div className="calldetails-section-title mb-3">Transcript Preview</div>
-            <div ref={messagesContainerRef} className="min-h-[300px] max-h-[380px] overflow-y-auto">
-              <div className="space-y-3">
-                {loadingMore && (
-                  <div className="flex justify-center py-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.1s" }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      ></div>
-                    </div>
+            {/* Tabs Skeleton */}
+            <CallTabsSkeleton tabs={tabs.map((tab) => tab.label)} />
+          </>
+        ) : (
+          <>
+            {/* Three Info Cards */}
+            <div className="pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {infoCards.map((card, index) => (
+                <div
+                  key={index}
+                  className=" p-4 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[8px] "
+                >
+                  <p className="font-medium text-brand-dark text-[14px] md:text-[16px] leading-[1.32]">
+                    {card.title}
+                  </p>
+                  <div className="font-semibold text-brand-dark text-xl mt-4 mb-4 leading-[1.32] flex items-center gap-1 break-words">
+                    <Image src={card.icon} alt={card.title} width={24} height={24} />
+                    {card.mainContent}
                   </div>
-                )}
-                {loading ? (
-                  // Skeleton loader for messages
-                  <>
-                    <div className="flex justify-start">
-                      <div
-                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                        style={{ background: "#E8E3FF" }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-end">
-                      <div
-                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                        style={{ background: "#E8E3FF" }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-start">
-                      <div
-                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                        style={{ background: "#E8E3FF" }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-end">
-                      <div
-                        className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
-                        style={{ background: "#E8E3FF" }}
-                      ></div>
-                    </div>
-                  </>
-                ) : messages && messages.length > 0 ? (
-                  messages.map((message) => (
+                  {card.subtitle && (
+                    <div className="text-xs text-gray-500 break-words">{card.subtitle}</div>
+                  )}
+                  {card.extraContent && <div className="mt-1">{card.extraContent}</div>}
+                  {/* {card.additionalText &&
+                    card.additionalText.map((text, textIndex) => (
+                      <div key={textIndex} className="mt-2">
+                        <div className="text-xs text-gray-400 break-words">{text}</div>
+                      </div>
+                    ))} */}
+                </div>
+              ))}
+            </div>
+
+            {/* Tabs */}
+
+            <div className=" p-6 border border-[#D5D9E2] shadow-[0_2px_2px_0_#23272E14] rounded-[16px] ">
+              <div
+                className="flex gap-6 border-b overflow-x-auto"
+                style={{ borderBottomColor: "#E6E7EB" }}
+              >
+                {tabs.map(({ id, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTab(id as TabType)}
+                    className={`pb-3 transition-colors min-w-[160px] ${
+                      activeTab === id
+                        ? "text-[#6325A9] border-b-2 border-[#6325A9]"
+                        : "text-[#4C5564] hover:text-gray-700"
+                    }`}
+                    style={{
+                      fontFamily: "Figtree",
+                      fontWeight: 500,
+                      fontSize: "20px",
+                      lineHeight: "132%",
+                      letterSpacing: "0%",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab Content */}
+              <div className="mt-6">
+                {/* Call Transcript Tab */}
+                {activeTab === "transcript" && (
+                  <div className="space-y-4">
                     <div
-                      key={message.id}
-                      className={`flex ${message.role === "user" ? "justify-start" : "justify-end"}`}
+                      ref={messagesContainerRef}
+                      className="min-h-[300px] max-h-[400px] overflow-y-auto pr-2"
                     >
-                      <div
-                        className={`text-sm p-3 rounded-lg max-w-xs lg:max-w-[255px] ${
-                          message.role === "user" ? "text-brand-blue" : "text-gray-700 border"
-                        }`}
-                        style={
-                          message.role === "user"
-                            ? { background: "linear-gradient(to right, #F0EEFF, #E8E3FF)" }
-                            : { background: "#FFFFFF", borderColor: "#E8E3FF" }
-                        }
-                      >
-                        <p
-                          className={
-                            message.role === "user" ? "calldetails-chat-user" : "calldetails-chat-bot"
-                          }
-                        >
-                          {message.content}
-                        </p>
+                      <div className="space-y-3">
+                        {loadingMore && (
+                          <div className="flex justify-center py-2">
+                            <div className="flex space-x-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.1s" }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.2s" }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
+                        {loading ? (
+                          <>
+                            <div className="flex justify-start">
+                              <div
+                                className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                                style={{ background: "#E8E3FF" }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-end">
+                              <div
+                                className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                                style={{ background: "#E8E3FF" }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-start">
+                              <div
+                                className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                                style={{ background: "#E8E3FF" }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-end">
+                              <div
+                                className="h-12 rounded-lg animate-pulse max-w-xs lg:max-w-md w-full"
+                                style={{ background: "#E8E3FF" }}
+                              ></div>
+                            </div>
+                          </>
+                        ) : messages && messages.length > 0 ? (
+                          messages.map((message) => (
+                            <MessageItem
+                              key={message.id}
+                              message={message}
+                              patientName={conversation?.patient?.name || "Sarah Johnson"}
+                              formattedTime={formatTime(message.timestamp)}
+                            />
+                          ))
+                        ) : (
+                          <div className="flex justify-center">
+                            <div
+                              className="p-3 rounded-lg text-gray-500"
+                              style={{ background: "#F5F3FF" }}
+                            >
+                              <p>No chat transcript available</p>
+                            </div>
+                          </div>
+                        )}
+                        <div ref={messagesEndRef} />
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="flex justify-center">
-                    <div className="p-3 rounded-lg text-gray-500" style={{ background: "#F5F3FF" }}>
-                      <p>No chat transcript available</p>
+                    <div className="mt-4 px-2 pt-2 border-t border-gray-200">
+                      <div className="flex justify-between items-center text-sm text-[#64748B]">
+                        <div className="w-1/3 flex items-center justify-between">
+                          <div>
+                            {" "}
+                            Total Messages: <span className="text-[#000000]">{messages.length}</span>
+                          </div>
+                          <span>
+                            Duration:{" "}
+                            <span className="text-[#000000]">
+                              {formatDuration(
+                                conversation?.started_at || null,
+                                conversation?.ended_at || null
+                              )}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="text-[#6325A9] flex items-center gap-2 ">
+                          <span className="text-[#000000] text-[8px]">🟣</span>{" "}
+                          <span>Analyzed with AI</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
-                <div ref={messagesEndRef} />
+
+                {/* Call Recording Tab */}
+                {activeTab === "recording" && (
+                  <CallRecordingTab
+                    conversation={conversation}
+                    audioSrc={audioSrc}
+                    isPlaying={isPlaying}
+                    isStreaming={isStreaming}
+                    handlePlayRecording={handlePlayRecording}
+                    setIsPlaying={setIsPlaying}
+                  />
+                )}
+
+                {/* AI Summary Tab */}
+                {activeTab === "summary" && <AISummaryTab summary={summary} messages={messages} />}
               </div>
             </div>
-          </div>
-
-          <div className="mt-6">
-            <button
-              onClick={handlePlayRecording}
-              disabled={isStreaming || !conversation?.id}
-              className={`btn-primary-gradient w-full ${
-                isStreaming || !conversation?.id ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              onMouseEnter={(e) => {
-                if (!isStreaming && conversation?.id) {
-                  e.currentTarget.style.background = "linear-gradient(to right, #7C3AED, #2563EB)";
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isStreaming && conversation?.id) {
-                  e.currentTarget.style.background = "linear-gradient(to right, #8B5CF6, #3B82F6)";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }
-              }}
-            >
-              <Image
-                width={20}
-                height={20}
-                src="/assets/images/audioIcon.svg"
-                alt="Audio icon"
-                className="flex-shrink-0"
-              />
-              {isStreaming ? (
-                <>
-                  <span>Loading</span>
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-                    <div
-                      className="w-2 h-2 bg-white rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-white rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    ></div>
-                  </div>
-                </>
-              ) : (
-                "Play Recording"
-              )}
-            </button>
-          </div>
-
-          {/* Audio Player - Always reserve space for consistent height */}
-          <div className="mt-4" style={{ minHeight: audioSrc ? "auto" : "" }}>
-            {audioSrc && (
-              <audio
-                controls
-                autoPlay={isPlaying}
-                className="w-full"
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onEnded={() => setIsPlaying(false)}
-                onError={(e) => {
-                  console.error("Audio playback error:", e);
-                  setIsPlaying(false);
-                }}
-              >
-                <source src={audioSrc} type="audio/mpeg" />
-                <source src={audioSrc} type="audio/mp3" />
-                <source src={audioSrc} type="audio/wav" />
-                <source src={audioSrc} type="audio/ogg" />
-                Your browser does not support the audio element.
-              </audio>
-              // ) : (
-              //   <div className="w-full h-[54px] opacity-0 pointer-events-none">
-              //     {/* Invisible placeholder to maintain consistent height */}
-              //   </div>
-            )}
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </aside>
   );

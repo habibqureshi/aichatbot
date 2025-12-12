@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SingleSelect from "@/components/common/SingleSelect";
+import InputField from "@/components/common/InputField";
 import TimeRangePicker from "@/components/common/TimeRangePicker";
 import { getSpecialitiesList } from "@/app/actions/specialities";
 import { createDoctor, updateDoctor, getDoctorById } from "@/app/actions/doctors";
@@ -80,8 +81,8 @@ function AddDoctorPageContent() {
         // Fetch specialities (always needed)
         setLoadingSpecialities(true);
         const specialitiesResponse = await getSpecialitiesList(1, 100, user_timezone);
-        console.log("specialitiesResponse", specialitiesResponse);
-        setSpecialities(specialitiesResponse.data.map((speciality) => speciality.name));
+        // console.log("specialitiesResponse", specialitiesResponse);
+        setSpecialities(specialitiesResponse.data);
         setLoadingSpecialities(false);
 
         // If editing, fetch doctor data
@@ -246,10 +247,9 @@ function AddDoctorPageContent() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Doctor Information Card */}
           <div
-            className="border rounded-xl p-4 sm:p-6 shadow-sm"
+            className=" rounded-xl p-4 sm:p-6 "
             style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
+              background: "#F6F7F9",
             }}
           >
             <div className="mb-4">
@@ -257,51 +257,32 @@ function AddDoctorPageContent() {
               <p className="text-sm text-gray-600 mt-1">Enter the doctor&apos;s basic details</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-2">
-                  Doctor Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter doctor's full name"
-                />
-              </div>
+              <InputField
+                title="Doctor Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                placeholder="Enter doctor's full name"
+              />
 
-              <div>
-                <label htmlFor="phone_number" className="block text-sm font-medium text-gray-900 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  id="phone_number"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter phone number"
-                />
-              </div>
+              <InputField
+                title="Phone Number"
+                name="phone_number"
+                value={formData.phone_number}
+                onChange={handleChange}
+                type="tel"
+                required
+                placeholder="Enter phone number"
+              />
 
               <div>
                 {loadingSpecialities ? (
                   <SpecialtySkeleton />
                 ) : (
                   <>
-                    <label
-                      htmlFor="specialty_id"
-                      className="block text-sm font-medium text-gray-900 mb-2"
-                    >
-                      Specialty
-                    </label>
                     <SingleSelect
-                      label=""
+                      title="Speciality"
                       options={specialities.map((specialty, index) => ({
                         id: index.toString(),
                         label: specialty,
@@ -311,8 +292,8 @@ function AddDoctorPageContent() {
                       onChange={(value) =>
                         setFormData((prev) => ({ ...prev, specialty: value as string }))
                       }
-                      placeholder="Select Specialty"
-                      searchable={true}
+                      placeholder="Select Speciality"
+                      searchable
                     />
                   </>
                 )}
@@ -322,10 +303,9 @@ function AddDoctorPageContent() {
 
           {/* Duration and Time Slots Card */}
           <div
-            className="border rounded-xl p-4 sm:p-6 shadow-sm space-y-6"
+            className=" rounded-xl p-4 sm:p-6 space-y-6"
             style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
+              background: "#F6F7F9",
             }}
           >
             {/* Duration Section */}
@@ -346,10 +326,10 @@ function AddDoctorPageContent() {
                       disabled={formData.timeSlots.length > 0}
                       className={`px-6 py-3 text-sm font-medium rounded-lg transition-all ${
                         formData.duration === duration
-                          ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white shadow-md"
+                          ? "bg-[#6325a9] text-white shadow-md"
                           : formData.timeSlots.length > 0
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-300"
-                          : "bg-white text-gray-700 border border-gray-300 hover:border-[#8B5CF6] hover:text-[#8B5CF6]"
+                          : "bg-white text-gray-700 border border-gray-300 hover:border-[#6325a9] hover:text-[#6325a9]"
                       }`}
                     >
                       {duration} minutes
@@ -398,16 +378,12 @@ function AddDoctorPageContent() {
 
               <div className="space-y-4">
                 <div className="max-w-2xl">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
-                    Select Day for Slot Creation
-                  </label>
                   <SingleSelect
-                    label=""
+                    title="Select Day for Slot Creation"
                     options={DAYS_OF_WEEK}
                     selectedValue={selectedDayForSlot}
                     onChange={(value) => setSelectedDayForSlot(value as string)}
                     placeholder="Choose a day to create slots"
-                    searchable={true}
                   />
                 </div>
 
@@ -490,32 +466,31 @@ function AddDoctorPageContent() {
 
           {/* Submit Section */}
           <div
-            className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm"
+            className=" rounded-xl p-4 sm:p-6 shadow-sm"
             style={{
-              background: "#FFFFFF",
-              borderColor: "#F0EEFF",
+              background: "#F6F7F9",
             }}
           >
             <div className="space-y-4">
               {!isFormValid() && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
+                <div className="bg-[#6325A912] rounded-lg p-3">
+                  <div className="flex items-center gap-2">
                     <svg
-                      className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
+                      className="w-5 h-5 text-[#6325A9] flex-shrink-0 mt-0.5"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
                       <path
                         fillRule="evenodd"
-                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                         clipRule="evenodd"
                       />
                     </svg>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900 mb-2">
+                      <p className="text-xs font-semibold text-[#6325A9] mb-1">
                         Please complete all required fields:
                       </p>
-                      <ul className="text-sm space-y-1 ml-4 list-disc text-amber-800">
+                      <ul className="text-xs space-y-1 ml-4 list-disc text-[#6325A9]">
                         {formData.name.trim() === "" && <li>Doctor Name is required</li>}
                         {formData.phone_number.trim() === "" && <li>Phone Number is required</li>}
                         {formData.specialty.trim() === "" && <li>Specialty must be selected</li>}

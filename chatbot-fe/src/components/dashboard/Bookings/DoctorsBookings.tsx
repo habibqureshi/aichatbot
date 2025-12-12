@@ -1,91 +1,137 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { DataTable, ExtendedColumnDef } from "@/components/common/DataTable";
 import { getAppointmentsList, Appointment } from "@/app/actions/appointments";
 import { toast } from "react-toastify";
+import { StatusBadge } from "@/lib/statusUtils";
+import { getInitials, getAvatarColors } from "@/lib/avatarUtils";
 
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<string, { bg: string; text: string }> = {
-    scheduled: { bg: "#10B981", text: "#FFFFFF" },
-    confirmed: { bg: "#10B981", text: "#FFFFFF" },
-    pending: { bg: "#FBBF24", text: "#FFFFFF" },
-    cancelled: { bg: "#EF4444", text: "#FFFFFF" },
-    canceled: { bg: "#EF4444", text: "#FFFFFF" },
-    completed: { bg: "#3B82F6", text: "#FFFFFF" },
-    rescheduled: { bg: "#3B82F6", text: "#FFFFFF" },
-  };
-
-  const style = statusStyles[status.toLowerCase()] || { bg: "#6B7280", text: "#FFFFFF" };
-
-  return (
-    <span
-      className="inline-flex px-3 py-1 text-xs font-medium rounded"
-      style={{ backgroundColor: style.bg, color: style.text }}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
+const formatTime = (timeString: string): string => {
+  const time = new Date(timeString);
+  return time.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 };
 
 const columns: ExtendedColumnDef<Appointment>[] = [
   {
     accessorKey: "id",
-    header: "Booking ID",
-    width: "120px",
-    cell: ({ row }) => <div className="font-medium text-gray-900">BK-{row.original.id}</div>,
-  },
-  {
-    accessorKey: "patient.name",
-    header: "Patient Name",
-    width: "180px",
+    header: "ID",
+    width: "100px",
     cell: ({ row }) => (
-      <div className="font-medium text-gray-900">{row.original.patient?.name || "N/A"}</div>
+      <div className="font-medium text-gray-900">APT-{String(row.original.id).padStart(3, "0")}</div>
     ),
   },
   {
-    accessorKey: "patient.phone_number",
-    header: "Phone no",
-    width: "150px",
-    cell: ({ row }) => (
-      <div className="text-gray-600">{row.original.patient?.phone_number || "N/A"}</div>
-    ),
-  },
-  {
-    accessorKey: "doctor.name",
-    header: "Doctor",
-    width: "150px",
+    accessorKey: "patient_id",
+    header: "PATIENT",
+    width: "220px",
+    cell: ({ row }) => {
+      const patientName = row.original.patient?.name || `Patient ${row.original.patient_id}`;
+      const phoneNumber = row.original.patient?.phone_number || "N/A";
+      const initials = getInitials(patientName);
+      const avatarColors = getAvatarColors(row.original.patient_id);
 
-    cell: ({ row }) => <div className="text-gray-900">{row.original.doctor?.name || "N/A"}</div>,
+      return (
+        <div className="flex items-start gap-3">
+          <div
+            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: avatarColors.bg }}
+          >
+            <span className="text-sm font-semibold" style={{ color: avatarColors.text }}>
+              {initials}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-gray-900 truncate">{patientName}</p>
+            <p className="text-sm text-gray-600 truncate">{phoneNumber}</p>
+          </div>
+        </div>
+      );
+    },
   },
   {
-    accessorKey: "doctor.specialty.name",
-    header: "Department",
-    width: "150px",
-    cell: ({ row }) => (
-      <div className="text-gray-600">{row.original.doctor?.specialty?.name || "N/A"}</div>
-    ),
+    accessorKey: "doctor_id",
+    header: "DOCTOR",
+    width: "220px",
+    cell: ({ row }) => {
+      const doctorName = row.original.doctor?.name || `Doctor ${row.original.doctor_id}`;
+      const specialty = row.original.doctor?.specialty?.name || row.original.doctor?.specialty || "N/A";
+      const initials = getInitials(doctorName);
+      const avatarColors = getAvatarColors(row.original.doctor_id);
+
+      return (
+        <div className="flex items-start gap-3">
+          <div
+            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: avatarColors.bg }}
+          >
+            <span className="text-sm font-semibold" style={{ color: avatarColors.text }}>
+              {initials}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-gray-900 truncate">{doctorName}</p>
+            <p className="text-sm text-gray-600 truncate">{String(specialty)}</p>
+          </div>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "appointment_date",
-    header: "Appointment Date/Time",
-    width: "180px",
-    cell: ({ row }) => (
-      <div className="text-gray-900">
-        {row.original.appointment_date && row.original.start_time
-          ? `${new Date(row.original.appointment_date).toLocaleDateString("en-US", {
-              day: "numeric",
-              month: "short",
-            })}, ${row.original.start_time.slice(0, 5)}`
-          : "N/A"}
-      </div>
-    ),
+    header: "APPOINTMENT DATE",
+    width: "220px",
+    cell: ({ row }) => {
+      const appointmentDateString = row.original.appointment_date;
+      const startTimeString = row.original.start_time;
+      const createdString = row.original.created_at;
+
+      return (
+        <div>
+          {appointmentDateString && startTimeString ? (
+            <>
+              {/* Appointment Date */}
+              <p className="flex items-center gap-1 text-sm font-medium text-gray-900">
+                <Image src="/assets/CalendarBlank.svg" alt="calendar" width={16} height={16} />
+                {formatDate(appointmentDateString)}
+              </p>
+
+              {/* Appointment Time */}
+              <p className="flex items-center gap-1 text-sm font-medium text-gray-900">
+                <Image src="/assets/Clock2.svg" alt="clock" width={16} height={16} />
+                {formatTime(startTimeString)}
+              </p>
+
+              {/* Booked Date */}
+              <p className="flex items-center gap-1 text-sm text-gray-600">
+                Booked: {createdString ? formatDate(createdString) : "N/A"}
+              </p>
+            </>
+          ) : (
+            <p className="text-gray-600">N/A</p>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",
-    header: "Status",
-    width: "130px",
+    header: "STATUS",
+    width: "150px",
     cell: ({ row }) => <StatusBadge status={row.original.status || "N/A"} />,
   },
 ];
@@ -97,7 +143,6 @@ export default function DoctorBookings() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalAppointments, setTotalAppointments] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Debounced search value
@@ -128,7 +173,6 @@ export default function DoctorBookings() {
         );
         setAppointments(response.data);
         setTotalPages(response.metadata.total_pages);
-        setTotalAppointments(response.metadata.total);
         setCurrentPage(response.metadata.page);
       } catch (error: unknown) {
         console.error("Error fetching appointments:", error);
@@ -139,7 +183,6 @@ export default function DoctorBookings() {
         }
         setAppointments([]);
         setTotalPages(0);
-        setTotalAppointments(0);
       } finally {
         setLoading(false);
       }

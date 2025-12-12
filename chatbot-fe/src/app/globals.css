@@ -1,49 +1,6 @@
-@import "tailwindcss";
-
-@plugin "tailwindcss-animate";
-
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
-  --font-inter: var(--font-inter);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 :root {
   /* Background and foreground */
@@ -51,11 +8,15 @@
   --foreground: 215 15% 15%; /* #23272E */
 
   /* Card colors */
-  --card: 249 100% 97%; /* #F5F3FF */
-  --card-foreground: 215 15% 15%;
+  --card: 268 73% 52%; /* #7D2ADD */
+  --card-foreground: 0 0% 100%; /* #FFFFFF */
+
+  /* Sidebar */
+  --sidebar: 268 73% 52%; /* #7D2ADD */
+  --sidebar-foreground: 0 0% 100%;
 
   /* Primary brand colors (purple to blue gradient) */
-  --primary: 250 91% 75%; /* #9882F7 */
+  --primary: 260 76% 52%; /* primary purple fallback (approx) or brand-purple */
   --primary-foreground: 0 0% 100%;
 
   /* Secondary */
@@ -80,13 +41,23 @@
   --ring: 250 91% 75%;
 
   --radius: 0.5rem;
+
+  /* Brand tokens */
+  --brand-purple: 268 73% 52%; /* #7D2ADD */
+  --brand-blue: 258 56% 38%; /* #4C2B97 */
+  --brand-white: 0 0% 100%; /* #FFFFFF */
+  --brand-light2: 210 10% 97%; /* #F6F7F9 */
+
+  /* Chart colors */
+  --chart-1: 260 76% 52%; /* #6325A9 - Successful Calls */
+  --chart-2: 0 84% 60%; /* #EA4A4A - Failed Calls */
 }
 
 .dark {
   --background: 215 15% 15%; /* #23272E */
   --foreground: 0 0% 100%;
 
-  --card: 215 15% 18%;
+  --card: 268 73% 52%; /* Keep sidebar/card purple even in dark mode */
   --card-foreground: 0 0% 100%;
 
   --primary: 250 91% 75%; /* #9882F7 */
@@ -109,23 +80,40 @@
   --ring: 250 91% 75%;
 }
 
+/* Topbar background - use the dark foreground color */
+:root {
+  --topbar: 215 15% 15%; /* #23272E */
+}
+
+/* Recent Calls heading (uses Figtree, semi-bold 600, size 32px, line-height 132%) */
+.recent-calls-title {
+  color: hsl(var(--foreground));
+  font-family: var(--font-figtree), Figtree, Inter, sans-serif;
+  font-weight: 600; /* SemiBold */
+  font-style: normal;
+  font-size: 32px;
+  line-height: 1.32; /* 132% */
+  letter-spacing: 0%;
+}
+
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   html {
     scroll-behavior: smooth;
     overflow-x: hidden;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     overflow-x: hidden;
     width: 100%;
   }
   button,
   [role="button"],
   .cursor-pointer {
-    @apply cursor-pointer;
+    cursor: pointer;
   }
 }
 
@@ -142,18 +130,18 @@
 
 /* Call Details Font Classes */
 .calldetails-title {
-  color: var(--dark-text);
-  font-family: Inter, sans-serif;
-  font-weight: 500;
+  color: #23272e;
+  font-family: var(--font-figtree), Figtree, Inter, sans-serif;
+  font-weight: 600;
   font-style: normal;
-  font-size: 20px;
+  font-size: 32px;
   line-height: 100%;
   letter-spacing: -4%;
 }
 
 .calldetails-label {
   color: var(--gray-text);
-  font-family: Inter, sans-serif;
+  font-family: var(--font-figtree), Figtree, Inter, sans-serif;
   font-weight: 500;
   font-style: normal;
   font-size: 16px;
@@ -163,7 +151,7 @@
 
 .calldetails-value {
   color: var(--dark-text);
-  font-family: Inter, sans-serif;
+  font-family: var(--font-figtree), Figtree, Inter, sans-serif;
   font-weight: 400;
   font-style: normal;
   font-size: 16px;
@@ -173,7 +161,7 @@
 
 .calldetails-section-title {
   color: var(--dark-text);
-  font-family: Inter, sans-serif;
+  font-family: var(--font-figtree), Figtree, Inter, sans-serif;
   font-weight: 500;
   font-style: normal;
   font-size: 16px;
@@ -183,7 +171,7 @@
 
 .calldetails-summary-text {
   color: var(--dark-text);
-  font-family: Inter, sans-serif;
+  font-family: var(--font-figtree), Figtree, Inter, sans-serif;
   font-weight: 400;
   font-style: normal;
   font-size: 14px;
@@ -193,7 +181,7 @@
 
 .calldetails-chat-user {
   color: var(--primary-purple);
-  font-family: Inter, sans-serif;
+  font-family: var(--font-figtree), Figtree, Inter, sans-serif;
   font-weight: 400;
   font-style: normal;
   font-size: 12px;
@@ -204,7 +192,7 @@
 
 .calldetails-chat-bot {
   color: var(--dark-text);
-  font-family: Inter, sans-serif;
+  font-family: var(--font-figtree), Figtree, Inter, sans-serif;
   font-weight: 400;
   font-style: normal;
   font-size: 12px;
@@ -252,7 +240,7 @@
 
 /* Sidebar item styles */
 .sidebar-item {
-  font-family: var(--font-inter), sans-serif;
+  font-family: var(--font-figtree), Figtree, var(--font-inter), sans-serif;
   font-weight: 400;
   font-style: normal;
   font-size: 16px;
@@ -262,7 +250,7 @@
 
 /* Logo text styles */
 .logo-text {
-  font-family: Inter, sans-serif;
+  font-family: var(--font-figtree), Figtree, Inter, sans-serif;
   font-weight: 900;
   font-style: normal;
   font-size: 24px;
@@ -440,15 +428,15 @@ html {
   justify-content: center;
   gap: 12px;
   font-weight: 500;
-  font-size: 15px;
+  font-size: 16px;
   border: none;
   cursor: pointer;
-  background: linear-gradient(to right, #8b5cf6, #3b82f6);
+  background: #6325a9;
 }
 
 .btn-primary-gradient:hover:not(:disabled) {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  background: linear-gradient(to right, #7c3aed, #2563eb);
+  background: #51218a;
   transform: translateY(-1px);
 }
 

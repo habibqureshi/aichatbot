@@ -10,6 +10,7 @@ from sqlalchemy import (
     Enum,
     Time,
     Date,
+    Boolean,
 )
 from datetime import datetime, timezone
 from sqlalchemy import UniqueConstraint
@@ -61,27 +62,16 @@ class Knowledge(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
-class Specialty(Base):
-    __tablename__ = "specialties"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), index=True, unique=True)
-    description = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    doctors = relationship("Doctor", back_populates="specialty")
-
-
 class Doctor(Base):
     __tablename__ = "doctors"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    specialty_id = Column(Integer, ForeignKey("specialties.id"), nullable=True)
+    specialty = Column(String(100), nullable=True)
     phone_number = Column(String(100), unique=True, index=True)
     duration = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    specialty = relationship("Specialty", back_populates="doctors")
     appointments = relationship("Appointment", back_populates="doctor")
     availabilities = relationship("Availability", back_populates="doctor")
 
@@ -136,3 +126,50 @@ class Appointment(Base):
 
     patient = relationship("Patient", back_populates="appointments")
     doctor = relationship("Doctor", back_populates="appointments")
+
+
+class RestaurantTable(Base):
+    __tablename__ = "restaurant_tables"
+    id = Column(Integer, primary_key=True, index=True)
+    capacity = Column(Integer, nullable=False)
+    table_number = Column(String(20), nullable=False)
+    location = Column(String(50), nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class Reservation(Base):
+    __tablename__ = "reservations"
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("patients.id"))
+    table_id = Column(Integer, ForeignKey("restaurant_tables.id"))
+    reservation_date = Column(DateTime, nullable=False)
+    party_size = Column(Integer, nullable=False)
+    status = Column(
+        Enum(
+            "pending",
+            "confirmed",
+            "cancelled",
+            "completed",
+            "no_show",
+            name="reservation_status_enum",
+        ),
+        default="pending",
+        index=True,
+    )
+    special_request = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    cancelled_at = Column(DateTime, nullable=True)
+
+
+class RestaurantSetting(Base):
+    __tablename__ = "restaurant_settings"
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), nullable=False)
+    value = Column(Text, nullable=False)
+    description = Column(String(255))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )

@@ -4,7 +4,7 @@ import { ENDPOINTS } from "@/app/http/endpoints";
 export interface Conversation {
   id: number;
   started_at: string;
-  ended_at: string;
+  ended_at: string | null;
   status: string;
   call_sid: string;
   patient: {
@@ -13,6 +13,8 @@ export interface Conversation {
     name: string;
     created_at: string;
   };
+  summary: string | null;
+  recording_available: boolean;
 }
 
 export interface ConversationsResponse {
@@ -65,6 +67,6 @@ export async function getConversationsList(
   name?: string
 ): Promise<ConversationsResponse> {
   const response = await API.get(ENDPOINTS.CONVERSATIONS.LIST(page, limit, user_timezone, status, name));
-  console.log("api response", response?.data);
+  // console.log("api response", response?.data);
   return response.data;
 }

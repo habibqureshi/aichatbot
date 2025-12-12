@@ -160,63 +160,76 @@ export default function TimeRangePicker({
 
   return (
     <div>
-      {label && <label className="block text-sm font-medium text-gray-900 mb-3">{label}</label>}
+      {label && (
+        <label className="flex items-baseline gap-1 mb-2 font-semibold text-[20px] leading-[132%] text-black">
+          <span>{label}</span>
+        </label>
+      )}
 
       <div className="mb-4">
         {/* Duration Selector */}
         {!hideDuration && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-900 mb-2">Appointment Duration</label>
+            <label className="flex items-baseline gap-1 mb-2 font-semibold text-[20px] leading-[132%] text-black">
+              <span>Appointment Duration</span>
+            </label>
             <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsDurationOpen((v) => !v)}
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm bg-white text-gray-900 flex items-center justify-between transition-colors ${
-                  isDurationOpen
-                    ? "border-blue-500 ring-2 ring-blue-500"
-                    : "border-gray-300 hover:border-gray-400"
+              <div
+                className={`w-full rounded-[8px] bg-white flex items-center transition-colors cursor-pointer ${
+                  isDurationOpen ? "ring-2 ring-blue-500" : ""
                 }`}
+                onClick={() => setIsDurationOpen((v) => !v)}
               >
-                <span
-                  className={`flex-1 text-left text-sm ${
-                    selectedDuration ? "text-gray-900" : "text-gray-500"
-                  }`}
+                <input
+                  type="text"
+                  className="flex-1 h-[42px] pt-1 pr-[19px] pb-1 pl-[19px] bg-transparent text-black font-normal text-[16px] leading-[132%] focus:outline-none placeholder:text-[#00000059] border-none rounded-[8px] cursor-pointer"
+                  placeholder="Select duration"
+                  value={DURATION_OPTIONS.find((d) => d.value === selectedDuration)?.label || ""}
+                  readOnly
+                />
+                <button
+                  type="button"
+                  className="px-3 py-3 flex items-center justify-center hover:bg-gray-50 rounded-r-[8px]"
                 >
-                  {DURATION_OPTIONS.find((d) => d.value === selectedDuration)?.label ||
-                    "Select duration"}
-                </span>
-                <svg
-                  className={`h-5 w-5 text-gray-400 transform transition-transform flex-shrink-0 ml-2 ${
-                    isDurationOpen ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    className={`h-5 w-5 text-gray-400 transform transition-transform ${
+                      isDurationOpen ? "rotate-180" : ""
+                    }`}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
 
               {isDurationOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-lg py-1 text-base border border-gray-200 custom-scrollbar">
+                <div className="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none border border-gray-200 custom-scrollbar">
                   {DURATION_OPTIONS.map((duration) => (
-                    <button
+                    <div
                       key={duration.value}
-                      type="button"
-                      onClick={() => handleDurationSelect(duration.value)}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors focus:outline-none ${
+                      className={`cursor-pointer select-none relative py-2.5 px-4 transition-colors ${
                         selectedDuration === duration.value
-                          ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white font-medium"
+                          ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white"
                           : "text-gray-900 hover:bg-gray-100"
                       }`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleDurationSelect(duration.value);
+                      }}
                     >
-                      {duration.label}
-                    </button>
+                      <span
+                        className={`block truncate text-sm ${
+                          selectedDuration === duration.value ? "font-medium" : "font-normal"
+                        }`}
+                      >
+                        {duration.label}
+                      </span>
+                    </div>
                   ))}
                 </div>
               )}
@@ -227,56 +240,66 @@ export default function TimeRangePicker({
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
           {/* Start */}
           <div className="flex-1 w-full">
-            <label className="block text-sm font-medium text-gray-900 mb-2">Start Time</label>
+            <label className="flex items-baseline gap-1 mb-2 font-semibold text-[16px] leading-[132%] text-black">
+              <span>Start Time</span>
+            </label>
             <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsStartOpen((v) => !v)}
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm bg-white text-gray-900 flex items-center justify-between transition-colors ${
-                  isStartOpen
-                    ? "border-blue-500 ring-2 ring-blue-500"
-                    : "border-gray-300 hover:border-gray-400"
+              <div
+                className={`w-full rounded-[8px] bg-white flex items-center transition-colors cursor-pointer ${
+                  isStartOpen ? "ring-2 ring-blue-500" : ""
                 }`}
+                onClick={() => setIsStartOpen((v) => !v)}
               >
-                <span
-                  className={`flex-1 text-left text-sm ${
-                    newStartTime ? "text-gray-900" : "text-gray-500"
-                  }`}
+                <input
+                  type="text"
+                  className="flex-1 h-[42px] pt-1 pr-[19px] pb-1 pl-[19px] bg-transparent text-black font-normal text-[16px] leading-[132%] focus:outline-none placeholder:text-[#00000059] border-none rounded-[8px] cursor-pointer"
+                  placeholder="Select time"
+                  value={newStartTime ? formatTimeDisplay(newStartTime) : ""}
+                  readOnly
+                />
+                <button
+                  type="button"
+                  className="px-3 py-3 flex items-center justify-center hover:bg-gray-50 rounded-r-[8px]"
                 >
-                  {newStartTime ? formatTimeDisplay(newStartTime) : "Select time"}
-                </span>
-                <svg
-                  className={`h-5 w-5 text-gray-400 transform transition-transform flex-shrink-0 ml-2 ${
-                    isStartOpen ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    className={`h-5 w-5 text-gray-400 transform transition-transform ${
+                      isStartOpen ? "rotate-180" : ""
+                    }`}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
 
               {isStartOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-lg py-1 text-base border border-gray-200 overflow-auto custom-scrollbar">
+                <div className="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none border border-gray-200 custom-scrollbar">
                   {TIME_OPTIONS.map((time) => (
-                    <button
+                    <div
                       key={time}
-                      type="button"
-                      onClick={() => handleStartTimeSelect(time)}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors focus:outline-none ${
+                      className={`cursor-pointer select-none relative py-2.5 px-4 transition-colors ${
                         time === newStartTime
-                          ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white font-medium"
+                          ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white"
                           : "text-gray-900 hover:bg-gray-100"
                       }`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleStartTimeSelect(time);
+                      }}
                     >
-                      {formatTimeDisplay(time)}
-                    </button>
+                      <span
+                        className={`block truncate text-sm ${
+                          time === newStartTime ? "font-medium" : "font-normal"
+                        }`}
+                      >
+                        {formatTimeDisplay(time)}
+                      </span>
+                    </div>
                   ))}
                 </div>
               )}
@@ -285,61 +308,70 @@ export default function TimeRangePicker({
 
           {/* End */}
           <div className="flex-1 w-full">
-            <label className="block text-sm font-medium text-gray-900 mb-2">End Time</label>
+            <label className="flex items-baseline gap-1 mb-2 font-semibold text-[16px] leading-[132%] text-black">
+              <span>End Time</span>
+            </label>
             <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsEndOpen((v) => !v)}
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm bg-white text-gray-900 flex items-center justify-between transition-colors ${
-                  isEndOpen
-                    ? "border-blue-500 ring-2 ring-blue-500"
-                    : "border-gray-300 hover:border-gray-400"
+              <div
+                className={`w-full rounded-[8px] bg-white flex items-center transition-colors cursor-pointer ${
+                  isEndOpen ? "ring-2 ring-blue-500" : ""
                 }`}
+                onClick={() => setIsEndOpen((v) => !v)}
               >
-                <span
-                  className={`flex-1 text-left text-sm ${
-                    newEndTime ? "text-gray-900" : "text-gray-500"
-                  }`}
+                <input
+                  type="text"
+                  className="flex-1 h-[42px] pt-1 pr-[19px] pb-1 pl-[19px] bg-transparent text-black font-normal text-[16px] leading-[132%] focus:outline-none placeholder:text-[#00000059] border-none rounded-[8px] cursor-pointer"
+                  placeholder="Select time"
+                  value={newEndTime ? formatTimeDisplay(newEndTime) : ""}
+                  readOnly
+                />
+                <button
+                  type="button"
+                  className="px-3 py-3 flex items-center justify-center hover:bg-gray-50 rounded-r-[8px]"
                 >
-                  {newEndTime ? formatTimeDisplay(newEndTime) : "Select time"}
-                </span>
-                <svg
-                  className={`h-5 w-5 text-gray-400 transform transition-transform flex-shrink-0 ml-2 ${
-                    isEndOpen ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    className={`h-5 w-5 text-gray-400 transform transition-transform ${
+                      isEndOpen ? "rotate-180" : ""
+                    }`}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
 
               {isEndOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-lg py-1 text-base border border-gray-200 overflow-auto custom-scrollbar">
+                <div className="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none border border-gray-200 custom-scrollbar">
                   {TIME_OPTIONS.map((time) => {
                     const isDisabled = newStartTime ? time <= newStartTime : false;
                     return (
-                      <button
+                      <div
                         key={time}
-                        type="button"
-                        onClick={() => !isDisabled && handleEndTimeSelect(time)}
-                        disabled={isDisabled}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors focus:outline-none ${
+                        className={`cursor-pointer select-none relative py-2.5 px-4 transition-colors ${
                           isDisabled
                             ? "text-gray-400 cursor-not-allowed bg-gray-50"
                             : time === newEndTime
-                            ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white font-medium"
+                            ? "bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white"
                             : "text-gray-900 hover:bg-gray-100"
                         }`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          if (!isDisabled) handleEndTimeSelect(time);
+                        }}
                       >
-                        {formatTimeDisplay(time)}
-                      </button>
+                        <span
+                          className={`block truncate text-sm ${
+                            time === newEndTime ? "font-medium" : "font-normal"
+                          }`}
+                        >
+                          {formatTimeDisplay(time)}
+                        </span>
+                      </div>
                     );
                   })}
                 </div>

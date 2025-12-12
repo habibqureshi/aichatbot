@@ -1,16 +1,19 @@
 import animate from "tailwindcss-animate";
 
 /** @type {import('tailwindcss').Config} */
-export default {
+const config = {
   darkMode: ["class"],
   content: ["./src/app/**/*.{ts,tsx}", "./src/components/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       screens: {
         custom930: "930px",
+        xl2: "1350px",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
+        sans: ["var(--font-figtree)", "Figtree", "sans-serif"],
+        inter: ["var(--font-inter)", "sans-serif"],
+        figtree: ["var(--font-figtree)", "Figtree", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -47,13 +50,17 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         "brand-white": "#FFFFFF",
-        "brand-purple": "#9882F7",
-        "brand-blue": "#4318FF",
+        "brand-purple": "#6325A9",
+        "brand-blue": "#4C2B97",
         "brand-dark": "#23272E",
+        "brand-dark1": "#434E61",
         "brand-light": "#64748B",
         "brand-light2": "#F6F7F9",
+        "brand-light3": "#9BA1AE",
         "brand-gray": "#2A2A2A",
-        "brand-card": "#F5F3FF",
+        "brand-card": "#7D2ADD",
+        "brand-button": "#384152",
+        topbar: "#ECEEF2",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -94,3 +101,5 @@ export default {
   },
   plugins: [animate],
 };
+
+export default config;

@@ -17,7 +17,7 @@ export async function getSession() {
   const decodedPayload = decodePayload(decryptedSessionId);
 
   const authResponse: AuthResponse = {
-    token: decryptedSessionId || "",
+    access_token: decryptedSessionId || "",
     user: getCurrentUserInfoFromJwtPayload(decodedPayload),
   };
   return authResponse;
@@ -50,7 +50,7 @@ export async function createSession(
   authData: AuthResponse,
   cookieMaxAge: number = 3600
 ) {
-  const sessionId = authData.token || "";
+  const sessionId = authData.access_token || "";
   const encryptedSessionId = await encrypt(sessionId);
   const cookie: ResponseCookie = {
     name: SESSION_COOKIE,

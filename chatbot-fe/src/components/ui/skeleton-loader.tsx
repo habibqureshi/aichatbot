@@ -100,8 +100,12 @@ export const AddDoctorSkeleton = ({ className = "" }: SkeletonLoaderProps) => (
 );
 
 export const SpecialtySkeleton = () => (
-  <div className="max-w-md">
-    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse mb-2"></div>
-    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+  <div>
+    {/* <div className="h-6 bg-gray-200 rounded w-24 animate-pulse mb-4"></div> */}
+    <span className="flex items-baseline gap-1 mb-2 font-semibold text-[16px] leading-[132%] text-black">
+      {"Speciality"}
+    </span>
+
+    <div className="h-[42px] bg-gray-200 w-full rounded animate-pulse"></div>
   </div>
 );

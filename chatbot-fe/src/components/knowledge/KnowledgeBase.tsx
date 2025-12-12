@@ -11,7 +11,7 @@ interface KnowledgeBaseProps {
 export default function KnowledgeBase({ existingFiles, handleDeleteFile }: KnowledgeBaseProps) {
   return (
     <div
-      className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[400px] flex flex-col"
+      className="backdrop-blur-sm border rounded-xl p-4 sm:p-6 shadow-sm h-auto lg:min-h-[400px] lg:max-h-[400px] flex flex-col"
       style={{
         background: "#FFFFFF",
         borderColor: "#F0EEFF",

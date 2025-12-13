@@ -37,6 +37,11 @@ export default function CallDetails({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(initialLoading);
+
+  // Update loading state when prop changes
+  useEffect(() => {
+    setLoading(initialLoading);
+  }, [initialLoading]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
@@ -197,8 +202,8 @@ export default function CallDetails({
     };
   }, [audioSrc]);
   // Fallback values if no conversation is selected
-  const caller = conversation?.patient?.name || "Not Available";
-  const phone = conversation?.patient?.phone_number || "Not Available";
+  const caller = conversation?.patient?.name || "N/A";
+  const phone = conversation?.patient?.phone_number || "N/A";
   const status = conversation?.status || "Unknown";
   const summary =
     (conversation && (conversation as unknown as { summary?: string }).summary) ||
@@ -282,7 +287,18 @@ export default function CallDetails({
           </h3>
         </div>
 
-        {loading ? (
+        {loading && !conversation ? (
+          <>
+            {/* Info Cards Skeleton */}
+            <div className="pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <CallInfoCardSkeleton title="Customer Name" />
+              <CallInfoCardSkeleton title="Call Duration" />
+              <CallInfoCardSkeleton title="Call Date & Time" />
+            </div>
+            {/* Tabs Skeleton */}
+            <CallTabsSkeleton tabs={tabs.map((tab) => tab.label)} />
+          </>
+        ) : loading ? (
           <>
             {/* Info Cards Skeleton */}
             <div className="pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -409,17 +425,17 @@ export default function CallDetails({
                             <MessageItem
                               key={message.id}
                               message={message}
-                              patientName={conversation?.patient?.name || "Sarah Johnson"}
+                              patientName={conversation?.patient?.name || "User"}
                               formattedTime={formatTime(message.timestamp)}
                             />
                           ))
                         ) : (
-                          <div className="flex justify-center">
+                          <div className="h-[300px] flex items-center justify-center">
                             <div
                               className="p-3 rounded-lg text-gray-500"
                               style={{ background: "#F5F3FF" }}
                             >
-                              <p>No chat transcript available</p>
+                              <p className="text-xl">No chat transcript available</p>
                             </div>
                           </div>
                         )}

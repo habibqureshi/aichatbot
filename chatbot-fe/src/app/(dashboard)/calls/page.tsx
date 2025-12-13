@@ -88,6 +88,7 @@ export default function CallsPage() {
 
         setConversations([]);
         setTotalPages(0);
+        setSelectedConversation(null);
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -106,7 +107,7 @@ export default function CallsPage() {
     setConversations([]);
     setCurrentPage(1);
     fetchConversations(1, pageSize, debouncedSearchQuery, false);
-  }, [fetchConversations, pageSize, debouncedSearchQuery]);
+  }, [fetchConversations, pageSize, debouncedSearchQuery, statusFilter]);
 
   // Attach scroll listener for infinite scroll
   useEffect(() => {
@@ -114,11 +115,15 @@ export default function CallsPage() {
     if (!container) return;
 
     const onScroll = () => {
-      if (isFetchingRef.current || loadingMore || loading || !hasMore) return;
+      // Early exit conditions - prevent any fetch
+      if (isFetchingRef.current) return;
+      if (loading) return;
+      if (!hasMore || currentPage >= totalPages) return;
+
       const { scrollTop, scrollHeight, clientHeight } = container;
       if (scrollTop + clientHeight >= scrollHeight - 120) {
-        // close to bottom, load next page
-        if (currentPage < totalPages) {
+        // Double-check before fetching
+        if (currentPage < totalPages && !isFetchingRef.current) {
           isFetchingRef.current = true;
           fetchConversations(currentPage + 1, pageSize, debouncedSearchQuery, true).finally(() => {
             isFetchingRef.current = false;
@@ -130,16 +135,7 @@ export default function CallsPage() {
 
     container.addEventListener("scroll", onScroll);
     return () => container.removeEventListener("scroll", onScroll);
-  }, [
-    currentPage,
-    pageSize,
-    debouncedSearchQuery,
-    hasMore,
-    loadingMore,
-    loading,
-    totalPages,
-    fetchConversations,
-  ]);
+  }, [currentPage, pageSize, debouncedSearchQuery, hasMore, loading, totalPages, fetchConversations]);
 
   // loadNextPage handled inside scroll handler
 
@@ -157,7 +153,7 @@ export default function CallsPage() {
     <div className="relative">
       {/* Drawer for small screens */}
       <div
-        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 z-50 md:hidden transition-opacity duration-300 ${
           drawerOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
@@ -324,7 +320,7 @@ export default function CallsPage() {
               </button>
             </div>
           </div>
-          <CallDetails conversation={selectedConversation} loading={!selectedConversation} />
+          <CallDetails conversation={selectedConversation} loading={loading} />
         </div>
       </div>
     </div>

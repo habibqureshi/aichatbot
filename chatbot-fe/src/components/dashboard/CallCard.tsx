@@ -65,7 +65,7 @@ const formatTime = (dateString?: string) => {
 };
 
 const getInitials = (name: string) => {
-  if (!name || name === "Unknown") return "U";
+  if (!name || name === "") return null; // Return null to show generic avatar
   return name
     .split(" ")
     .map((word) => word.charAt(0).toUpperCase())
@@ -85,7 +85,7 @@ const calculateDuration = (startedAt: string, endedAt: string | null): string =>
 };
 
 export default function CallCard({ conversation, onClick, isSelected = false }: Props) {
-  const caller = conversation?.patient?.name || "Unknown";
+  const caller = conversation?.patient?.name || "";
   const phone = conversation?.patient?.phone_number || "N/A";
   const summary = (conversation as unknown as { summary?: string })?.summary || "";
   const sentiment = sentimentFromSummary(summary);
@@ -103,13 +103,25 @@ export default function CallCard({ conversation, onClick, isSelected = false }: 
     }`}
     >
       <div className="flex-shrink-0 w-[47px] h-[47px] rounded-full overflow-hidden bg-[#6C54C4] flex items-center justify-center">
-        <span className="text-white font-medium text-[22px]">{getInitials(caller)}</span>
+        {getInitials(caller) ? (
+          <span className="text-white font-medium text-[22px]">{getInitials(caller)}</span>
+        ) : (
+          <Image
+            src="/assets/person.svg"
+            alt="user"
+            width={36}
+            height={36}
+            className="text-white mb-1"
+          />
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start flex-col xl2:flex-row justify-between gap-2">
           <div className="min-w-0 ml-2">
-            <p className="font-semibold text-base leading-[100%] text-black truncate">{caller}</p>
+            <p className="font-semibold text-base leading-[100%] text-black truncate">
+              {caller || "\u00A0"}
+            </p>
             <p className="font-medium text-xs leading-[132%] text-[#64748B] truncate">{phone}</p>
           </div>
           <div className="flex items-center ">

@@ -11,7 +11,8 @@ export function useInstallationType() {
     const fetchInstallationType = async () => {
       try {
         const data = await getAppSettingByKey("INSTALLED_FOR");
-        console.log("data11", data);
+        console.log("data11", data?.value);
+        
         setInstallationType(data.value.toLowerCase());
       } catch (error) {
         console.error("Error fetching installation type:", error);

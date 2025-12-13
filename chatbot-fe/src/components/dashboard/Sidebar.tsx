@@ -33,14 +33,14 @@ const navigation = [
     name: "Appointments",
     href: "/appointments",
     icon: "/assets/sideBarIcons/CalendarDots.svg",
-    showOnlyFor: "clinic",
+    showOnlyFor: ["clinic"],
   },
 
   {
     name: "Doctors",
     href: "/doctors",
     icon: "/assets/sideBarIcons/doctor.svg",
-    showOnlyFor: "clinic",
+    showOnlyFor: ["clinic"],
   },
   {
     name: "Tables",
@@ -71,7 +71,7 @@ const navigation = [
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { installationType, isLoading } = useInstallation();
+  const { installationType, isLoading, clearInstallation } = useInstallation();
 
   const handleLinkClick = () => {
     // Close sidebar on mobile when clicking a link
@@ -85,6 +85,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       onClose();
     }
     clearSession();
+    clearInstallation();
     toast.success("Logout successful");
   };
   // Filter navigation based on installation type

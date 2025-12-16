@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description:
     "Manage settings, call flows, agents, patient interactions, analytics, and system configurations in the CallSynthra Admin Panel.",
   icons: {
-    icon: "/favicon.png",
+    icon: "/favicon.ico",
   },
 };
 

@@ -38,6 +38,7 @@ def register_tools(mcp: FastMCP):
             str: A summarized string containing the most relevant information from the knowledge base.
         """
         try:
+            print(collection.name)
             # Retrieve relevant documents from the knowledge base
             results = collection.query(
                 query_texts=[query],

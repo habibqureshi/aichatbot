@@ -67,6 +67,7 @@ async def create_appointment_graph(
             Ask for missing details naturally.
             Do not repeat information unless confirming an action.
             After completing any action, ask if they need anything else.
+            if you don't find any information in the retriever, respond with "I'm sorry, I don't have that information right now."
         General rules:
             Do not invent or assume information.
             Do not rely on your own memory for factual details.
@@ -76,6 +77,7 @@ async def create_appointment_graph(
         {f"Custom capabilities: {menu_setting}" if menu_setting else ""}
         ----------------
         Remember: this is a phone call.
+        Use SSML tags where appropriate to enhance voice interaction.
         current date and time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
         """
         response = llm.invoke(

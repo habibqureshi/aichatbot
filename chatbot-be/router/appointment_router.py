@@ -53,9 +53,9 @@ async def feedback(
         if conversation:
             conversation.resolved_status = "unsatisfied"
             await db.commit()
-        response.say("I'm sorry for not helping you out!")
+        response.say("I'm sorry for not helping you out!", voice="Polly.Joanna-Neural")
     if data.Digits == "1":
-        response.say("I'm very happy to help you out")
+        response.say("I'm very happy to help you out", voice="Polly.Joanna-Neural")
     response.hangup()
     return Response(content=str(response), media_type="application/xml")
 

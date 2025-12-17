@@ -21,6 +21,8 @@ from configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
 background_tasks = BackgroundTasks()
 client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
+VOICE = "Polly.Joanna-Neural"
+
 
 async def greeting(
     data: TwilioIncoming,
@@ -61,10 +63,11 @@ async def greeting(
         speech_model="phone_call",
         language="en-US",
     )
-    gather.say(message.content)
+    gather.say(message.content, voice=VOICE)
     resp.append(gather)
     resp.say(
-        "Sorry, I didn't catch that. Please call again or visit our website to manage your appointment."
+        "Sorry, I didn't catch that. Please call again or visit our website to manage your appointment.",
+        voice=VOICE,
     )
     resp.hangup()
     return resp
@@ -83,18 +86,21 @@ async def process_speech(
             speech_model="phone_call",
             language="en-US",
         )
-        gather.say("Sorry, I did not catch that. Please say again!")
+        gather.say("Sorry, I did not catch that. Please say again!", voice=VOICE)
         resp.append(gather)
         return resp
     conversation = await conversation_service.find_by_call_sid(
         call_sid=data.CallSid, db=db
     )
-    if not conversation:
-        resp.say("Conversation not found!")
-        resp.hangup()
-        return resp
-    if conversation.status != "active":
-        resp.say("Conversation already ended!")
+    if not conversation or conversation.status != "active":
+        resp.say(
+            "<speak>"
+            '  <prosody rate="medium" pitch="medium">'
+            "    It looks like you are at the wrong place."
+            "  </prosody>"
+            "</speak>",
+            voice=VOICE,
+        )
         resp.hangup()
         return resp
     patient = await patient_service.find_by_id(conversation.patient_id, db)
@@ -121,10 +127,23 @@ async def process_speech(
     )
     final_message = ai_response.get("messages", [])[-1].content
     if not final_message:
-        final_message = "Unfortunately we have to end the conversation"
-        resp.say(final_message)
+        final_message = f"""
+                <speak>
+                <prosody rate="medium" pitch="medium">
+                    <break time="300ms"/>
+                    Due to some technical issues,
+                    <break time="250ms"/>
+                    we are unable to process your request at the moment.
+                    <break time="400ms"/>
+                    <emphasis level="moderate">
+                    Our representative will get in touch with you shortly.
+                    </emphasis>
+                    <break time="300ms"/>
+                </prosody>
+                </speak>"""
+        resp.say(final_message, voice=VOICE)
         resp.hangup()
-        await conversation_service.end(conversation=conversation, db=db)
+        await conversation_service.needs_human(conversation=conversation, db=db)
     elif final_message.strip().endswith(
         "FINISH_CONVERSATION"
     ) or final_message.strip().endswith("**FINISH_CONVERSATION**"):
@@ -133,8 +152,20 @@ async def process_speech(
             .replace("**FINISH_CONVERSATION**", "")
             .strip()
         )
-        resp.say(final_message)
-        resp.pause(1)
+        if not final_message:
+            final_message = "Thank you for contacting us. Goodbye!"
+        resp.say(
+            f"""
+                <speak>
+                    <prosody rate="medium" pitch="medium">
+                        <break time="250ms"/>
+                        {final_message}
+                        <break time="400ms"/>
+                    </prosody>
+                </speak>
+            """,
+            voice=VOICE,
+        )
         gather = Gather(
             input="dtmf",
             action=feedback_url,
@@ -144,7 +175,18 @@ async def process_speech(
             language="en-US",
         )
         gather.say(
-            "Please rate your experience. Press 1 for satisfied or 2 for not satisfied."
+            """
+                <speak>
+                    <prosody rate="medium">
+                        Please rate your experience.
+                        <break time="300ms"/>
+                        Press 1 if you were satisfied.
+                        <break time="300ms"/>
+                        Or press 2 if you were not satisfied.
+                    </prosody>
+                </speak>
+            """,
+            voice=VOICE,
         )
         resp.append(gather)
         resp.redirect(url=str(feedback_url), method="POST")
@@ -158,7 +200,7 @@ async def process_speech(
             .strip()
             or "Our representative will get in touch with you shortly."
         )
-        resp.say(final_message)
+        resp.say(final_message, voice=VOICE)
         resp.hangup()
         await conversation_service.needs_human(conversation=conversation, db=db)
     else:
@@ -170,7 +212,7 @@ async def process_speech(
             speech_model="phone_call",
             language="en-US",
         )
-        gather.say(final_message.strip())
+        gather.say(final_message.strip(), voice=VOICE)
         resp.append(gather)
     await message_service.create(
         conversation=conversation, content=final_message, role="assistant", db=db

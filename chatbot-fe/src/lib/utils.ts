@@ -13,13 +13,26 @@ export const formatDuration = (
   if (!startDate || !endDate) return "0m";
   const start = new Date(startDate);
   const end = new Date(endDate);
-  const minutes = Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+  const diffMs = end.getTime() - start.getTime();
+
+  if (diffMs <= 0) return "0m";
+
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
   if (hours > 0) {
-    return `${hours}h ${mins}m`;
+    return `${hours}h ${minutes}m`;
   }
-  return `${mins}m`;
+
+  if (minutes > 0) {
+    // show minutes and seconds for sub-hour durations
+    return `${minutes}m ${seconds}s`;
+  }
+
+  // shorter than a minute -> show seconds
+  return `${seconds}s`;
 };
 
 export const formatDate = (dateString: string | null | undefined) => {

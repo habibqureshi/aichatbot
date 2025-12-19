@@ -102,11 +102,7 @@ async def process_speech(
     )
     if not conversation or conversation.status != "active":
         resp.say(
-            "<speak>"
-            '  <prosody rate="medium" pitch="medium">'
-            "    It looks like you are at the wrong place."
-            "  </prosody>"
-            "</speak>",
+            "It looks like you are at the wrong place.",
             voice=VOICE,
         )
         resp.hangup()
@@ -141,20 +137,7 @@ async def process_speech(
     )
     final_message = ai_response.get("messages", [])[-1].content
     if not final_message:
-        final_message = f"""
-                <speak>
-                <prosody rate="medium" pitch="medium">
-                    <break time="300ms"/>
-                    Due to some technical issues,
-                    <break time="250ms"/>
-                    we are unable to process your request at the moment.
-                    <break time="400ms"/>
-                    <emphasis level="moderate">
-                    Our representative will get in touch with you shortly.
-                    </emphasis>
-                    <break time="300ms"/>
-                </prosody>
-                </speak>"""
+        final_message = "Due to some technical issues, we are unable to process your request at the moment. Our representative will get in touch with you shortly."
         resp.say(final_message, voice=VOICE)
         resp.hangup()
         await conversation_service.needs_human(conversation=conversation, db=db)
@@ -169,15 +152,7 @@ async def process_speech(
         if not final_message:
             final_message = "Thank you for contacting us. Goodbye!"
         resp.say(
-            f"""
-                <speak>
-                    <prosody rate="medium" pitch="medium">
-                        <break time="250ms"/>
-                        {final_message}
-                        <break time="400ms"/>
-                    </prosody>
-                </speak>
-            """,
+            final_message,
             voice=VOICE,
         )
         gather = Gather(
@@ -189,17 +164,7 @@ async def process_speech(
             language="en-US",
         )
         gather.say(
-            """
-                <speak>
-                    <prosody rate="medium">
-                        Please rate your experience.
-                        <break time="300ms"/>
-                        Press 1 if you were satisfied.
-                        <break time="300ms"/>
-                        Or press 2 if you were not satisfied.
-                    </prosody>
-                </speak>
-            """,
+            "Please rate your experience. Press 1 if you were satisfied. Or press 2 if you were not satisfied.",
             voice=VOICE,
         )
         resp.append(gather)
@@ -246,6 +211,4 @@ async def change_status(data: TwilioIncoming, db: AsyncSession, tenant_id: int):
         if not conversation:
             raise HTTPException(status_code=400, detail="No conversation ongoing")
         if conversation.status == "active":
-            await conversation_service.end(
-                conversation=conversation, db=db, tenant_id=tenant_id
-            )
+            await conversation_service.end(conversation=conversation, db=db)

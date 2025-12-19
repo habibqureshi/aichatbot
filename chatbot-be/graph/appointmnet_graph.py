@@ -59,8 +59,8 @@ async def create_appointment_graph(
         • Never answer factual/business questions from your own memory.
         • Never call the same tool more than once for the same question.
 
-        If the caller wants to talk to a human, return **NEEDS_HUMAN_INTERVENTION** only.
-        If the caller wants to end the call, return **FINISH_CONVERSATION** only.
+        If the caller wants to talk to a human, analyze the conversation and return a warm, apologetic message and end with **NEEDS_HUMAN_INTERVENTION**.
+        If the caller wants to end the call, analyze the conversation and return a polite call-ending message and end with **FINISH_CONVERSATION** only.
 
         Conversation style:
             Keep responses brief, clear, and conversational.
@@ -73,8 +73,6 @@ async def create_appointment_graph(
             Always use the retriever for factual/general questions and custom capabilities.
             Call tools only when all required details have been collected.
             if you don't find any information in the retriever, respond with "I'm sorry, I don't have that information right now."
-        Output format:
-            The response must have SSML tags for voice synthesis. only if the conversation is continued.
         ---------------------- 
         {f"Custom capabilities: {menu_setting}" if menu_setting else ""}
         ----------------

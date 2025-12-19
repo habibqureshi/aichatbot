@@ -44,7 +44,9 @@ def register_tools(mcp: FastMCP):
 
         async with get_db() as db:
             customer = await patient_service.find_or_create(
-                phone_number=ctx.get_state("patient_number"), db=db
+                phone_number=ctx.get_state("patient_number"),
+                db=db,
+                tenant_id=ctx.get_state("tenant_id"),
             )
             if not customer.name:
                 customer.name = customer_name
@@ -56,6 +58,7 @@ def register_tools(mcp: FastMCP):
                 db=db,
                 duration=duration,
                 location=location,
+                tenant_id=ctx.get_state("tenant_id"),
             )
             if not tables:
                 return "No available tables for the requested time and party size"
@@ -70,6 +73,7 @@ def register_tools(mcp: FastMCP):
                     table_id=table.id,
                     status="confirmed",
                     special_request=special_request,
+                    tenant_id=ctx.get_state("tenant_id"),
                 )
                 return (
                     f"Reservation confirmed for {customer_name} on {dt.strftime('%A, %B %d, %Y at %I:%M %p')} "
@@ -100,6 +104,7 @@ def register_tools(mcp: FastMCP):
                     phone_number=ctx.get_state("patient_number"),
                     reservation_datetime=dt,
                     db=db,
+                    tenant_id=ctx.get_state("tenant_id"),
                 )
             )
             if not reservation:
@@ -139,6 +144,7 @@ def register_tools(mcp: FastMCP):
                     phone_number=ctx.get_state("patient_number"),
                     reservation_datetime=current_dt,
                     db=db,
+                    tenant_id=ctx.get_state("tenant_id"),
                 )
             )
             if not reservation or reservation.status != "confirmed":
@@ -150,6 +156,7 @@ def register_tools(mcp: FastMCP):
                 party_size=reservation.party_size,
                 db=db,
                 duration=duration,
+                tenant_id=ctx.get_state("tenant_id"),
             )
             chosen_table_id = None
             if reservation.table_id and any(
@@ -175,6 +182,7 @@ def register_tools(mcp: FastMCP):
     async def find_available_tables(
         preferred_date: str,
         start_time: str,
+        ctx: Context,
         party_size: int = 2,
         max_tables: int = 5,
     ) -> List[dict[str, Any]] | str:
@@ -200,6 +208,7 @@ def register_tools(mcp: FastMCP):
                 party_size=party_size,
                 db=db,
                 duration=duration,
+                tenant_id=ctx.get_state("tenant_id"),
             )
             if not tables:
                 return "No available tables found."

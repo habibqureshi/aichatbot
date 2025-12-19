@@ -15,11 +15,14 @@ client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
 
 async def _get_random_doctors_by_specialty(
-    speciality: str, limit: int, db
+    speciality: str, limit: int, db, tenant_id: int
 ) -> List[Doctor]:
     result = await db.execute(
         select(Doctor)
-        .where(func.lower(Doctor.specialty) == func.lower(speciality))
+        .where(
+            func.lower(Doctor.specialty) == func.lower(speciality),
+            Doctor.tenant_id == tenant_id,
+        )
         .order_by(func.rand())
         .limit(limit)
     )
@@ -27,9 +30,12 @@ async def _get_random_doctors_by_specialty(
 
 
 async def _resolve_doctor_by_name(
-    db, doctor_name: str, speciality: str | None = None
+    db, doctor_name: str, tenant_id: int, speciality: str | None = None
 ) -> Doctor | None:
-    query = select(Doctor).where(func.lower(Doctor.name) == func.lower(doctor_name))
+    query = select(Doctor).where(
+        func.lower(Doctor.name) == func.lower(doctor_name),
+        Doctor.tenant_id == tenant_id,
+    )
     if speciality:
         query = query.where(func.lower(Doctor.specialty) == func.lower(speciality))
     result = await db.execute(query.limit(1))
@@ -53,7 +59,7 @@ async def _load_future_availabilities(
 
 
 async def _load_future_appointments(
-    db, doctor_id: int, target_date: date
+    db, doctor_id: int, target_date: date, tenant_id: int
 ) -> List[Appointment]:
     result = await db.execute(
         select(Appointment)
@@ -102,17 +108,27 @@ def register_tools(mcp: FastMCP):
         async with get_db() as db:
 
             patient = await patient_service.find_or_create(
-                phone_number=ctx.get_state("patient_number"), db=db
+                phone_number=ctx.get_state("patient_number"),
+                db=db,
+                tenant_id=ctx.get_state("tenant_id"),
             )
             if patient.name is None:
                 patient.name = patient_name
                 patient = await patient_service.update(patient=patient, db=db)
 
-            doctor = await _resolve_doctor_by_name(db, doctor_name, speciality)
+            doctor = await _resolve_doctor_by_name(
+                db=db,
+                doctor_name=doctor_name,
+                speciality=speciality,
+                tenant_id=ctx.get_state("tenant_id"),
+            )
             if not doctor:
                 if speciality:
                     doctor = await _get_random_doctors_by_specialty(
-                        speciality=speciality, limit=1, db=db
+                        speciality=speciality,
+                        limit=1,
+                        db=db,
+                        tenant_id=ctx.get_state("tenant_id"),
                     )
                     if not doctor:
                         return f"Doctor '{doctor_name}' with specialty '{speciality}' not found"
@@ -145,6 +161,7 @@ def register_tools(mcp: FastMCP):
                     call_sid=ctx.get_state("call_sid"),
                     doctor_id=doctor.id,
                     notes=notes,
+                    tenant_id=ctx.get_state("tenant_id"),
                 )
                 return f"Appointment scheduled for {patient_name} on {date.strftime('%A, %B %d, %Y at %I:%M %p')}. Confirmation will be sent by sms."
             except IntegrityError:
@@ -180,6 +197,7 @@ def register_tools(mcp: FastMCP):
                 start_time=date.time(),
                 duration=timedelta(minutes=duration),
                 db=db,
+                tenant_id=ctx.get_state("tenant_id"),
             )
             if not appointment:
                 return f"No appointment scheduled at  {date.strftime('%A, %B %d, %Y at %I:%M %p')}"
@@ -219,6 +237,7 @@ def register_tools(mcp: FastMCP):
                 appointment_date=date.date(),
                 start_time=date.time(),
                 duration=timedelta(minutes=duration),
+                tenant_id=ctx.get_state("tenant_id"),
             )
             if not appointment or appointment.status != "scheduled":
                 return f"No appointment scheduled at {date.strftime('%A, %B %d, %Y at %I:%M %p')}"
@@ -250,13 +269,18 @@ def register_tools(mcp: FastMCP):
 
     @mcp.tool(tags=["clinic"])
     async def find_random_doctors_by_speciality(
-        speciality: str, k: int = 3
+        speciality: str,
+        ctx: Context,
+        k: int = 3,
     ) -> list[dict[str, Any]] | str:
         """If user did not mentioned any doctor then first call this tool to confirm doctor first then do booking."""
 
         async with get_db() as db:
             doctors = await _get_random_doctors_by_specialty(
-                speciality=speciality, limit=k, db=db
+                speciality=speciality,
+                limit=k,
+                db=db,
+                tenant_id=ctx.get_state("tenant_id"),
             )
             if not doctors:
                 return f"No doctors found for speciality '{speciality}'"
@@ -274,6 +298,7 @@ def register_tools(mcp: FastMCP):
     async def find_doctor_empty_slots(
         doctor_name: str,
         preferred_date: str,
+        ctx: Context,
         speciality: str | None = None,
         start_time: str | None = None,
         max_slots: int = 3,
@@ -289,7 +314,12 @@ def register_tools(mcp: FastMCP):
             max_slots: Maximum number of slots to return
         """
         async with get_db() as db:
-            doctor = await _resolve_doctor_by_name(db, doctor_name, speciality)
+            doctor = await _resolve_doctor_by_name(
+                db,
+                doctor_name,
+                speciality,
+                ctx.get_state("tenant_id"),
+            )
             if not doctor:
                 return "Doctor not found"
             try:
@@ -317,7 +347,9 @@ def register_tools(mcp: FastMCP):
             if len(availabilities) == 0:
                 return f"No availabilities found for {doctor.name} on {day_name.capitalize()}s"
 
-            appointments = await _load_future_appointments(db, doctor.id, target_date)
+            appointments = await _load_future_appointments(
+                db, doctor.id, target_date, tenant_id=ctx.get_state("tenant_id")
+            )
             slots = []
             duration = timedelta(minutes=doctor.duration or 30)
             for availability in availabilities:

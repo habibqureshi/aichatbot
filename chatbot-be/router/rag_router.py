@@ -3,7 +3,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from rag.indexing.index import index_file_from_stream
-from services import cloud_storage_service, knowledge_service
+from schemas.auth import TokenPayload
+from services import auth_service, cloud_storage_service, knowledge_service
 from uuid import uuid4 as uuid
 from db.db import get_db
 from schemas.common import PaginatedResponse
@@ -19,6 +20,7 @@ router = APIRouter(
 async def upload_file(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
     """
     Endpoint to accept a file upload.
@@ -35,7 +37,10 @@ async def upload_file(
         filename = f"{str(uuid())}.{ext}"
         try:
             await knowledge_service.create(
-                name=file.filename, blob_name=filename, db=db
+                name=file.filename,
+                blob_name=filename,
+                db=db,
+                tenant_id=current_user.tenant_id,
             )
         except IntegrityError:
             await db.rollback()
@@ -44,7 +49,9 @@ async def upload_file(
             )
         cloud_storage_service.upload_file(file=file, filename=f"knowledge/{filename}")
         await file.seek(0)
-        await index_file_from_stream(file, index_name=filename)
+        await index_file_from_stream(
+            file, index_name=filename, tenant_id=current_user.tenant_id
+        )
         # Here you can process the file as needed, e.g., save to disk, index, etc.
         # For demonstration, we'll just return the filename and size.
         return JSONResponse(
@@ -65,28 +72,21 @@ async def upload_file(
 
 @router.get("/", response_model=PaginatedResponse[Knowledge])
 async def get(
-    db: AsyncSession = Depends(get_db), page: int = 1, limit: int = Query(10, le=100)
+    db: AsyncSession = Depends(get_db),
+    page: int = 1,
+    limit: int = Query(10, le=100),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
-    return await knowledge_service.get(db=db, page=page, limit=limit)
-
-
-# @router.patch("/activate/{knowledge_id}")
-# async def activate_knowledge(knowledge_id: int, db: AsyncSession = Depends(get_db)):
-#     await knowledge_service.activate_knowledge(db=db, knowledge_id=knowledge_id)
-#     return {"message": "Knowledge activated successfully."}
-
-
-# @router.get("/activate")
-# async def get_active_knowledge(db: AsyncSession = Depends(get_db)):
-#     knowledge = await knowledge_service.get_active_knowledge(db=db)
-#     if not knowledge:
-#         raise HTTPException(status_code=404, detail="No active knowledge found.")
-#     return knowledge
+    return await knowledge_service.get(
+        db=db, page=page, limit=limit, tenant_id=current_user.tenant_id
+    )
 
 
 @router.get("/{knowledge_id}/link")
 async def generate_knowledge_link(
-    knowledge_id: int, db: AsyncSession = Depends(get_db)
+    knowledge_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
     knowledge = await db.get(Knowledge, knowledge_id)
     if not knowledge:
@@ -98,5 +98,9 @@ async def generate_knowledge_link(
 
 
 @router.delete("/{knowledge_id}")
-async def delete_knowledge(knowledge_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_knowledge(
+    knowledge_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
+):
     return await knowledge_service.delete_knowledge(knowledge_id, db)

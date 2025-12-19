@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.db import get_db
+from schemas.auth import TokenPayload
 from services import call_stats_service, auth_service
 from schemas.call_stats import (
     TotalCallsResponse,
@@ -22,12 +23,13 @@ async def total_calls(
     start: date,
     end: date,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
     total = await call_stats_service.total_calls(
         db=db,
         start=datetime.combine(start, time.min),
         end=datetime.combine(end, time.max),
+        tenant_id=current_user.tenant_id,
     )
     return TotalCallsResponse(total=total)
 
@@ -37,12 +39,13 @@ async def average_duration(
     start: date,
     end: date,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
     avg = await call_stats_service.average_call_duration_seconds(
         db=db,
         start=datetime.combine(start, time.min),
         end=datetime.combine(end, time.max),
+        tenant_id=current_user.tenant_id,
     )
     return AverageDurationResponse(average_seconds=avg)
 
@@ -52,12 +55,13 @@ async def conversion_rate(
     start: date,
     end: date,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
     rate = await call_stats_service.conversion_rate(
         db=db,
         start=datetime.combine(start, time.min),
         end=datetime.combine(end, time.max),
+        tenant_id=current_user.tenant_id,
     )
     return ConversionRateResponse(conversion_rate=rate)
 
@@ -68,13 +72,14 @@ async def timeseries(
     end: date,
     interval: Literal["month", "day"] = Query("month"),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
     rows = await call_stats_service.call_volume_timeseries(
         db=db,
         start=datetime.combine(start, time.min),
         end=datetime.combine(end, time.max),
         interval=interval,
+        tenant_id=current_user.tenant_id,
     )
     return [TimeseriesPoint(**r) for r in rows]
 
@@ -82,7 +87,10 @@ async def timeseries(
 @router.get("/live", response_model=LiveCallActivity)
 async def live_activity(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
-    data = await call_stats_service.live_call_activity(db=db)
-    return LiveCallActivity.parse_obj(data)
+    data = await call_stats_service.live_call_activity(
+        db=db,
+        tenant_id=current_user.tenant_id,
+    )
+    return LiveCallActivity.model_validate(data)

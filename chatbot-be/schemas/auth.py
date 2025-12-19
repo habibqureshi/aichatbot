@@ -12,7 +12,8 @@ class Token(BaseModel):
 
 
 class TokenPayload(BaseModel):
-    user_id: int | None = None
+    user_id: int
+    tenant_id: int
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, computed_field, Field
 from typing import ClassVar
 from datetime import datetime
 from schemas.common import TimezoneMixin
@@ -17,6 +17,7 @@ class Conversation(TimezoneMixin, BaseModel):
     _timezone_fields: ClassVar[list[str]] = ["started_at", "ended_at"]
 
     @computed_field
+    @property
     def recording_available(self) -> bool:
         return bool(self.recording_link)
 

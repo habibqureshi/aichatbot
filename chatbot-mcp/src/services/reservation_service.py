@@ -17,6 +17,7 @@ async def create_reservation(
     party_size: int,
     db: AsyncSession,
     table_id: int,
+    tenant_id: int,
     status: str = "pending",
     special_request: Optional[str] = None,
 ):
@@ -27,6 +28,7 @@ async def create_reservation(
         party_size=party_size,
         status=status,
         special_request=special_request,
+        tenant_id=tenant_id,
     )
     db.add(reservation)
     await db.commit()
@@ -35,7 +37,7 @@ async def create_reservation(
 
 
 async def find_by_customer_number_and_datetime(
-    phone_number: str, reservation_datetime: datetime, db: AsyncSession
+    phone_number: str, reservation_datetime: datetime, db: AsyncSession, tenant_id: int
 ) -> Optional[Reservation]:
     result = await db.execute(
         select(Reservation)
@@ -43,6 +45,7 @@ async def find_by_customer_number_and_datetime(
         .where(
             Patient.phone_number == phone_number,
             Reservation.reservation_date == reservation_datetime,
+            Reservation.tenant_id == tenant_id,
         )
         .limit(1)
     )
@@ -53,6 +56,7 @@ async def find_available_tables(
     reservation_datetime: datetime,
     party_size: int,
     db: AsyncSession,
+    tenant_id: int,
     duration: timedelta = DEFAULT_RESERVATION_DURATION,
     location: Optional[str] = None,
 ) -> List[RestaurantTable]:
@@ -79,14 +83,15 @@ async def find_available_tables(
             Reservation.status != "cancelled",
             Reservation.table_id.isnot(None),
             Reservation.reservation_date < end_dt,
-            # Assuming reservation end time is reservation_date + duration
-            Reservation.reservation_date > start_dt - duration,
+            Reservation.reservation_date > start_dt,
+            Reservation.tenant_id == tenant_id,
         )
         .distinct()
     )
     filters = [
         RestaurantTable.is_active == True,
         RestaurantTable.capacity >= party_size,
+        RestaurantTable.tenant_id == tenant_id,
     ]
     if (
         overlapping_reservations is not None

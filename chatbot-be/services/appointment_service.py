@@ -1,7 +1,7 @@
 from twilio.twiml.voice_response import VoiceResponse, Start, Gather
 from twilio.twiml.voice_response import Record
 from fastapi import HTTPException, BackgroundTasks
-from db.models import Appointment
+from db.models import Tenant
 from schemas.twilio import TwilioIncoming
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.datastructures import URL
@@ -29,14 +29,17 @@ async def greeting(
     db: AsyncSession,
     action_url: URL,
     recording_status_callback: URL,
+    tenant_id: int,
 ) -> VoiceResponse:
     resp = VoiceResponse()
-    patient = await patient_service.find_or_create(data.From, db=db)
+    patient = await patient_service.find_or_create(
+        data.From, db=db, tenant_id=tenant_id
+    )
     conversation = await conversation_service.find_or_create(
-        data=data, patient=patient, db=db
+        data=data, patient=patient, db=db, tenant_id=tenant_id
     )
     greeting_message_saved = await app_setting_service.get_app_setting_by_key(
-        db=db, key="GREETING"
+        db=db, key="GREETING", tenant_id=tenant_id
     )
     if greeting_message_saved and greeting_message_saved.value:
         greenting_message = greeting_message_saved.value
@@ -45,6 +48,7 @@ async def greeting(
     message = await message_service.create(
         conversation=conversation,
         content=greenting_message,
+        tenant_id=tenant_id,
         role="assistant",
         db=db,
     )
@@ -74,7 +78,11 @@ async def greeting(
 
 
 async def process_speech(
-    data: TwilioIncoming, action_url: URL, db: AsyncSession, feedback_url: URL
+    data: TwilioIncoming,
+    action_url: URL,
+    db: AsyncSession,
+    feedback_url: URL,
+    tenant_id: int,
 ) -> VoiceResponse:
     resp = VoiceResponse()
     if not data.SpeechResult:
@@ -90,7 +98,7 @@ async def process_speech(
         resp.append(gather)
         return resp
     conversation = await conversation_service.find_by_call_sid(
-        call_sid=data.CallSid, db=db
+        call_sid=data.CallSid, db=db, tenant_id=tenant_id
     )
     if not conversation or conversation.status != "active":
         resp.say(
@@ -103,7 +111,9 @@ async def process_speech(
         )
         resp.hangup()
         return resp
-    patient = await patient_service.find_by_id(conversation.patient_id, db)
+    patient = await patient_service.find_by_id(
+        conversation.patient_id, db, tenant_id=tenant_id
+    )
     lc_messages = (
         [HumanMessage(content=f"Patient name is {patient.name}")]
         if patient.name
@@ -111,13 +121,17 @@ async def process_speech(
     ) + [
         HumanMessage(content=conv_message.content)
         for conv_message in await message_service.load_messages_by_conversation(
-            conversation=conversation, db=db
+            conversation=conversation, db=db, tenant_id=tenant_id
         )
     ]
     await message_service.create(
-        conversation=conversation, content=data.SpeechResult, role="user", db=db
+        conversation=conversation,
+        content=data.SpeechResult,
+        role="user",
+        db=db,
+        tenant_id=tenant_id,
     )
-    graph: CompiledStateGraph = await get_graph(data.CallSid, data.From, db)
+    graph: CompiledStateGraph = await get_graph(data.CallSid, data.From, db, tenant_id)
     ai_response = await graph.ainvoke(
         AppointmentState(
             messages=lc_messages + [HumanMessage(content=data.SpeechResult)],
@@ -148,8 +162,8 @@ async def process_speech(
         "FINISH_CONVERSATION"
     ) or final_message.strip().endswith("**FINISH_CONVERSATION**"):
         final_message = (
-            final_message.replace("FINISH_CONVERSATION", "")
-            .replace("**FINISH_CONVERSATION**", "")
+            final_message.replace("**FINISH_CONVERSATION**", "")
+            .replace("FINISH_CONVERSATION", "")
             .strip()
         )
         if not final_message:
@@ -195,8 +209,8 @@ async def process_speech(
         "NEEDS_HUMAN_INTERVENTION"
     ) or final_message.strip().endswith("**NEEDS_HUMAN_INTERVENTION**"):
         final_message = (
-            final_message.replace("NEEDS_HUMAN_INTERVENTION", "")
-            .replace("**NEEDS_HUMAN_INTERVENTION**", "")
+            final_message.replace("**NEEDS_HUMAN_INTERVENTION**", "")
+            .replace("NEEDS_HUMAN_INTERVENTION", "")
             .strip()
             or "Our representative will get in touch with you shortly."
         )
@@ -215,17 +229,23 @@ async def process_speech(
         gather.say(final_message.strip(), voice=VOICE)
         resp.append(gather)
     await message_service.create(
-        conversation=conversation, content=final_message, role="assistant", db=db
+        conversation=conversation,
+        content=final_message,
+        role="assistant",
+        db=db,
+        tenant_id=tenant_id,
     )
     return resp
 
 
-async def change_status(data: TwilioIncoming, db: AsyncSession):
+async def change_status(data: TwilioIncoming, db: AsyncSession, tenant_id: int):
     if data.CallStatus == "completed":
         conversation = await conversation_service.find_by_call_sid(
-            call_sid=data.CallSid, db=db
+            call_sid=data.CallSid, db=db, tenant_id=tenant_id
         )
         if not conversation:
             raise HTTPException(status_code=400, detail="No conversation ongoing")
         if conversation.status == "active":
-            await conversation_service.end(conversation=conversation, db=db)
+            await conversation_service.end(
+                conversation=conversation, db=db, tenant_id=tenant_id
+            )

@@ -5,7 +5,7 @@ from src.configs import (
     CHROMA_DB_TOKEN,
 )
 from chromadb import HttpClient
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 from chromadb.config import Settings
 
 client = HttpClient(
@@ -23,7 +23,7 @@ collection = client.get_or_create_collection(name=CHROMA_INDEX_NAME)
 
 def register_tools(mcp: FastMCP):
     @mcp.tool(tags=["common"])
-    def knowledge_retriever(query: str, k: int = 3) -> str:
+    def knowledge_retriever(query: str, ctx: Context, k: int = 3) -> list[str]:
         """
         Retrieve information from the knowledge base using a RAG (Retrieval-Augmented Generation) approach.
 
@@ -42,6 +42,7 @@ def register_tools(mcp: FastMCP):
             # Retrieve relevant documents from the knowledge base
             results = collection.query(
                 query_texts=[query],
+                where={"tenant_id": str(ctx.get_state("tenant_id"))},
                 n_results=k,
                 include=[
                     "documents",
@@ -54,7 +55,7 @@ def register_tools(mcp: FastMCP):
                 or not results.get("documents")
                 or not results["documents"][0]
             ):
-                return "No relevant information found in the knowledge base."
+                return []
 
             # Format the results
             documents = results["documents"][0]
@@ -69,7 +70,7 @@ def register_tools(mcp: FastMCP):
                 if metadata:
                     result_text += f"Source: {metadata.get('source', 'Unknown')}\n"
                 formatted_results.append(result_text)
-            return "\n\n".join(formatted_results)
+            return formatted_results
 
         except Exception as e:
             return f"Error searching knowledge base: {str(e)}"

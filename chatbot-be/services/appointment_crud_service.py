@@ -17,6 +17,7 @@ async def list_appointments(
     db: AsyncSession,
     page: int,
     limit: int,
+    tenant_id: int,
     user_timezone: str,
     doctor_id: int | None = None,
     patient_id: int | None = None,
@@ -28,9 +29,12 @@ async def list_appointments(
             joinedload(AppointmentModel.patient),
             joinedload(AppointmentModel.doctor),
         )
+        .where(AppointmentModel.tenant_id == tenant_id)
         .order_by(AppointmentModel.appointment_date.desc())
     )
-    count_query = select(func.count(AppointmentModel.id))
+    count_query = select(func.count(AppointmentModel.id)).where(
+        AppointmentModel.tenant_id == tenant_id
+    )
 
     if doctor_id is not None:
         query = query.where(AppointmentModel.doctor_id == doctor_id)

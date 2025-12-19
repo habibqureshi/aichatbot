@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.db import get_db
+from schemas.auth import TokenPayload
 from schemas.common import PaginatedResponse
 from schemas.restaurant import (
     RestaurantTable,
@@ -22,9 +23,11 @@ async def list_tables(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
     user_timezone: str = Query("UTC"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
-    return await restaurant_service.list_tables(db=db, page=page, limit=limit)
+    return await restaurant_service.list_tables(
+        db=db, page=page, limit=limit, tenant_id=current_user.tenant_id
+    )
 
 
 @router.post(
@@ -34,18 +37,24 @@ async def create_table(
     payload: RestaurantTableCreate,
     db: AsyncSession = Depends(get_db),
     user_timezone: str = Query("UTC"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
-    table = await restaurant_service.create_table(db=db, payload=payload)
+    table = await restaurant_service.create_table(
+        db=db, payload=payload, tenant_id=current_user.tenant_id
+    )
     return RestaurantTable.model_validate(table, context={"timezone": user_timezone})
 
 
 @router.get("/tables/{table_id}", response_model=RestaurantTable)
 async def get_table(
-    table_id: int, db: AsyncSession = Depends(get_db), user_timezone: str = Query("UTC"),
-    current_user=Depends(auth_service.get_current_user),
+    table_id: int,
+    db: AsyncSession = Depends(get_db),
+    user_timezone: str = Query("UTC"),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
-    table = await restaurant_service.get_table(db=db, table_id=table_id)
+    table = await restaurant_service.get_table(
+        db=db, table_id=table_id, tenant_id=current_user.tenant_id
+    )
     if table is None:
         raise HTTPException(status_code=404, detail="Table not found")
     return RestaurantTable.model_validate(table, context={"timezone": user_timezone})
@@ -57,9 +66,11 @@ async def update_table(
     payload: RestaurantTableUpdate,
     db: AsyncSession = Depends(get_db),
     user_timezone: str = Query("UTC"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
-    table = await restaurant_service.get_table(db=db, table_id=table_id)
+    table = await restaurant_service.get_table(
+        db=db, table_id=table_id, tenant_id=current_user.tenant_id
+    )
     if table is None:
         raise HTTPException(status_code=404, detail="Table not found")
     table = await restaurant_service.update_table(db=db, table=table, payload=payload)
@@ -67,9 +78,14 @@ async def update_table(
 
 
 @router.delete("/tables/{table_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_table(table_id: int, db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),) -> Response:
-    table = await restaurant_service.get_table(db=db, table_id=table_id)
+async def delete_table(
+    table_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
+) -> Response:
+    table = await restaurant_service.get_table(
+        db=db, table_id=table_id, tenant_id=current_user.tenant_id
+    )
     if table is None:
         raise HTTPException(status_code=404, detail="Table not found")
     await restaurant_service.delete_table(db=db, table=table)
@@ -84,10 +100,15 @@ async def list_reservations(
     customer_id: int | None = Query(None),
     status: str | None = Query(None),
     user_timezone: str = Query("UTC"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
     return await restaurant_service.list_reservations(
-        db=db, page=page, limit=limit, customer_id=customer_id, status=status
+        db=db,
+        page=page,
+        limit=limit,
+        customer_id=customer_id,
+        status=status,
+        tenant_id=current_user.tenant_id,
     )
 
 
@@ -96,10 +117,10 @@ async def get_reservation(
     reservation_id: int,
     db: AsyncSession = Depends(get_db),
     user_timezone: str = Query("UTC"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
     reservation = await restaurant_service.get_reservation(
-        db=db, reservation_id=reservation_id
+        db=db, reservation_id=reservation_id, tenant_id=current_user.tenant_id
     )
     if reservation is None:
         raise HTTPException(status_code=404, detail="Reservation not found")
@@ -107,17 +128,24 @@ async def get_reservation(
 
 
 @router.get("/settings", response_model=list[RestaurantSetting])
-async def list_settings(db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),) -> list[RestaurantSetting]:
-    return await restaurant_service.list_settings(db=db)
+async def list_settings(
+    db: AsyncSession = Depends(get_db),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
+) -> list[RestaurantSetting]:
+    return await restaurant_service.list_settings(
+        db=db, tenant_id=current_user.tenant_id
+    )
 
 
 @router.get("/settings/{key}", response_model=RestaurantSetting)
 async def get_setting(
-    key: str, db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),
+    key: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ) -> RestaurantSetting:
-    setting = await restaurant_service.get_setting_by_key(db=db, key=key)
+    setting = await restaurant_service.get_setting_by_key(
+        db=db, key=key, tenant_id=current_user.tenant_id
+    )
     if setting is None:
         raise HTTPException(status_code=404, detail="Setting not found")
     return RestaurantSetting.model_validate(setting)
@@ -127,8 +155,11 @@ async def get_setting(
     "/settings", response_model=RestaurantSetting, status_code=status.HTTP_201_CREATED
 )
 async def create_setting(
-    payload: RestaurantSettingCreate, db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),
+    payload: RestaurantSettingCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ) -> RestaurantSetting:
-    setting = await restaurant_service.create_or_update_setting(db=db, payload=payload)
+    setting = await restaurant_service.create_or_update_setting(
+        db=db, payload=payload, tenant_id=current_user.tenant_id
+    )
     return RestaurantSetting.model_validate(setting)

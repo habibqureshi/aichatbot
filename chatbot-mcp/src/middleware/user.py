@@ -11,5 +11,6 @@ class UserMiddleware(Middleware):
         context.fastmcp_context.set_state(
             "patient_number", headers.get("x-patient-no", "invalid")
         )
+        context.fastmcp_context.set_state("tenant_id", int(headers.get("x-tenant-id")))
         result = await call_next(context)
         return result

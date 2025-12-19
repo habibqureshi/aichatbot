@@ -16,14 +16,21 @@ async def list_app_settings(
     db: AsyncSession,
     page: int,
     limit: int,
+    tenant_id: int,
 ) -> PaginatedResponse[AppSettingSchema]:
-    query = select(AppSetting).order_by(AppSetting.id.desc())
+    query = (
+        select(AppSetting)
+        .where(AppSetting.tenant_id == tenant_id)
+        .order_by(AppSetting.id.desc())
+    )
     result = await db.execute(query.offset((page - 1) * limit).limit(limit))
     app_settings = [
         AppSettingSchema.model_validate(setting) for setting in result.scalars().all()
     ]
 
-    total = await db.scalar(select(func.count(AppSetting.id)))
+    total = await db.scalar(
+        select(func.count(AppSetting.id)).where(AppSetting.tenant_id == tenant_id)
+    )
 
     return PaginatedResponse[AppSettingSchema].create(
         data=app_settings,
@@ -33,18 +40,36 @@ async def list_app_settings(
     )
 
 
-async def get_app_setting(db: AsyncSession, setting_id: int) -> AppSetting | None:
-    result = await db.execute(select(AppSetting).where(AppSetting.id == setting_id))
+async def get_app_setting(
+    db: AsyncSession, setting_id: int, tenant_id: int
+) -> AppSetting | None:
+    result = await db.execute(
+        select(AppSetting).where(
+            AppSetting.id == setting_id, AppSetting.tenant_id == tenant_id
+        )
+    )
     return result.scalar_one_or_none()
 
 
-async def get_app_setting_by_key(db: AsyncSession, key: str) -> AppSetting | None:
-    result = await db.execute(select(AppSetting).where(AppSetting.key == key))
+async def get_app_setting_by_key(
+    db: AsyncSession, key: str, tenant_id: int
+) -> AppSetting | None:
+    result = await db.execute(
+        select(AppSetting).where(
+            AppSetting.key == key, AppSetting.tenant_id == tenant_id
+        )
+    )
     return result.scalar_one_or_none()
 
 
-async def get_app_setting_by_key_value(db: AsyncSession, key: str) -> str | None:
-    result = await db.execute(select(AppSetting).where(AppSetting.key == key))
+async def get_app_setting_by_key_value(
+    db: AsyncSession, key: str, tenant_id: int
+) -> str | None:
+    result = await db.execute(
+        select(AppSetting).where(
+            AppSetting.key == key, AppSetting.tenant_id == tenant_id
+        )
+    )
     data = result.scalar_one_or_none()
     if data:
         return data.value
@@ -55,8 +80,9 @@ async def get_app_setting_by_key_value(db: AsyncSession, key: str) -> str | None
 async def create_app_setting(
     db: AsyncSession,
     payload: AppSettingCreate,
+    tenant_id: int,
 ) -> AppSetting:
-    app_setting = AppSetting(key=payload.key, value=payload.value)
+    app_setting = AppSetting(key=payload.key, value=payload.value, tenant_id=tenant_id)
     db.add(app_setting)
 
     try:

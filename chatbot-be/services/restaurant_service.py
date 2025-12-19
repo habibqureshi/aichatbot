@@ -25,11 +25,15 @@ from schemas.restaurant import (
 )
 
 
-async def list_tables(db: AsyncSession, page: int, limit: int):
-    query = select(RestaurantTableModel).order_by(
-        RestaurantTableModel.created_at.desc()
+async def list_tables(db: AsyncSession, page: int, limit: int, tenant_id: int):
+    query = (
+        select(RestaurantTableModel)
+        .where(RestaurantTableModel.tenant_id == tenant_id)
+        .order_by(RestaurantTableModel.created_at.desc())
     )
-    count_query = select(func.count(RestaurantTableModel.id))
+    count_query = select(func.count(RestaurantTableModel.id)).where(
+        RestaurantTableModel.tenant_id == tenant_id
+    )
 
     result = await db.execute(query.offset((page - 1) * limit).limit(limit))
     tables = [
@@ -43,21 +47,27 @@ async def list_tables(db: AsyncSession, page: int, limit: int):
     )
 
 
-async def get_table(db: AsyncSession, table_id: int) -> RestaurantTableModel | None:
+async def get_table(
+    db: AsyncSession, table_id: int, tenant_id: int
+) -> RestaurantTableModel | None:
     result = await db.execute(
-        select(RestaurantTableModel).where(RestaurantTableModel.id == table_id)
+        select(RestaurantTableModel).where(
+            RestaurantTableModel.id == table_id,
+            RestaurantTableModel.tenant_id == tenant_id,
+        )
     )
     return result.unique().scalar_one_or_none()
 
 
 async def create_table(
-    db: AsyncSession, payload: RestaurantTableCreate
+    db: AsyncSession, payload: RestaurantTableCreate, tenant_id: int
 ) -> RestaurantTableModel:
     table = RestaurantTableModel(
         capacity=payload.capacity,
         table_number=payload.table_number,
         location=payload.location,
         is_active=payload.is_active,
+        tenant_id=tenant_id,
     )
     db.add(table)
     try:
@@ -92,11 +102,18 @@ async def list_reservations(
     db: AsyncSession,
     page: int,
     limit: int,
+    tenant_id: int,
     customer_id: int | None = None,
     status: str | None = None,
 ):
-    query = select(ReservationModel).order_by(ReservationModel.created_at.desc())
-    count_query = select(func.count(ReservationModel.id))
+    query = (
+        select(ReservationModel)
+        .where(ReservationModel.tenant_id == tenant_id)
+        .order_by(ReservationModel.created_at.desc())
+    )
+    count_query = select(func.count(ReservationModel.id)).where(
+        ReservationModel.tenant_id == tenant_id
+    )
 
     if customer_id is not None:
         query = query.where(ReservationModel.customer_id == customer_id)
@@ -126,15 +143,17 @@ async def get_reservation(
     return result.unique().scalar_one_or_none()
 
 
-async def list_settings(db: AsyncSession):
+async def list_settings(db: AsyncSession, tenant_id: int):
     result = await db.execute(
-        select(RestaurantSettingModel).order_by(RestaurantSettingModel.id.asc())
+        select(RestaurantSettingModel)
+        .where(RestaurantSettingModel.tenant_id == tenant_id)
+        .order_by(RestaurantSettingModel.id.asc())
     )
     return [RestaurantSettingSchema.model_validate(s) for s in result.scalars().all()]
 
 
 async def get_setting_by_key(
-    db: AsyncSession, key: str
+    db: AsyncSession, key: str, tenant_id: int
 ) -> RestaurantSettingModel | None:
     result = await db.execute(
         select(RestaurantSettingModel).where(RestaurantSettingModel.key == key)
@@ -143,10 +162,14 @@ async def get_setting_by_key(
 
 
 async def create_or_update_setting(
-    db: AsyncSession, payload: RestaurantSettingCreate | RestaurantSettingUpdate
+    db: AsyncSession,
+    payload: RestaurantSettingCreate | RestaurantSettingUpdate,
+    tenant_id: int,
 ) -> RestaurantSettingModel:
     existing = (
-        await get_setting_by_key(db, payload.key) if hasattr(payload, "key") else None
+        await get_setting_by_key(db, payload.key, tenant_id)
+        if hasattr(payload, "key")
+        else None
     )
 
     if existing:
@@ -161,6 +184,7 @@ async def create_or_update_setting(
     setting = RestaurantSettingModel(
         key=payload.key,
         value=payload.value,
+        tenant_id=tenant_id,
         description=getattr(payload, "description", None),
     )
     db.add(setting)

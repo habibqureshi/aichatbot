@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.db import get_db
-from schemas.appointment import Appointment, AppointmentCreate, AppointmentUpdate
+from schemas.appointment import Appointment
+from schemas.auth import TokenPayload
 from schemas.common import PaginatedResponse
 from services import appointment_crud_service, auth_service
 
@@ -17,7 +18,7 @@ async def list_appointments(
     user_timezone: str = Query("UTC"),
     doctor_id: int | None = Query(None),
     status_filter: str | None = Query(None, alias="status"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ) -> PaginatedResponse[Appointment]:
     return await appointment_crud_service.list_appointments(
         db=db,
@@ -26,4 +27,5 @@ async def list_appointments(
         user_timezone=user_timezone,
         doctor_id=doctor_id,
         status=status_filter,
+        tenant_id=current_user.tenant_id,
     )

@@ -13,10 +13,12 @@ from schemas.conversation import Conversation as ConversationSchema
 
 
 async def find_or_create(
-    data: TwilioIncoming, patient: Patient, db: AsyncSession
+    data: TwilioIncoming, patient: Patient, db: AsyncSession, tenant_id: int
 ) -> Conversation:
     result = await db.execute(
-        select(Conversation).where(Conversation.call_sid == data.CallSid)
+        select(Conversation).where(
+            Conversation.call_sid == data.CallSid, Conversation.tenant_id == tenant_id
+        )
     )
     conversation = result.scalars().first()
     if conversation:
@@ -24,6 +26,7 @@ async def find_or_create(
     conversation = Conversation(
         call_sid=data.CallSid,
         patient_id=patient.id,
+        tenant_id=tenant_id,
     )
     db.add(conversation)
     try:
@@ -33,14 +36,21 @@ async def find_or_create(
         return conversation
     except IntegrityError:
         result = await db.execute(
-            select(Conversation).where(Conversation.call_sid == data.CallSid)
+            select(Conversation).where(
+                Conversation.call_sid == data.CallSid,
+                Conversation.tenant_id == tenant_id,
+            )
         )
         return result.scalars().first()
 
 
-async def find_by_call_sid(call_sid: str, db: AsyncSession) -> Conversation:
+async def find_by_call_sid(
+    call_sid: str, db: AsyncSession, tenant_id: int
+) -> Conversation:
     result = await db.execute(
-        select(Conversation).where(Conversation.call_sid == call_sid)
+        select(Conversation).where(
+            Conversation.call_sid == call_sid, Conversation.tenant_id == tenant_id
+        )
     )
     return result.scalar_one_or_none()
 
@@ -55,6 +65,7 @@ async def end(conversation: Conversation, db: AsyncSession) -> Conversation:
 
 async def get_all_conversations(
     db: AsyncSession,
+    tenant_id: int,
     limit: int = 10,
     page: int = 1,
     user_timezone: str = "UTC",
@@ -65,6 +76,7 @@ async def get_all_conversations(
     query = (
         select(Conversation)
         .options(joinedload(Conversation.patient))
+        .where(Conversation.tenant_id == tenant_id)
         .order_by(Conversation.started_at.desc())
     )
     if status is not None and status != "all":
@@ -90,9 +102,9 @@ async def get_all_conversations(
 
 
 async def update_recording_url(
-    call_sid: str, recording_link: HttpUrl, db: AsyncSession
+    call_sid: str, recording_link: HttpUrl, db: AsyncSession, tenant_id: int
 ):
-    conversation = await find_by_call_sid(call_sid, db)
+    conversation = await find_by_call_sid(call_sid, db, tenant_id=tenant_id)
     if conversation is None:
         raise HTTPException(status_code=400, detail={"message": "Call not found"})
 
@@ -100,8 +112,12 @@ async def update_recording_url(
     await db.commit()
 
 
-async def find_by_id(id: int, db: AsyncSession) -> Conversation | None:
-    result = await db.execute(select(Conversation).where(Conversation.id == id))
+async def find_by_id(id: int, db: AsyncSession, tenant_id: int) -> Conversation | None:
+    result = await db.execute(
+        select(Conversation).where(
+            Conversation.id == id, Conversation.tenant_id == tenant_id
+        )
+    )
     return result.scalar_one_or_none()
 
 

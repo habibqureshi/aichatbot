@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Literal
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.db import get_db
+from schemas.auth import TokenPayload
 from services import conversation_service, message_service, auth_service
 from schemas.common import PaginatedResponse
 from schemas.conversation import Conversation
@@ -23,10 +24,16 @@ async def list_conversations(
         None, description="Filter by conversation status"
     ),
     q: str | None = Query(None, description="Search query to filter conversations"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ) -> PaginatedResponse[Conversation]:
     return await conversation_service.get_all_conversations(
-        db=db, limit=limit, page=page, user_timezone=user_timezone, status=status, q=q
+        db=db,
+        limit=limit,
+        page=page,
+        user_timezone=user_timezone,
+        status=status,
+        q=q,
+        tenant_id=current_user.tenant_id,
     )
 
 
@@ -36,8 +43,12 @@ async def get_conversation(
     limit: int = Query(10, le=100),
     page: int = Query(1),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
     return await message_service.get_messages_by_conversation_id(
-        db=db, conversation_id=conversation_id, limit=limit, page=page
+        db=db,
+        conversation_id=conversation_id,
+        limit=limit,
+        page=page,
+        tenant_id=current_user.tenant_id,
     )

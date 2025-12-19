@@ -2,10 +2,12 @@ from fastapi import APIRouter, Request, Response, Depends, Form, HTTPException
 from twilio.twiml.voice_response import VoiceResponse
 from db.db import get_db, AsyncSession
 from fastapi.responses import StreamingResponse
+from schemas.auth import TokenPayload
 from schemas.twilio import TwilioIncoming, parse_webhook, TwilioRecordingCallback
-from services import appointment_service, conversation_service
+from services import appointment_service, auth_service, conversation_service
 import aiohttp
 from configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
+from utils.tenant_context import TenantContext, get_tenant_context
 
 router = APIRouter(prefix="/api/v1/appointment", tags=["appointment_workflow"])
 
@@ -15,12 +17,14 @@ async def receive_call(
     req: Request,
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context),
 ):
     resp = await appointment_service.greeting(
         data=data,
         db=db,
         action_url=req.url_for("process_voice"),
         recording_status_callback=req.url_for("recording_status"),
+        tenant_id=tenant.tenant_id,
     )
     return Response(content=str(resp), media_type="application/xml")
 
@@ -30,12 +34,14 @@ async def process_voice(
     req: Request,
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context),
 ):
     resp = await appointment_service.process_speech(
         action_url=req.url_for("process_voice"),
         db=db,
         data=data,
         feedback_url=req.url_for("feedback"),
+        tenant_id=tenant.tenant_id,
     )
     return Response(content=str(resp), media_type="application/xml")
 
@@ -44,12 +50,13 @@ async def process_voice(
 async def feedback(
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context),
 ):
-    print(data)
-
     response = VoiceResponse()
     if data.Digits == "2":  # unsatisfied
-        conversation = await conversation_service.find_by_call_sid(data.CallSid, db)
+        conversation = await conversation_service.find_by_call_sid(
+            data.CallSid, db, tenant.tenant_id
+        )
         if conversation:
             conversation.resolved_status = "unsatisfied"
             await db.commit()
@@ -62,10 +69,13 @@ async def feedback(
 
 @router.post("/status/change")
 async def status_change(
-    data: TwilioIncoming = Depends(parse_webhook), db: AsyncSession = Depends(get_db)
+    data: TwilioIncoming = Depends(parse_webhook),
+    db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context),
 ):
-    print(data.model_dump())
-    await appointment_service.change_status(data=data, db=db)
+    await appointment_service.change_status(
+        data=data, db=db, tenant_id=tenant.tenant_id
+    )
     return {"message": "ok"}
 
 
@@ -73,16 +83,23 @@ async def status_change(
 async def recording_status(
     data: TwilioRecordingCallback = Form(...),
     db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context),
 ):
-    await conversation_service.update_recording_url(data.CallSid, data.RecordingUrl, db)
+    await conversation_service.update_recording_url(
+        data.CallSid, data.RecordingUrl, db, tenant.tenant_id
+    )
     return {"message": "ok"}
 
 
 @router.get("/{conversation_id}/stream")
 async def call_recording_stream(
-    conversation_id: int, db: AsyncSession = Depends(get_db)
+    conversation_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ):
-    conversation = await conversation_service.find_by_id(conversation_id, db)
+    conversation = await conversation_service.find_by_id(
+        conversation_id, db, current_user.tenant_id
+    )
     if conversation is None:
         raise HTTPException(status_code=400, detail="Conversation not found")
     if conversation.recording_link is None:

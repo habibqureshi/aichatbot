@@ -12,6 +12,7 @@ async def create_appointment(
     end_time: time,
     call_sid: str,
     db: AsyncSession,
+    tenant_id: int,
     doctor_id: int | None = None,
     status: str = "scheduled",
     notes: str | None = None,
@@ -25,6 +26,7 @@ async def create_appointment(
         doctor_id=doctor_id,
         status=status,
         notes=notes,
+        tenant_id=tenant_id,
     )
     db.add(appointment)
     await db.commit()
@@ -38,6 +40,7 @@ async def find_by_patient_number_and_date(
     start_time: time,
     duration: timedelta,
     db: AsyncSession,
+    tenant_id: int,
 ) -> Appointment:
     result = await db.execute(
         select(Appointment)
@@ -48,6 +51,7 @@ async def find_by_patient_number_and_date(
             Appointment.appointment_date == appointment_date,
             Appointment.start_time == start_time,
             Appointment.end_time == (start_time + duration),
+            Appointment.tenant_id == tenant_id,
         )
         .limit(1)
     )

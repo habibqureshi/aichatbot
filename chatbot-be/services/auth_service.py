@@ -15,10 +15,11 @@ from configs import (
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES,
     JWT_REFRESH_TOKEN_EXPIRE_DAYS,
 )
-from db.db import get_db
 from db.models import User as UserModel, RefreshToken as RefreshTokenModel
 import secrets
 from datetime import timezone
+
+from schemas.auth import TokenPayload
 
 bearer_token = HTTPBearer()
 
@@ -33,8 +34,8 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict[str, Any], expires_delta: int | None = None) -> str:
-    to_encode = data.copy()
+def create_access_token(data: TokenPayload, expires_delta: int | None = None) -> str:
+    to_encode = data.model_dump()
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=(expires_delta or JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     )
@@ -54,28 +55,49 @@ def decode_access_token(token: str) -> dict[str, Any]:
         ) from exc
 
 
-async def get_user_by_username(db: AsyncSession, username: str) -> UserModel | None:
-    result = await db.execute(select(UserModel).where(UserModel.username == username))
+async def get_user_by_username(
+    db: AsyncSession, username: str, tenant_id: int
+) -> UserModel | None:
+    result = await db.execute(
+        select(UserModel).where(
+            UserModel.username == username, UserModel.tenant_id == tenant_id
+        )
+    )
     return result.unique().scalar_one_or_none()
 
 
-async def get_user_by_id(db: AsyncSession, user_id: int) -> UserModel | None:
+async def get_user_by_id(
+    db: AsyncSession, user_id: int, tenant_id: int
+) -> UserModel | None:
     result = await db.execute(
-        select(UserModel).where(UserModel.id == user_id, UserModel.is_active == True)
+        select(UserModel).where(
+            UserModel.id == user_id,
+            UserModel.is_active == True,
+            UserModel.tenant_id == tenant_id,
+        )
     )
     return result.unique().scalar_one_or_none()
 
 
 async def create_user(
-    db: AsyncSession, username: str, password: str, full_name: str | None = None
+    db: AsyncSession,
+    username: str,
+    password: str,
+    tenant_id: int,
+    full_name: str | None = None,
 ) -> UserModel:
     hashed = get_password_hash(password)
-    user = UserModel(username=username, hashed_password=hashed, full_name=full_name)
+    user = UserModel(
+        username=username,
+        hashed_password=hashed,
+        full_name=full_name,
+        tenant_id=tenant_id,
+    )
     db.add(user)
     try:
         await db.flush()
         await db.commit()
-        return await get_user_by_id(db, user.id)
+        return await get_user_by_id(db, user.id, tenant_id)
     except IntegrityError as exc:
         await db.rollback()
         raise HTTPException(status_code=409, detail="User already exists") from exc
@@ -83,8 +105,7 @@ async def create_user(
 
 async def get_current_user(
     token: HTTPAuthorizationCredentials = Depends(bearer_token),
-    db: AsyncSession = Depends(get_db),
-) -> object:
+) -> TokenPayload:
     payload = decode_access_token(token.credentials)
     user_id = payload.get("user_id")
     if user_id is None:
@@ -92,18 +113,18 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         )
-    user = await get_user_by_id(db, user_id)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
-        )
-    return user
+    # user = await get_user_by_id(db, user_id)
+    # if user is None:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+    #     )
+    return TokenPayload.model_validate(payload)
 
 
 async def authenticate_user(
-    db: AsyncSession, username: str, password: str
+    db: AsyncSession, username: str, password: str, tenant_id: int
 ) -> UserModel | None:
-    user = await get_user_by_username(db, username)
+    user = await get_user_by_username(db, username, tenant_id)
     if not user:
         return None
     if not verify_password(password, user.hashed_password):
@@ -111,13 +132,15 @@ async def authenticate_user(
     return user
 
 
-async def create_refresh_token(db: AsyncSession, user_id: int) -> str:
+async def create_refresh_token(db: AsyncSession, user_id: int, tenant_id: int) -> str:
     token = secrets.token_urlsafe(48)
     # ensure expires_at is timezone-aware UTC
     expires_at = datetime.now(timezone.utc).replace(tzinfo=timezone.utc) + timedelta(
         days=JWT_REFRESH_TOKEN_EXPIRE_DAYS
     )
-    rt = RefreshTokenModel(user_id=user_id, token=token, expires_at=expires_at)
+    rt = RefreshTokenModel(
+        user_id=user_id, token=token, expires_at=expires_at, tenant_id=tenant_id
+    )
     db.add(rt)
     await db.flush()
     await db.commit()
@@ -125,16 +148,18 @@ async def create_refresh_token(db: AsyncSession, user_id: int) -> str:
 
 
 async def get_refresh_token_by_token(
-    db: AsyncSession, token: str
+    db: AsyncSession, token: str, tenant_id: int
 ) -> RefreshTokenModel | None:
     result = await db.execute(
-        select(RefreshTokenModel).where(RefreshTokenModel.token == token)
+        select(RefreshTokenModel).where(
+            RefreshTokenModel.token == token, RefreshTokenModel.tenant_id == tenant_id
+        )
     )
     return result.unique().scalar_one_or_none()
 
 
-async def revoke_refresh_token(db: AsyncSession, token: str) -> None:
-    rt = await get_refresh_token_by_token(db, token)
+async def revoke_refresh_token(db: AsyncSession, token: str, tenant_id: int) -> None:
+    rt = await get_refresh_token_by_token(db, token, tenant_id)
     if not rt:
         return
     rt.revoked = True
@@ -142,8 +167,10 @@ async def revoke_refresh_token(db: AsyncSession, token: str) -> None:
     await db.commit()
 
 
-async def refresh_access_token(db: AsyncSession, refresh_token: str) -> dict[str, str]:
-    rt = await get_refresh_token_by_token(db, refresh_token)
+async def refresh_access_token(
+    db: AsyncSession, refresh_token: str, tenant_id: int
+) -> dict[str, str]:
+    rt = await get_refresh_token_by_token(db, refresh_token, tenant_id)
     if not rt:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
@@ -165,7 +192,7 @@ async def refresh_access_token(db: AsyncSession, refresh_token: str) -> dict[str
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired"
         )
 
-    user = await get_user_by_id(db, rt.user_id)
+    user = await get_user_by_id(db, rt.user_id, tenant_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
@@ -174,6 +201,6 @@ async def refresh_access_token(db: AsyncSession, refresh_token: str) -> dict[str
     # rotate: revoke old token and issue a new one
     rt.revoked = True
     await db.flush()
-    new_refresh = await create_refresh_token(db, user.id)
-    access = create_access_token({"user_id": user.id})
+    new_refresh = await create_refresh_token(db, user.id, tenant_id)
+    access = create_access_token(TokenPayload(user_id=user.id, tenant_id=tenant_id))
     return {"access_token": access, "refresh_token": new_refresh}

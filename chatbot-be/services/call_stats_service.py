@@ -8,15 +8,18 @@ from sqlalchemy import func, case, text
 from db.models import Conversation, Patient
 
 
-async def total_calls(db: AsyncSession, start: datetime, end: datetime) -> int:
+async def total_calls(
+    db: AsyncSession, start: datetime, end: datetime, tenant_id: int
+) -> int:
     q = select(func.count(Conversation.id)).where(
-        Conversation.started_at.between(start, end)
+        Conversation.started_at.between(start, end),
+        Conversation.tenant_id == tenant_id,
     )
     return int((await db.scalar(q)) or 0)
 
 
 async def average_call_duration_seconds(
-    db: AsyncSession, start: datetime, end: datetime
+    db: AsyncSession, start: datetime, end: datetime, tenant_id: int
 ) -> float:
     """Compute average call duration in seconds fully inside SQL.
     'start' and 'end' are required.
@@ -31,13 +34,16 @@ async def average_call_duration_seconds(
         Conversation.ended_at.isnot(None),
         Conversation.started_at >= start,
         Conversation.started_at <= end,
+        Conversation.tenant_id == tenant_id,
     )
 
     avg_seconds = await db.scalar(q)
     return float(avg_seconds or 0.0)
 
 
-async def conversion_rate(db: AsyncSession, start: datetime, end: datetime) -> float:
+async def conversion_rate(
+    db: AsyncSession, start: datetime, end: datetime, tenant_id: int
+) -> float:
     total_expr = func.count(Conversation.id)
     success_expr = func.sum(
         case((Conversation.resolved_status == "satisfied", 1), else_=0)
@@ -46,6 +52,7 @@ async def conversion_rate(db: AsyncSession, start: datetime, end: datetime) -> f
     q = select(total_expr.label("total"), success_expr.label("success")).where(
         Conversation.ended_at.isnot(None),
         Conversation.started_at.between(start, end),
+        Conversation.tenant_id == tenant_id,
     )
 
     row = (await db.execute(q)).one_or_none()
@@ -61,7 +68,11 @@ async def conversion_rate(db: AsyncSession, start: datetime, end: datetime) -> f
 
 
 async def call_volume_timeseries(
-    db: AsyncSession, start: datetime, end: datetime, interval: str = "month"
+    db: AsyncSession,
+    start: datetime,
+    end: datetime,
+    tenant_id: int,
+    interval: str = "month",
 ) -> List[Dict[str, Any]]:
 
     fmt = "%Y-%m" if interval == "month" else "%Y-%m-%d"
@@ -74,7 +85,10 @@ async def call_volume_timeseries(
 
     q = (
         select(label_expr.label("label"), total_expr, success_expr)
-        .where(Conversation.started_at.between(start, end))
+        .where(
+            Conversation.started_at.between(start, end),
+            Conversation.tenant_id == tenant_id,
+        )
         .group_by(label_expr)
         .order_by(label_expr)
     )
@@ -90,8 +104,11 @@ async def call_volume_timeseries(
     return out
 
 
-async def live_call_activity(db: AsyncSession) -> Dict[str, Any]:
-    q = select(Conversation).where(Conversation.status == "active")
+async def live_call_activity(db: AsyncSession, tenant_id: int) -> Dict[str, Any]:
+    q = select(Conversation).where(
+        Conversation.status == "active",
+        Conversation.tenant_id == tenant_id,
+    )
 
     convs = (await db.execute(q)).scalars().unique().all()
 

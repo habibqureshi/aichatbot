@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.db import get_db
+from schemas.auth import TokenPayload
 from schemas.common import PaginatedResponse
 from schemas.doctor import Doctor, DoctorCreate, DoctorUpdate
 from services import doctor_service, auth_service
@@ -17,12 +18,13 @@ async def list_doctors(
     user_timezone: str = Query("UTC"),
     specialty: str | None = Query(None),
     name_filter: str | None = Query(None, alias="name"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ) -> PaginatedResponse[Doctor]:
     return await doctor_service.list_doctors(
         db=db,
         page=page,
         limit=limit,
+        tenant_id=current_user.tenant_id,
         user_timezone=user_timezone,
         specialty=specialty,
         name_filter=name_filter,
@@ -34,9 +36,11 @@ async def create_doctor(
     payload: DoctorCreate,
     db: AsyncSession = Depends(get_db),
     user_timezone: str = Query("UTC"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ) -> Doctor:
-    doctor = await doctor_service.create_doctor(db=db, payload=payload)
+    doctor = await doctor_service.create_doctor(
+        db=db, payload=payload, tenant_id=current_user.tenant_id
+    )
     return Doctor.model_validate(doctor, context={"timezone": user_timezone})
 
 
@@ -45,9 +49,11 @@ async def get_doctor(
     doctor_id: int,
     db: AsyncSession = Depends(get_db),
     user_timezone: str = Query("UTC"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ) -> Doctor:
-    doctor = await doctor_service.get_doctor(db=db, doctor_id=doctor_id)
+    doctor = await doctor_service.get_doctor(
+        db=db, doctor_id=doctor_id, tenant_id=current_user.tenant_id
+    )
     if doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
     return Doctor.model_validate(doctor, context={"timezone": user_timezone})
@@ -59,9 +65,11 @@ async def update_doctor(
     payload: DoctorUpdate,
     db: AsyncSession = Depends(get_db),
     user_timezone: str = Query("UTC"),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ) -> Doctor:
-    doctor = await doctor_service.get_doctor(db=db, doctor_id=doctor_id)
+    doctor = await doctor_service.get_doctor(
+        db=db, doctor_id=doctor_id, tenant_id=current_user.tenant_id
+    )
     if doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
 
@@ -73,9 +81,11 @@ async def update_doctor(
 async def delete_doctor(
     doctor_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(auth_service.get_current_user),
+    current_user: TokenPayload = Depends(auth_service.get_current_user),
 ) -> Response:
-    doctor = await doctor_service.get_doctor(db=db, doctor_id=doctor_id)
+    doctor = await doctor_service.get_doctor(
+        db=db, doctor_id=doctor_id, tenant_id=current_user.tenant_id
+    )
     if doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
 

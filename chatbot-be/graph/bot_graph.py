@@ -1,13 +1,11 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from langgraph.graph import START, StateGraph, END
 from nodes import ask_user, route, route_after_ask, reasoner_node_builder
 from graph_state import ChatState
 from langgraph.prebuilt import ToolNode
-import asyncmy
 from db.db import init_db
-from langgraph.checkpoint.mysql.asyncmy import AsyncMySaver
-from configs import DB_HOST, DB_PASS, DB_PORT, DB_USER, DB, MCP_URL
+from configs import MCP_URL
 from dotenv import load_dotenv
 from utils.mcp_client import MCPClient
 from langchain_mcp_adapters.tools import (
@@ -86,15 +84,22 @@ async def lifespan(app: FastAPI):
         raise
 
 
-async def get_graph(call_id: str, patient_number: str, db: AsyncSession) -> StateGraph:
+async def get_graph(
+    call_id: str, patient_number: str, db: AsyncSession, tenant_id: int
+) -> StateGraph:
     global my_checkpointer
     mcp_client = MCPClient()
     success = await mcp_client.connect(
-        url=MCP_URL, headers={"x-call-id": call_id, "x-patient-no": patient_number}
+        url=MCP_URL,
+        headers={
+            "x-call-id": call_id,
+            "x-patient-no": patient_number,
+            "x-tenant-id": str(tenant_id),
+        },
     )
     if not success:
         raise ConnectionError("Error during setup. Contact administrator!")
-    graph = await create_appointment_graph(mcp_client, db)
+    graph = await create_appointment_graph(mcp_client, db, tenant_id)
     # compiled_graph = graph.compile(checkpointer=my_checkpointer)
     return graph
 

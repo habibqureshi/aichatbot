@@ -1,8 +1,7 @@
-from src.configs import DB_HOST, DB_PASS, DB_PORT, DB_USER, DB, INSTANCE_CONNECTION_NAME
+from src.configs import DB_PASS, DB_USER, DB, INSTANCE_CONNECTION_NAME
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.engine import URL
 from contextlib import asynccontextmanager
 from google.cloud.sql.connector import Connector
 
@@ -44,7 +43,6 @@ async def init_db():
             creator=getconn_async,
             pool_size=10,
             max_overflow=2,
-            echo=True,
         )
         async_session = sessionmaker(
             bind=engine, class_=AsyncSession, expire_on_commit=False

@@ -4,14 +4,18 @@ from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 
 
-async def find_or_create(phone_number: str, db: AsyncSession) -> Patient:
+async def find_or_create(
+    phone_number: str, db: AsyncSession, tenant_id: int
+) -> Patient:
     result = await db.execute(
-        select(Patient).where(Patient.phone_number == phone_number)
+        select(Patient).where(
+            Patient.phone_number == phone_number, Patient.tenant_id == tenant_id
+        )
     )
     patient = result.scalars().first()
     if patient:
         return patient
-    patient = Patient(phone_number=phone_number)
+    patient = Patient(phone_number=phone_number, tenant_id=tenant_id)
     db.add(patient)
     try:
         await db.commit()
@@ -20,7 +24,9 @@ async def find_or_create(phone_number: str, db: AsyncSession) -> Patient:
     except IntegrityError:
         await db.rollback()
         result = await db.execute(
-            select(Patient).where(Patient.phone_number == phone_number)
+            select(Patient).where(
+                Patient.phone_number == phone_number, Patient.tenant_id == tenant_id
+            )
         )
         return result.scalars().first()
 

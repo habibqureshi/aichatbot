@@ -20,7 +20,6 @@ print("connected to chromadb")
 
 
 def add_to_store(documents):
-    print(collection.name)
     collection.add(
         ids=[str(uuid.uuid4()) for _ in range(len(documents))],
         documents=[doc.page_content for doc in documents],

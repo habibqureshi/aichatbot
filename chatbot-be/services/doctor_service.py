@@ -18,11 +18,16 @@ def _validate_time_range(slot: AvailabilitySlotCreate) -> None:
 
 
 async def _apply_availabilities(
-    db: AsyncSession, doctor_id: int, slots: list[AvailabilitySlotCreate]
+    db: AsyncSession,
+    doctor_id: int,
+    slots: list[AvailabilitySlotCreate],
+    tenant_id: int,
 ) -> None:
     print(slots)
     await db.execute(
-        delete(AvailabilityModel).where(AvailabilityModel.doctor_id == doctor_id)
+        delete(AvailabilityModel).where(
+            AvailabilityModel.doctor_id == doctor_id,
+        )
     )
     availabilities = []
     for slot in slots:
@@ -44,16 +49,17 @@ async def list_doctors(
     page: int,
     limit: int,
     user_timezone: str,
+    tenant_id: int,
     specialty: str | None = None,
     name_filter: str | None = None,
 ) -> PaginatedResponse[DoctorSchema]:
     query = (
         select(Doctor)
+        .where(Doctor.tenant_id == tenant_id)
         .options(joinedload(Doctor.availabilities))
         .order_by(Doctor.created_at.desc())
     )
-    count_query = select(func.count(Doctor.id))
-
+    count_query = select(func.count(Doctor.id)).where(Doctor.tenant_id == tenant_id)
     if specialty is not None:
         query = query.where(Doctor.specialty == specialty)
         count_query = count_query.where(Doctor.specialty == specialty)
@@ -76,27 +82,32 @@ async def list_doctors(
     )
 
 
-async def get_doctor(db: AsyncSession, doctor_id: int) -> Doctor | None:
+async def get_doctor(db: AsyncSession, doctor_id: int, tenant_id: int) -> Doctor | None:
     result = await db.execute(
         select(Doctor)
         .options(joinedload(Doctor.availabilities))
-        .where(Doctor.id == doctor_id)
+        .where(Doctor.id == doctor_id, Doctor.tenant_id == tenant_id)
     )
     return result.unique().scalar_one_or_none()
 
 
-async def create_doctor(db: AsyncSession, payload: DoctorCreate) -> Doctor:
+async def create_doctor(
+    db: AsyncSession, payload: DoctorCreate, tenant_id: int
+) -> Doctor:
     doctor = Doctor(
         name=payload.name,
         specialty=payload.specialty,
         phone_number=payload.phone_number,
+        tenant_id=tenant_id,
     )
     db.add(doctor)
 
     try:
         await db.flush()
         if payload.availabilities:
-            await _apply_availabilities(db, doctor.id, payload.availabilities)
+            await _apply_availabilities(
+                db, doctor.id, payload.availabilities, tenant_id
+            )
         await db.commit()
     except IntegrityError as exc:
         await db.rollback()

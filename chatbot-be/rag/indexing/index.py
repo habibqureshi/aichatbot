@@ -13,9 +13,9 @@ from indexing.splitter import recursive_split
 from indexing.store import add_to_store
 
 
-async def index_file_from_stream(f: UploadFile, index_name: str):
+async def index_file_from_stream(f: UploadFile, index_name: str, tenant_id: int):
     try:
-        documents = await load_file_from_stream(f, index_name)
+        documents = await load_file_from_stream(f, index_name, tenant_id)
         print(f"Loaded {documents} documents from stream")
         split_chunks = recursive_split(documents, chunk_size=1000, chunk_overlap=200)
         return add_to_store(split_chunks)

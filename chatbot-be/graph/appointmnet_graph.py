@@ -22,16 +22,16 @@ class AppointmentState(BaseModel):
 
 
 async def create_appointment_graph(
-    mcp_client: MCPClient, db: AsyncSession
+    mcp_client: MCPClient, db: AsyncSession, tenant_id: int
 ) -> CompiledStateGraph:
     """
     Creates and returns a LangGraph StateGraph for appointment scheduling.
     """
     menu_setting = await app_setting_service.get_app_setting_by_key_value(
-        db=db, key="MENU"
+        db=db, key="MENU", tenant_id=tenant_id
     )
     business_setting = await app_setting_service.get_app_setting_by_key_value(
-        db=db, key="INSTALLED_FOR"
+        db=db, key="INSTALLED_FOR", tenant_id=tenant_id
     )
     tags = ["common", business_setting]
     tools = [
@@ -67,17 +67,18 @@ async def create_appointment_graph(
             Ask for missing details naturally.
             Do not repeat information unless confirming an action.
             After completing any action, ask if they need anything else.
-            if you don't find any information in the retriever, respond with "I'm sorry, I don't have that information right now."
         General rules:
             Do not invent or assume information.
             Do not rely on your own memory for factual details.
             Always use the retriever for factual/general questions and custom capabilities.
             Call tools only when all required details have been collected.
-           ---------------------- 
+            if you don't find any information in the retriever, respond with "I'm sorry, I don't have that information right now."
+        Output format:
+            The response must have SSML tags for voice synthesis. only if the conversation is continued.
+        ---------------------- 
         {f"Custom capabilities: {menu_setting}" if menu_setting else ""}
         ----------------
         Remember: this is a phone call.
-        Use SSML tags where appropriate to enhance voice interaction.
         current date and time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
         """
         response = llm.invoke(

@@ -20,6 +20,7 @@ class Patient(Base):
     __tablename__ = "patients"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, index=True)
     phone_number = Column(String(100), unique=True, index=True)
     name = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -31,6 +32,7 @@ class Conversation(Base):
     __tablename__ = "conversations"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, index=True)
     patient_id = Column(Integer, ForeignKey("patients.id"))
     call_sid = Column(String(50), unique=True, index=True)
     started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -45,6 +47,7 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, index=True)
     conversation_id = Column(Integer, ForeignKey("conversations.id"))
     role = Column(String(50))
     content = Column(Text)
@@ -57,6 +60,7 @@ class Knowledge(Base):
     __tablename__ = "knowledges"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, index=True)
     name = Column(String(100), index=True, unique=True)
     blob_name = Column(String(255))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -67,6 +71,7 @@ class Doctor(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
+    tenant_id = Column(Integer, index=True)
     specialty = Column(String(100), nullable=True)
     phone_number = Column(String(100), unique=True, index=True)
     duration = Column(Integer, nullable=True)
@@ -81,6 +86,7 @@ class Availability(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     doctor_id = Column(Integer, ForeignKey("doctors.id"))
+    tenant_id = Column(Integer, index=True)
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     day_of_week = Column(
@@ -116,6 +122,7 @@ class Appointment(Base):
     id = Column(Integer, primary_key=True, index=True)
     patient_id = Column(Integer, ForeignKey("patients.id"))
     doctor_id = Column(Integer, ForeignKey("doctors.id"))
+    tenant_id = Column(Integer, index=True)
     appointment_date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
@@ -132,6 +139,7 @@ class RestaurantTable(Base):
     __tablename__ = "restaurant_tables"
     id = Column(Integer, primary_key=True, index=True)
     capacity = Column(Integer, nullable=False)
+    tenant_id = Column(Integer, index=True)
     table_number = Column(String(20), nullable=False)
     location = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=True)
@@ -142,6 +150,7 @@ class Reservation(Base):
     __tablename__ = "reservations"
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, ForeignKey("patients.id"))
+    tenant_id = Column(Integer, index=True)
     table_id = Column(Integer, ForeignKey("restaurant_tables.id"))
     reservation_date = Column(DateTime, nullable=False)
     party_size = Column(Integer, nullable=False)
@@ -167,6 +176,7 @@ class RestaurantSetting(Base):
     id = Column(Integer, primary_key=True, index=True)
     key = Column(String(100), nullable=False)
     value = Column(Text, nullable=False)
+    tenant_id = Column(Integer, index=True)
     description = Column(String(255))
     updated_at = Column(
         DateTime,

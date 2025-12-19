@@ -8,9 +8,15 @@ from schemas.message import Message as MessageSchema
 
 
 async def create(
-    conversation: Conversation, content: str, role: str, db: AsyncSession
+    conversation: Conversation,
+    content: str,
+    role: str,
+    db: AsyncSession,
+    tenant_id: int,
 ) -> Message:
-    message = Message(conversation_id=conversation.id, role=role, content=content)
+    message = Message(
+        conversation_id=conversation.id, role=role, content=content, tenant_id=tenant_id
+    )
     db.add(message)
     await db.commit()
     await db.refresh(message)
@@ -18,22 +24,30 @@ async def create(
 
 
 async def load_messages_by_conversation(
-    conversation: Conversation, db: AsyncSession
+    conversation: Conversation, db: AsyncSession, tenant_id: int
 ) -> List[Message]:
     result = await db.execute(
         select(Message)
-        .filter(Message.conversation_id == conversation.id)
+        .where(
+            Message.conversation_id == conversation.id, Message.tenant_id == tenant_id
+        )
         .order_by(Message.timestamp)
     )
     return result.scalars().all()
 
 
 async def get_messages_by_conversation_id(
-    conversation_id: int, db: AsyncSession, limit: int = 10, page: int = 1
+    conversation_id: int,
+    db: AsyncSession,
+    tenant_id: int,
+    limit: int = 10,
+    page: int = 1,
 ) -> PaginatedResponse[MessageSchema]:
     result = await db.execute(
         select(Message)
-        .filter(Message.conversation_id == conversation_id)
+        .filter(
+            Message.conversation_id == conversation_id, Message.tenant_id == tenant_id
+        )
         .offset((page - 1) * limit)
         .limit(limit)
         .order_by(desc(Message.timestamp))

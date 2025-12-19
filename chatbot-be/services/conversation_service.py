@@ -68,7 +68,6 @@ async def get_all_conversations(
     tenant_id: int,
     limit: int = 10,
     page: int = 1,
-    user_timezone: str = "UTC",
     status: str = None,
     q: str = None,
 ) -> PaginatedResponse[ConversationSchema]:
@@ -88,8 +87,7 @@ async def get_all_conversations(
         )
     result = await db.execute(query.limit(limit).offset(offset))
     conversations = [
-        ConversationSchema.model_validate(c, context={"timezone": user_timezone})
-        for c in result.scalars().all()
+        ConversationSchema.model_validate(c) for c in result.scalars().all()
     ]
 
     total = await db.scalar(select(func.count()).select_from(query.subquery()))

@@ -18,7 +18,7 @@ def register_tools(mcp: FastMCP):
         customer_name: str,
         reservation_datetime: str,
         ctx: Context,
-        party_size: int = 2,
+        party_size: int,
         location: Optional[str] = None,
         special_request: Optional[str] = None,
         duration_minutes: int = DEFAULT_RESERVATION_DURATION_MINUTES,
@@ -27,6 +27,8 @@ def register_tools(mcp: FastMCP):
         Create a table reservation for a customer.
 
         - `reservation_datetime` must be an ISO format datetime string.
+        - `customer_name` name of the customer for the reservation.
+        - `party_size` indicates the number of people for the reservation.
         """
         try:
             dt = datetime.fromisoformat(reservation_datetime)
@@ -183,7 +185,7 @@ def register_tools(mcp: FastMCP):
         preferred_date: str,
         start_time: str,
         ctx: Context,
-        party_size: int = 2,
+        party_size: int,
         max_tables: int = 5,
     ) -> List[dict[str, Any]] | str:
         """Find available tables for a given date and time.

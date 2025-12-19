@@ -30,7 +30,6 @@ async def list_conversations(
         db=db,
         limit=limit,
         page=page,
-        user_timezone=user_timezone,
         status=status,
         q=q,
         tenant_id=current_user.tenant_id,

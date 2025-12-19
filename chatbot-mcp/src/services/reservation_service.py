@@ -88,11 +88,11 @@ async def find_available_tables(
         )
         .distinct()
     )
-    filters = [
+    query = select(RestaurantTable).where(
         RestaurantTable.is_active == True,
-        RestaurantTable.capacity >= party_size,
+        RestaurantTable.capacity.between(party_size, party_size + 2),
         RestaurantTable.tenant_id == tenant_id,
-    ]
+    )
     if (
         overlapping_reservations is not None
         and len(
@@ -104,8 +104,8 @@ async def find_available_tables(
         )
         > 0
     ):
-        filters.append(RestaurantTable.id.notin_(reserved_table_ids))
+        query = query.where(RestaurantTable.id.notin_(reserved_table_ids))
     if location:
-        filters.append(RestaurantTable.location == location)
-    tables_q = await db.execute(select(RestaurantTable).where(*filters))
+        query = query.where(RestaurantTable.location == location)
+    tables_q = await db.execute(query)
     return tables_q.scalars().all()

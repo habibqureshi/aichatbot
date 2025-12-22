@@ -111,19 +111,29 @@ API.interceptors.request.use(
 
 // Response interceptor
 API.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle 401 - Token expired, try to refresh
+    const isRefreshRequest = originalRequest?.url?.includes("/api/v1/auth/refresh");
+
+    // Refresh token expired → logout immediately
+    if (isRefreshRequest && error.response?.status === 401) {
+      await clearSessionCookies();
+      if (typeof window !== "undefined") {
+        window.location.href = "/authentication";
+      }
+      return Promise.reject(error);
+    }
+
+    // Access token expired → try refresh ONCE
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       if (!refreshingToken) {
         const refreshToken = await getRefreshTokenFromCookie();
         if (!refreshToken) {
+          await clearSessionCookies();
           if (typeof window !== "undefined") {
             window.location.href = "/authentication";
           }
@@ -131,18 +141,19 @@ API.interceptors.response.use(
         }
 
         refreshingToken = axios
-          .post(`${ENV.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`, { refresh_token: refreshToken })
+          .post(`${ENV.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`, {
+            refresh_token: refreshToken,
+          })
           .then(async (res) => {
             await updateAccessToken(res.data.access_token);
-            if (res.data.refresh_token) await updateRefreshToken(res.data.refresh_token);
+            if (res.data.refresh_token) {
+              await updateRefreshToken(res.data.refresh_token);
+            }
             return res.data.access_token;
           })
-          .catch((refreshError) => {
-            throw refreshError;
-          })
-          .finally(() => (refreshingToken = null));
-      } else {
-        // console.log("[REFRESH QUEUE] Request queued, waiting for token refresh...");
+          .finally(() => {
+            refreshingToken = null;
+          });
       }
 
       try {
@@ -150,71 +161,11 @@ API.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return API(originalRequest);
       } catch {
+        await clearSessionCookies();
         if (typeof window !== "undefined") {
           window.location.href = "/authentication";
         }
         return Promise.reject(error);
-      }
-    }
-
-    if (error.response?.status === 403) {
-      await clearSessionCookies();
-      if (typeof window !== "undefined") {
-        window.location.href = "/authentication";
-      }
-    }
-
-    // Parse and format error messages uniformly
-    if (error.response?.data) {
-      const responseData = error.response.data;
-
-      // Handle ArrayBuffer responses (from responseType: "arraybuffer")
-      if (responseData instanceof ArrayBuffer) {
-        try {
-          const decoder = new TextDecoder();
-          const text = decoder.decode(responseData);
-          const parsed = JSON.parse(text);
-
-          error.response.data = parsed;
-
-          // Format the error message
-          if (parsed.detail) {
-            error.message = parsed.detail;
-          } else if (parsed.details && Array.isArray(parsed.details)) {
-            error.message = parsed.details.map((d: { message?: string }) => d.message).join(", ");
-          } else if (parsed.error) {
-            error.message = parsed.error;
-          }
-        } catch (e) {
-          console.error("Error parsing ArrayBuffer error response:", e);
-        }
-      }
-      // Handle JSON responses
-      else if (typeof responseData === "object") {
-        // Format validation errors (422 or 400)
-        if (error.response?.status === 422 || error.response?.status === 400) {
-          if (
-            responseData.details &&
-            Array.isArray(responseData.details) &&
-            responseData.details.length > 0
-          ) {
-            error.message = responseData.details
-              .map((detail: { message?: string }) => detail.message)
-              .join(", ");
-          } else if (responseData.detail) {
-            error.message = responseData.detail;
-          } else if (responseData.error) {
-            error.message = responseData.error;
-          }
-        }
-        // Handle other error formats
-        else if (responseData.detail) {
-          error.message = responseData.detail;
-        } else if (responseData.error) {
-          error.message = responseData.error;
-        } else if (responseData.message) {
-          error.message = responseData.message;
-        }
       }
     }
 

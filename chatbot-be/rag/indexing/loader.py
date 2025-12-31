@@ -46,7 +46,7 @@ async def load_file_from_stream(f: UploadFile, src: str, tenant_id: int) -> list
     try:
         content = await f.read()
         doc = Document(
-            page_content=content, metadata={"source": src, "tenant_id": tenant_id}
+            page_content=content, metadata={"source": src, "tenant_id": str(tenant_id)}
         )
         return [doc]
     except Exception as e:

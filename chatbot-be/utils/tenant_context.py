@@ -1,4 +1,4 @@
-from fastapi import Request, HTTPException, Depends
+from fastapi import Request, HTTPException, Depends, WebSocket
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.models import Tenant
 from db.db import get_db
@@ -23,6 +23,28 @@ class TenantContext:
             )
         return cls(tenant)
 
+    @classmethod
+    async def from_websocket(cls, websocket: WebSocket, db: AsyncSession):
+        host = websocket.headers.get("host")
+        if not host:
+            raise HTTPException(status_code=400, detail="Missing host header")
+
+        result = await db.execute(select(Tenant).where(Tenant.host == host))
+        tenant = result.scalar_one_or_none()
+
+        if not tenant:
+            raise HTTPException(
+                status_code=400, detail=f"No tenant found for host: {host}"
+            )
+
+        return cls(tenant)
+
 
 async def get_tenant_context(request: Request, db: AsyncSession = Depends(get_db)):
     return await TenantContext.from_request(request, db)
+
+
+async def get_tenant_context_from_ws(
+    websocket: WebSocket, db: AsyncSession = Depends(get_db)
+):
+    return await TenantContext.from_websocket(websocket=websocket, db=db)

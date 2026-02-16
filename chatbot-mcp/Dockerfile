@@ -16,7 +16,13 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
+
+
 ENV PATH="/app/.venv/bin:$PATH"
+
+RUN mkdir -p /app/.cache/chroma && \
+    python -c "from chromadb.utils.embedding_functions import DefaultEmbeddingFunction; DefaultEmbeddingFunction()(['warmup'])"
+
 
 EXPOSE 8000
 

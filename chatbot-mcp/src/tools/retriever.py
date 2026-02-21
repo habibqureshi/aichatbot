@@ -4,22 +4,39 @@ from src.configs import (
     CHROMA_INDEX_NAME,
     CHROMA_DB_TOKEN,
 )
-from chromadb import HttpClient
+import chromadb
 from fastmcp import Context, FastMCP
 from chromadb.config import Settings
 
-client = HttpClient(
-    host=CHROMA_DB_HOST,
-    port=int(CHROMA_DB_PORT),
-    ssl=int(CHROMA_DB_PORT) == 443,
-    settings=Settings(
-        chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
-        chroma_client_auth_credentials=CHROMA_DB_TOKEN,
-        anonymized_telemetry=False,
-    ),
-)
-collection = client.get_or_create_collection(name=CHROMA_INDEX_NAME)
+chroma_client = None
 
+
+
+def init_ChromaDB():
+    global chroma_client
+    if chroma_client is not None:
+        print("ChromaDB already initialized")
+        return chroma_client
+    print("Initializing ChromaDB")
+    chroma_client = chromadb.HttpClient(
+        host=CHROMA_DB_HOST,
+        port=int(CHROMA_DB_PORT),
+        ssl=int(CHROMA_DB_PORT) == 443,
+        settings=Settings(
+            chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+            chroma_client_auth_credentials=CHROMA_DB_TOKEN,
+            anonymized_telemetry=False,
+        ),
+    )
+    return chroma_client
+
+def get_collection():
+    print(f"Getting collection {CHROMA_INDEX_NAME}")
+    global chroma_client
+    if chroma_client is None:
+        print("ChromaDB not initialized, initializing...")
+        chroma_client = init_ChromaDB()
+    return chroma_client.get_or_create_collection(name=CHROMA_INDEX_NAME)
 
 def register_tools(mcp: FastMCP):
     @mcp.tool(tags=["common"])
@@ -38,7 +55,7 @@ def register_tools(mcp: FastMCP):
             str: A summarized string containing the most relevant information from the knowledge base.
         """
         try:
-            print(collection.name)
+            collection = get_collection()
             # Retrieve relevant documents from the knowledge base
             results = collection.query(
                 query_texts=[query],

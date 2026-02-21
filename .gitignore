@@ -41,7 +41,9 @@ chatbot-be/.env
 # App data (RAG/Chroma) - large/generated
 chatbot-be/chroma-data/
 chatbot-be/my_chroma_data/
-
+chroma-data/
+menu.txt
+quickex-395613-firebase-adminsdk-xxowy-cd97bc3489.json
 
 .venv/
 .env

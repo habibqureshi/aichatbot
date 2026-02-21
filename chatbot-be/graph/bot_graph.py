@@ -14,6 +14,7 @@ from langchain_mcp_adapters.tools import (
 from sqlalchemy.ext.asyncio import AsyncSession
 from aimodels import llm
 from graph.appointmnet_graph import create_appointment_graph
+from rag.indexing.store import init_ChromaDB
 
 # Load environment variables as early as possible
 load_dotenv()
@@ -77,6 +78,7 @@ async def lifespan(app: FastAPI):
         # my_checkpointer = AsyncMySaver(conn=checkpointer_conn)
         # await my_checkpointer.setup()
         await init_db()
+        init_ChromaDB()
         print("LangGraph and MySQL Checkpointer initialized successfully.")
         yield
     except Exception as e:

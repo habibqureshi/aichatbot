@@ -111,15 +111,14 @@ async def process_speech(
         conversation.patient_id, db, tenant_id=tenant_id
     )
     lc_messages = (
-        [HumanMessage(content=f"Patient name is {patient.name}")]
-        if patient.name
-        else []
+        [HumanMessage(content=f"Caller name is {patient.name}")] if patient.name else []
     ) + [
         HumanMessage(content=conv_message.content)
         for conv_message in await message_service.load_messages_by_conversation(
             conversation=conversation, db=db, tenant_id=tenant_id
         )
     ]
+    print("user said", data.SpeechResult)
     await message_service.create(
         conversation=conversation,
         content=data.SpeechResult,
@@ -193,6 +192,7 @@ async def process_speech(
         )
         gather.say(final_message.strip(), voice=VOICE)
         resp.append(gather)
+    print("AI responded with", final_message)
     await message_service.create(
         conversation=conversation,
         content=final_message,

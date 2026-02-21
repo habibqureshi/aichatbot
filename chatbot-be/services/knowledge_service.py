@@ -32,7 +32,7 @@ async def get(
         .select_from(Knowledge)
         .where(Knowledge.tenant_id == tenant_id)
     )
-    knowledges_with_status = result.all()
+    knowledges_with_status = result.scalars().all()
     knowledges = [
         KnowledgeSchema.model_validate(result) for result in knowledges_with_status
     ]
@@ -43,11 +43,11 @@ async def get(
 
 
 async def delete_knowledge(knowledge_id: int, db: AsyncSession):
-    knowledge = await db.get(Knowledge, knowledge_id, Knowledge)
+    knowledge = await db.get(Knowledge, knowledge_id)
     collection = get_collection()
     if not knowledge:
         raise HTTPException(status_code=400, detail="Knowledge not found.")
-  
+
     collection.delete(where={"source": knowledge.blob_name})
     await db.delete(knowledge)
     await db.commit()

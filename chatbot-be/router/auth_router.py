@@ -22,6 +22,7 @@ async def login(
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
 ):
+    print(f"Login payload: {payload}")
     user = await auth_service.authenticate_user(
         db, payload.username, payload.password, tenant.tenant_id
     )

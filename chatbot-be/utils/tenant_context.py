@@ -13,6 +13,7 @@ class TenantContext:
     @classmethod
     async def from_request(cls, request: Request, db: AsyncSession):
         host = request.headers.get("host")
+        print(f"Host: {host}")
         if not host:
             raise HTTPException(status_code=400, detail="Missing host header")
         result = await db.execute(select(Tenant).where(Tenant.host == host))

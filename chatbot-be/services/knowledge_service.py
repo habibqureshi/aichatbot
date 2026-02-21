@@ -5,7 +5,7 @@ from sqlalchemy.future import select
 from typing import List
 from schemas.knowledge import Knowledge as KnowledgeSchema
 from schemas.common import PaginatedResponse
-from rag.indexing.store import collection
+from rag.indexing.store import get_collection
 from fastapi import HTTPException
 
 
@@ -44,8 +44,10 @@ async def get(
 
 async def delete_knowledge(knowledge_id: int, db: AsyncSession):
     knowledge = await db.get(Knowledge, knowledge_id, Knowledge)
+    collection = get_collection()
     if not knowledge:
         raise HTTPException(status_code=400, detail="Knowledge not found.")
+  
     collection.delete(where={"source": knowledge.blob_name})
     await db.delete(knowledge)
     await db.commit()

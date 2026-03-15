@@ -27,9 +27,12 @@ def register_tools(mcp: FastMCP):
         Create a table reservation for a customer.
 
         - `reservation_datetime` must be an ISO format datetime string.
-        - `customer_name` name of the customer for the reservation.
+        - `customer_name` name of the caller for the reservation.
         - `party_size` indicates the number of people for the reservation.
         """
+        print(f"{customer_name} tool customer name")
+        print(f"{ctx} tool customer name")
+
         try:
             dt = datetime.fromisoformat(reservation_datetime)
         except ValueError:

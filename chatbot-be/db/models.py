@@ -232,6 +232,7 @@ class Reservation(Base):
         default="pending",
         index=True,
     )
+    customer = relationship("Patient", lazy="joined") 
     special_request = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     cancelled_at = Column(DateTime, nullable=True)

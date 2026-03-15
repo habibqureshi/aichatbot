@@ -13,16 +13,20 @@ from langchain_mcp_adapters.tools import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
+from logging import Logger
+
+
 
 
 class AppointmentState(BaseModel):
     messages: Annotated[List[BaseMessage], add_messages]
     user_input: Optional[str] = None
     patient_phone: Optional[str] = None
+    patient_name: Optional[str] = None
 
 
 async def create_appointment_graph(
-    mcp_client: MCPClient, db: AsyncSession, tenant_id: int
+    mcp_client: MCPClient, db: AsyncSession, tenant_id: int, log:Logger
 ) -> CompiledStateGraph:
     """
     Creates and returns a LangGraph StateGraph for appointment scheduling.
@@ -39,10 +43,15 @@ async def create_appointment_graph(
         for tool in await mcp_client.client.list_tools()
         if not tags or set(tool.meta.get("_fastmcp", {}).get("tags", [])) & set(tags)
     ]
+    # INSERT_YOUR_CODE
+    log.info("Appointment Graph: tools added to workflow:")
+    for t in tools:
+        log.info(f"  - {getattr(t, 'name', getattr(t, '__name__', str(t)))}")
+    
     llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0).bind_tools(tools=tools)
 
     def classify_intent(state: AppointmentState):
-        print(state)
+        log.info(state)
         prompt = f"""
         You are an inbound calling assistant. The business type is {business_setting or "clinic"}. The system includes core capabilities (schedule/reserve, reschedule, cancel) and may include additional custom capabilities defined in App Settings.
         Your responsibilities:

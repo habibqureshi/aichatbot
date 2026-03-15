@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from aimodels import llm
 from graph.appointmnet_graph import create_appointment_graph
 from rag.indexing.store import init_ChromaDB
-
+from logging import Logger
 # Load environment variables as early as possible
 load_dotenv()
 
@@ -87,7 +87,7 @@ async def lifespan(app: FastAPI):
 
 
 async def get_graph(
-    call_id: str, patient_number: str, db: AsyncSession, tenant_id: int
+    call_id: str, patient_number: str, db: AsyncSession, tenant_id: int, log:Logger
 ) -> StateGraph:
     global my_checkpointer
     mcp_client = MCPClient()
@@ -101,7 +101,7 @@ async def get_graph(
     )
     if not success:
         raise ConnectionError("Error during setup. Contact administrator!")
-    graph = await create_appointment_graph(mcp_client, db, tenant_id)
+    graph = await create_appointment_graph(mcp_client, db, tenant_id, log)
     # compiled_graph = graph.compile(checkpointer=my_checkpointer)
     return graph
 

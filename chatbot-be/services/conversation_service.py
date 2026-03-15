@@ -22,12 +22,15 @@ async def find_or_create(
     )
     conversation = result.scalars().first()
     if conversation:
+        print(f"${data.CallSid} conversation found ${conversation.id}")
         return conversation
     conversation = Conversation(
         call_sid=data.CallSid,
         patient_id=patient.id,
         tenant_id=tenant_id,
     )
+    print(f"${data.CallSid} new conversation")
+
     db.add(conversation)
     try:
 

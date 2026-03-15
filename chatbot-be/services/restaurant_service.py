@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from db.models import (
     RestaurantTable as RestaurantTableModel,
@@ -79,7 +80,7 @@ async def create_table(
             status_code=409, detail="Table could not be created"
         ) from exc
 
-    return await get_table(db, table.id)
+    return await get_table(db, table.id, tenant_id)
 
 
 async def update_table(
@@ -108,7 +109,9 @@ async def list_reservations(
 ):
     query = (
         select(ReservationModel)
+        .options(joinedload(ReservationModel.customer))  # ✅ eagerly load patient
         .where(ReservationModel.tenant_id == tenant_id)
+
         .order_by(ReservationModel.created_at.desc())
     )
     count_query = select(func.count(ReservationModel.id)).where(
@@ -123,8 +126,12 @@ async def list_reservations(
         count_query = count_query.where(ReservationModel.status == status)
 
     result = await db.execute(query.offset((page - 1) * limit).limit(limit))
+    result_list = result.scalars().unique().all()
+    for r in result_list:
+        print("type", type(r))
+        print("vars", vars(r))  
     reservations = [
-        ReservationSchema.model_validate(r) for r in result.scalars().unique().all()
+        ReservationSchema.model_validate(r) for r in result_list
     ]
 
     total = await db.scalar(count_query)

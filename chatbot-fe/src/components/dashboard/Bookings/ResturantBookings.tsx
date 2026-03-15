@@ -21,7 +21,7 @@ const columns: ExtendedColumnDef<TableBooking>[] = [
     ),
   },
   {
-    accessorKey: "customer_id",
+    accessorKey: "customer.name",
     header: "CUSTOMER",
     width: "200px",
     cell: ({ row }) => {

@@ -1,3 +1,4 @@
+from logging import Logger
 from fastapi import APIRouter, Request, Response, Depends, Form, HTTPException
 from twilio.twiml.voice_response import VoiceResponse
 from db.db import get_db, AsyncSession
@@ -8,6 +9,9 @@ from services import appointment_service, auth_service, conversation_service
 import aiohttp
 from configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
 from utils.tenant_context import TenantContext, get_tenant_context
+from logger import get_logger
+from langfuse import observe,propagate_attributes
+
 
 router = APIRouter(prefix="/api/v1/appointment", tags=["appointment_workflow"])
 
@@ -18,31 +22,41 @@ async def receive_call(
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
+    log:Logger=Depends(get_logger)
+    
 ):
+    # log = get_logger(data.CallSid)
+    log.info(f"call received")
+    log.info(f"{data.CallSid} Received call from {data.From}")
     resp = await appointment_service.greeting(
         data=data,
         db=db,
         action_url=req.url_for("process_voice"),
         recording_status_callback=req.url_for("recording_status"),
         tenant_id=tenant.tenant_id,
+        log=log
     )
     return Response(content=str(resp), media_type="application/xml")
 
-
+@observe
 @router.post("/process/voice")
 async def process_voice(
     req: Request,
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
+    log:Logger=Depends(get_logger)
 ):
-    resp = await appointment_service.process_speech(
-        action_url=req.url_for("process_voice"),
-        db=db,
-        data=data,
-        feedback_url=req.url_for("feedback"),
-        tenant_id=tenant.tenant_id,
-    )
+    log.info(f"Processing voice")
+    with propagate_attributes(tags=["callerID", data.CallSid],session_id=data.CallSid):
+        resp = await appointment_service.process_speech(
+            action_url=req.url_for("process_voice"),
+            db=db,
+            data=data,
+            feedback_url=req.url_for("feedback"),
+            tenant_id=tenant.tenant_id,
+            log=log
+        )
     return Response(content=str(resp), media_type="application/xml")
 
 
@@ -52,6 +66,7 @@ async def feedback(
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
 ):
+    print(f"feedback {data.CallSid}")
     response = VoiceResponse()
     if data.Digits == "2":  # unsatisfied
         conversation = await conversation_service.find_by_call_sid(
@@ -72,9 +87,11 @@ async def status_change(
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
+    log:Logger=Depends(get_logger)
 ):
+    log.info(f"Status change: {data}")
     await appointment_service.change_status(
-        data=data, db=db, tenant_id=tenant.tenant_id
+        data=data, db=db, tenant_id=tenant.tenant_id, log=log
     )
     return {"message": "ok"}
 
@@ -84,7 +101,9 @@ async def recording_status(
     data: TwilioRecordingCallback = Form(...),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
+    log:Logger= Depends(get_logger)
 ):
+    log.info(f"Recording url {data}")
     await conversation_service.update_recording_url(
         data.CallSid, data.RecordingUrl, db, tenant.tenant_id
     )

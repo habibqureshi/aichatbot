@@ -110,6 +110,7 @@ async def recording_status(
     return {"message": "ok"}
 
 
+
 @router.get("/{conversation_id}/stream")
 async def call_recording_stream(
     conversation_id: int,
@@ -138,3 +139,25 @@ async def call_recording_stream(
                     yield chunk
 
     return StreamingResponse(mp3_streamer(), media_type="audio/mpeg")
+
+
+# The `callerSid` is not required in the `/test/intent` endpoint.
+# However, if you have it as a required parameter in your OpenAPI (Swagger) docs for some endpoints,
+# it's likely because other endpoints depend on a call/caller session ID to link to a Twilio call/conversation.
+# For `/test/intent`, you do NOT need `callerSid`.
+# If Swagger shows `callerSid` as required for this endpoint, it's probably a copy-paste or schema issue;
+# this endpoint only needs user input (or whatever parameters you define).
+@observe
+@router.post("/test/intent")
+async def testintent(
+    userInput: str,
+    thread_id: str,
+    db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context),
+    log: Logger = Depends(get_logger),
+):
+    # Only use userInput for testing intent; callerSid is not required here.
+    with propagate_attributes(tags=["callerID", "testing"],session_id="test"):
+    
+        intent = await appointment_service.test_intent(userInput,thread_id, log)
+    return {"intent": intent}

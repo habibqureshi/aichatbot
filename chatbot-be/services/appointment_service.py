@@ -14,13 +14,15 @@ from services import (
     app_setting_service,
 )
 from graph.bot_graph import get_graph
-from langgraph.graph.state import CompiledStateGraph
-from langchain_core.messages import HumanMessage, SystemMessage
+from graph.intent_graph import voice_ai_graph
+from langgraph.graph.state import CompiledStateGraph, RunnableConfig
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from graph.appointmnet_graph import AppointmentState
 from twilio.rest import Client
 from configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
-from langfuse import get_client 
+from langfuse import get_client, observe 
 from langfuse.langchain import CallbackHandler
+
  
 # Initialize Langfuse client
 langfuse = get_client()
@@ -143,10 +145,8 @@ async def process_speech(
     patient = await patient_service.find_by_id(
         conversation.patient_id, db, tenant_id=tenant_id
     )
-    lc_messages = (
-        [SystemMessage(content=f"Caller name is {patient.name}")] if patient.name else []
-    ) + [
-        HumanMessage(content=conv_message.content)
+    lc_messages = [
+       HumanMessage(content=conv_message.content) if conv_message.role == "user" else AIMessage(content=conv_message.content)
         for conv_message in await message_service.load_messages_by_conversation(
             conversation=conversation, db=db, tenant_id=tenant_id
         )
@@ -164,7 +164,7 @@ async def process_speech(
     log.info(f"invoking graph")
     ai_response = await graph.ainvoke(
         AppointmentState(
-            messages=lc_messages + [HumanMessage(content=data.SpeechResult)],
+            messages=lc_messages ,
             user_input=data.SpeechResult,
             patient_phone=data.From,
             patient_name=patient.name
@@ -253,3 +253,33 @@ async def change_status(data: TwilioIncoming, db: AsyncSession, tenant_id: int, 
         if conversation.status == "active":
             await conversation_service.end(conversation=conversation, db=db)
             log.info(f"Conversation ended: {conversation}")
+        
+
+
+async def test_intent(user_input: str, thread_id: str, log: Logger) -> str:
+    """
+    Helper function to run the intent classification graph for a given user input.
+    Returns the predicted intent label (the `next_agent` value from the graph state).
+    """
+    graph = await voice_ai_graph(log)
+    log.info(f"user input {user_input}")
+
+    # Pass a dict (NOT a Pydantic model) so we only update the keys we care about.
+    # This prevents overwriting checkpointed fields like `next_agent` with None.
+    state = {
+        "user_input": user_input,
+        "messages": [HumanMessage(content=user_input)],
+    }
+    config: RunnableConfig = {"callbacks": [langfuse_handler],"configurable": {"thread_id": thread_id}}
+    result = await graph.ainvoke(state,config=config)
+    log.info(f"1 Intent test for '{user_input}' -> {result}")
+
+    # `result` is typically a dict-like state; we pull out the classified intent.
+    intent = None
+    if isinstance(result, dict):
+        intent = result.get("next_agent")
+    else:
+        intent = getattr(result, "next_agent", None)
+    log.info(f"2 Intent test for '{user_input}' -> {intent}")
+    return result["messages"]
+

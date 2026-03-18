@@ -13,7 +13,7 @@ DEFAULT_RESERVATION_DURATION_MINUTES = 90
 
 
 def register_tools(mcp: FastMCP):
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["restaurant","appointment_tool"])
     async def reserve_table(
         customer_name: str,
         reservation_datetime: str,

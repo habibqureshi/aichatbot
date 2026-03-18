@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from fastapi import UploadFile
 from langchain_google_community.gcs_file import GCSFileLoader
 import os
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 load_dotenv()
 

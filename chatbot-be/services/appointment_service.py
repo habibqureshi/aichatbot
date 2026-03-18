@@ -20,16 +20,16 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from graph.appointmnet_graph import AppointmentState
 from twilio.rest import Client
 from configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
-from langfuse import get_client, observe 
+from langfuse import get_client, observe
 from langfuse.langchain import CallbackHandler
 
- 
+
 # Initialize Langfuse client
 langfuse = get_client()
 
 
 # Initialize Langfuse CallbackHandler for Langchain (tracing)
-langfuse_handler  = CallbackHandler()
+langfuse_handler = CallbackHandler()
 
 
 background_tasks = BackgroundTasks()
@@ -44,7 +44,7 @@ async def greeting(
     action_url: URL,
     recording_status_callback: URL,
     tenant_id: int,
-    log:Logger
+    log: Logger,
 ) -> VoiceResponse:
     resp = VoiceResponse()
     patient = await patient_service.find_or_create(
@@ -64,12 +64,19 @@ async def greeting(
     greeting_message_saved = await app_setting_service.get_app_setting_by_key(
         db=db, key="GREETING", tenant_id=tenant_id
     )
-    
+
     # TODO: ADD variables for the greeting message
-    greeting_message = greeting_message_saved.value if (greeting_message_saved and greeting_message_saved.value) else "How i can help you today"
-    greeting_message = f"Hi {patient.name} {greeting_message}" if patient else f"Hi, {greeting_message}"
+    greeting_message = (
+        greeting_message_saved.value
+        if (greeting_message_saved and greeting_message_saved.value)
+        else "How i can help you today"
+    )
+    greeting_message = (
+        f"Hi {patient.name} {greeting_message}"
+        if patient
+        else f"Hi, {greeting_message}"
+    )
     log.info(f"greeting message ${greeting_message}")
-  
 
     message = await message_service.create(
         conversation=conversation,
@@ -111,13 +118,14 @@ async def greeting(
     resp.hangup()
     return resp
 
+
 async def process_speech(
     data: TwilioIncoming,
     action_url: URL,
     db: AsyncSession,
     feedback_url: URL,
     tenant_id: int,
-    log:Logger
+    log: Logger,
 ) -> VoiceResponse:
     resp = VoiceResponse()
     if not data.SpeechResult:
@@ -146,11 +154,17 @@ async def process_speech(
         conversation.patient_id, db, tenant_id=tenant_id
     )
     lc_messages = [
-       HumanMessage(content=conv_message.content) if conv_message.role == "user" else AIMessage(content=conv_message.content)
+        (
+            HumanMessage(content=conv_message.content)
+            if conv_message.role == "user"
+            else AIMessage(content=conv_message.content)
+        )
         for conv_message in await message_service.load_messages_by_conversation(
             conversation=conversation, db=db, tenant_id=tenant_id
         )
     ]
+    if patient.name:
+        lc_messages.append(SystemMessage(content=f"Caller name is {patient.name}"))
     log.info(f"{data.CallSid} user said: {data.SpeechResult}")
     await message_service.create(
         conversation=conversation,
@@ -160,17 +174,18 @@ async def process_speech(
         tenant_id=tenant_id,
     )
     log.info(f"Getting graph")
-    graph: CompiledStateGraph = await get_graph(data.CallSid, data.From, db, tenant_id, log)
+    graph: CompiledStateGraph = await get_graph(
+        data.CallSid, data.From, db, tenant_id, log
+    )
     log.info(f"invoking graph")
     ai_response = await graph.ainvoke(
         AppointmentState(
-            messages=lc_messages ,
+            messages=lc_messages,
             user_input=data.SpeechResult,
             patient_phone=data.From,
-            patient_name=patient.name
-
+            patient_name=patient.name,
         ),
-        config={"callbacks": [langfuse_handler]}
+        config={"callbacks": [langfuse_handler]},
     )
     final_message = ai_response.get("messages", [])[-1].content
     log.info(f"AI responded with: {final_message}")
@@ -242,7 +257,9 @@ async def process_speech(
     return resp
 
 
-async def change_status(data: TwilioIncoming, db: AsyncSession, tenant_id: int, log:Logger):
+async def change_status(
+    data: TwilioIncoming, db: AsyncSession, tenant_id: int, log: Logger
+):
     if data.CallStatus == "completed":
         conversation = await conversation_service.find_by_call_sid(
             call_sid=data.CallSid, db=db, tenant_id=tenant_id
@@ -253,7 +270,6 @@ async def change_status(data: TwilioIncoming, db: AsyncSession, tenant_id: int, 
         if conversation.status == "active":
             await conversation_service.end(conversation=conversation, db=db)
             log.info(f"Conversation ended: {conversation}")
-        
 
 
 async def test_intent(user_input: str, thread_id: str, log: Logger) -> str:
@@ -270,8 +286,11 @@ async def test_intent(user_input: str, thread_id: str, log: Logger) -> str:
         "user_input": user_input,
         "messages": [HumanMessage(content=user_input)],
     }
-    config: RunnableConfig = {"callbacks": [langfuse_handler],"configurable": {"thread_id": thread_id}}
-    result = await graph.ainvoke(state,config=config)
+    config: RunnableConfig = {
+        "callbacks": [langfuse_handler],
+        "configurable": {"thread_id": thread_id},
+    }
+    result = await graph.ainvoke(state, config=config)
     log.info(f"1 Intent test for '{user_input}' -> {result}")
 
     # `result` is typically a dict-like state; we pull out the classified intent.
@@ -282,4 +301,3 @@ async def test_intent(user_input: str, thread_id: str, log: Logger) -> str:
         intent = getattr(result, "next_agent", None)
     log.info(f"2 Intent test for '{user_input}' -> {intent}")
     return result["messages"]
-

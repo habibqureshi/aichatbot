@@ -5,7 +5,7 @@ from langgraph.graph import END, StateGraph, add_messages
 from langgraph.types import Command, interrupt
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from openai import BaseModel
-from aimodels.llm import llm,small_llm
+from aimodels.llm import llm, small_llm
 from graph.constants import GraphNode, IntentGraphState
 from utils.mcp_client import MCPClient
 from configs import MCP_URL
@@ -22,7 +22,9 @@ def supervisor_node(state: IntentGraphState) -> Command:
     # and route directly to that agent (e.g. user is answering follow-up questions)
     print("supervisor_node", state.next_agent)
     if state.next_agent and state.next_agent not in (GraphNode.UNSUPPORTED, None):
-        print(f"supervisor_node: resuming existing conversation with {state.next_agent}")
+        print(
+            f"supervisor_node: resuming existing conversation with {state.next_agent}"
+        )
         return Command(
             goto=state.next_agent,
             update={
@@ -31,7 +33,7 @@ def supervisor_node(state: IntentGraphState) -> Command:
         )
 
     system_msg = SystemMessage(
-       f"""You are an intent classifier.
+        f"""You are an intent classifier.
             Classify the user's message into ONE of these intents:
             ReservationAgent
             FaqAgent
@@ -60,12 +62,11 @@ def supervisor_node(state: IntentGraphState) -> Command:
 def unsupported() -> Command:
     print("unsupported")
 
-    
-
 
 compiled_graph = None
 
-async def voice_ai_graph(log:Logger):
+
+async def voice_ai_graph(log: Logger):
     global compiled_graph
     if compiled_graph is not None:
         return compiled_graph
@@ -82,7 +83,7 @@ async def voice_ai_graph(log:Logger):
         },
     )
     if not success:
-        raise ConnectionError("Error during setup. Contact administrator!",success)
+        raise ConnectionError("Error during setup. Contact administrator!", success)
     appointmentGraph = await get_appointment_graph(mcp_client, log)
     workflow = StateGraph(IntentGraphState)
     workflow.add_node("classify_intent", supervisor_node)
@@ -91,4 +92,3 @@ async def voice_ai_graph(log:Logger):
     workflow.add_edge("ReservationAgent", END)
     compiled_graph = workflow.compile(checkpointer=checkpointer)
     return compiled_graph
-

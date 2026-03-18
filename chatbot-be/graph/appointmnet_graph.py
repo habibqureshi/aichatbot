@@ -92,7 +92,7 @@ async def create_appointment_graph(
 
         CORE RULES:
         - Keep responses brief and conversational (this is a voice call)
-        - Collect missing info naturally before calling tools
+        - Collect missing info one at a time naturally before calling tools
         - NEVER call the same tool twice for the same question
         - NEVER invent information or answer from memory
         - Always confirm details with the caller before taking any action

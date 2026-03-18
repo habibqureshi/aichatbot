@@ -164,7 +164,10 @@ async def process_speech(
         )
     ]
     if patient.name:
-        lc_messages.append(SystemMessage(content=f"Caller name is {patient.name}"))
+        lc_messages.insert(
+            0,
+            HumanMessage(content=f"My name is: {patient.name}"),
+        )
     log.info(f"{data.CallSid} user said: {data.SpeechResult}")
     await message_service.create(
         conversation=conversation,

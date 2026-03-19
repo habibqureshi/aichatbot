@@ -1,9 +1,6 @@
-from doctest import debug
 from logging import Logger
 from twilio.twiml.voice_response import VoiceResponse, Start, Gather
-from twilio.twiml.voice_response import Record
 from fastapi import HTTPException, BackgroundTasks
-from db.models import Tenant
 from schemas.twilio import TwilioIncoming
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.datastructures import URL
@@ -16,11 +13,11 @@ from services import (
 from graph.bot_graph import get_graph
 from graph.intent_graph import voice_ai_graph
 from langgraph.graph.state import CompiledStateGraph, RunnableConfig
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from graph.appointmnet_graph import AppointmentState
 from twilio.rest import Client
 from configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
-from langfuse import get_client, observe
+from langfuse import get_client
 from langfuse.langchain import CallbackHandler
 
 
@@ -73,7 +70,7 @@ async def greeting(
     )
     greeting_message = (
         f"Hi {patient.name} {greeting_message}"
-        if patient
+        if patient.name
         else f"Hi, {greeting_message}"
     )
     log.info(f"greeting message ${greeting_message}")
@@ -166,7 +163,7 @@ async def process_speech(
     if patient.name:
         lc_messages.insert(
             0,
-            HumanMessage(content=f"My name is: {patient.name}"),
+            HumanMessage(content=f"[Caller: {patient.name}]"),
         )
     log.info(f"{data.CallSid} user said: {data.SpeechResult}")
     await message_service.create(

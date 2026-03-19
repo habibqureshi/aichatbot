@@ -94,7 +94,7 @@ async def create_appointment_graph(
         - Keep responses brief and conversational (this is a voice call)
         - Collect missing info one at a time naturally before calling tools
         - NEVER call the same tool twice for the same question
-        - NEVER invent information or answer from memory
+        - NEVER invent information or names or answer from memory. (User messages is your only source of truth about the caller and their needs)
         - Always confirm details with the caller before taking any action
         - After completing any action, ask if they need anything else
 

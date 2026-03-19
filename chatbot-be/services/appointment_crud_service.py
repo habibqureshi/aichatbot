@@ -1,14 +1,9 @@
-from fastapi import HTTPException
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-
-from db.models import Appointment as AppointmentModel, Doctor, Patient
+from db.models import Appointment as AppointmentModel
 from schemas.appointment import (
     Appointment as AppointmentSchema,
-    AppointmentCreate,
-    AppointmentUpdate,
 )
 from schemas.common import PaginatedResponse
 

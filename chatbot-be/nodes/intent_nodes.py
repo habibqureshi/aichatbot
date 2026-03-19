@@ -1,9 +1,7 @@
-from typing import Annotated, List, Optional
-from langgraph.graph import END, StateGraph, add_messages
-from langgraph.types import Command, interrupt
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langgraph.types import Command
+from langchain_core.messages import HumanMessage, SystemMessage
 from openai import BaseModel
-from aimodels.llm import llm,small_llm
+from aimodels.llm import small_llm
 from graph.constants import GraphNode, IntentGraphState
 
 
@@ -23,9 +21,9 @@ def supervisor_node(state: IntentGraphState) -> Command:
                 "next_agent": state.next_agent,
             },
         )
-    
+
     system_msg = SystemMessage(
-       f"""You are an intent classifier.
+        f"""You are an intent classifier.
             Classify the user's message into ONE of these intents:
             ReservationAgent
             FaqAgent
@@ -45,9 +43,7 @@ def supervisor_node(state: IntentGraphState) -> Command:
     print("supervisor_node", resp)
     # TODO need to review the logic of next agent and unsupported node
     return Command(
-        goto=(
-            resp.next_agent
-        ),
+        goto=(resp.next_agent),
         update={
             # "messages": [user_msg],
             "userInput": state.userInput,
@@ -58,5 +54,3 @@ def supervisor_node(state: IntentGraphState) -> Command:
 
 def unsupported() -> Command:
     print("unsupported")
-
-    

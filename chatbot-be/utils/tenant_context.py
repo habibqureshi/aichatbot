@@ -18,8 +18,6 @@ class TenantContext:
             print(f"Missing host header")
             raise HTTPException(status_code=400, detail="Missing host header")
         result = await db.execute(select(Tenant).where(Tenant.host == host))
-        # `scalar_one_or_none()` is a SQLAlchemy method that fetches exactly one row from the result set or returns None if there are no rows.
-        # It will raise an exception if there is more than one row, ensuring only a single result or no result at all.
         tenant = result.scalar_one_or_none()
         if not tenant:
             raise HTTPException(

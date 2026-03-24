@@ -1,6 +1,6 @@
 import json
-from langchain.schema import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pydantic import Json
 
 
@@ -20,7 +20,9 @@ def recursive_split(documents, chunk_size=50, chunk_overlap=10, separators=["\n\
     """
     para_docs = []
     for doc in documents:
-        paragraphs = doc.page_content.split("\n\n")  # or use "\n" if paragraphs use single line breaks
+        paragraphs = doc.page_content.split(
+            "\n\n"
+        )  # or use "\n" if paragraphs use single line breaks
     for para in paragraphs:
         clean_para = para.strip()
         if clean_para:

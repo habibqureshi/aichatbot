@@ -130,7 +130,7 @@ async def process_speech(
             input="speech",
             action=action_url,
             method="POST",
-            speech_timeout=60,
+            speech_timeout="auto",
             speech_model="phone_call",
             language="en-US",
         )
@@ -160,6 +160,11 @@ async def process_speech(
             conversation=conversation, db=db, tenant_id=tenant_id
         )
     ]
+    if patient.phone_number:
+        lc_messages.insert(
+            0,
+            HumanMessage(content=f"[Caller phone: {patient.phone_number}]"),
+        )
     if patient.name:
         lc_messages.insert(
             0,
@@ -246,6 +251,7 @@ async def process_speech(
         )
         gather.say(final_message.strip(), voice=VOICE)
         resp.append(gather)
+        resp.redirect(url=str(action_url), method="POST")
     log.info(f"{data.CallSid} AI responded with: {final_message}")
     await message_service.create(
         conversation=conversation,

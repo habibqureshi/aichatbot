@@ -1,5 +1,13 @@
 from logging import Logger
-from fastapi import APIRouter, Request, Response, Depends, Form, HTTPException
+from fastapi import (
+    APIRouter,
+    Request,
+    Response,
+    Depends,
+    Form,
+    HTTPException,
+    WebSocket,
+)
 from twilio.twiml.voice_response import VoiceResponse
 from db.db import get_db, AsyncSession
 from fastapi.responses import StreamingResponse
@@ -7,13 +15,41 @@ from schemas.auth import TokenPayload
 from schemas.twilio import TwilioIncoming, parse_webhook, TwilioRecordingCallback
 from services import appointment_service, auth_service, conversation_service
 import aiohttp
+import urllib.parse
 from configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
-from utils.tenant_context import TenantContext, get_tenant_context
-from logger import get_logger
-from langfuse import observe,propagate_attributes
+from utils.tenant_context import (
+    TenantContext,
+    get_tenant_context,
+    get_tenant_context_ws,
+)
+from logger import get_logger, get_ws_logger
+from langfuse import observe, propagate_attributes
 
 
 router = APIRouter(prefix="/api/v1/appointment", tags=["appointment_workflow"])
+
+
+@router.post("/ws/greeting")
+async def ws_greeting(
+    req: Request,
+    data: TwilioIncoming = Depends(parse_webhook),
+    db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context),
+):
+    stream_url = str(req.url_for("openai_stream_ws"))
+    stream_url = (
+        f"{stream_url}"
+        f"?CallSid={urllib.parse.quote_plus(data.CallSid)}"
+        f"&From={urllib.parse.quote_plus(data.From)}"
+        f"&To={urllib.parse.quote_plus(data.To)}"
+    )
+    resp = await appointment_service.ws_greeting(
+        data=data,
+        db=db,
+        action_url=stream_url,
+        tenant_id=tenant.tenant_id,
+    )
+    return Response(content=str(resp), media_type="application/xml")
 
 
 @router.post("/receive")
@@ -22,8 +58,7 @@ async def receive_call(
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
-    log:Logger=Depends(get_logger)
-    
+    log: Logger = Depends(get_logger),
 ):
     # log = get_logger(data.CallSid)
     log.info(f"call received")
@@ -34,9 +69,34 @@ async def receive_call(
         action_url=req.url_for("process_voice"),
         recording_status_callback=req.url_for("recording_status"),
         tenant_id=tenant.tenant_id,
-        log=log
+        log=log,
     )
     return Response(content=str(resp), media_type="application/xml")
+
+
+@router.websocket("/ws/stream-call")
+async def stream_call_ws(
+    websocket: WebSocket,
+    db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context_ws),
+    log: Logger = Depends(get_ws_logger),
+):
+    await appointment_service.stream_call(
+        websocket=websocket, db=db, tenant_id=tenant.tenant_id, log=log
+    )
+
+
+@router.websocket("/openai/stream")
+async def openai_stream_ws(
+    websocket: WebSocket,
+    db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context_ws),
+    log: Logger = Depends(get_ws_logger),
+):
+    await appointment_service.openai_stream(
+        websocket=websocket, db=db, tenant_id=tenant.tenant_id, log=log
+    )
+
 
 @observe
 @router.post("/process/voice")
@@ -45,17 +105,17 @@ async def process_voice(
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
-    log:Logger=Depends(get_logger)
+    log: Logger = Depends(get_logger),
 ):
     log.info(f"Processing voice")
-    with propagate_attributes(tags=["callerID", data.CallSid],session_id=data.CallSid):
+    with propagate_attributes(tags=["callerID", data.CallSid], session_id=data.CallSid):
         resp = await appointment_service.process_speech(
             action_url=req.url_for("process_voice"),
             db=db,
             data=data,
             feedback_url=req.url_for("feedback"),
             tenant_id=tenant.tenant_id,
-            log=log
+            log=log,
         )
     return Response(content=str(resp), media_type="application/xml")
 
@@ -87,7 +147,7 @@ async def status_change(
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
-    log:Logger=Depends(get_logger)
+    log: Logger = Depends(get_logger),
 ):
     log.info(f"Status change: {data}")
     await appointment_service.change_status(
@@ -101,14 +161,13 @@ async def recording_status(
     data: TwilioRecordingCallback = Form(...),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
-    log:Logger= Depends(get_logger)
+    log: Logger = Depends(get_logger),
 ):
     log.info(f"Recording url {data}")
     await conversation_service.update_recording_url(
         data.CallSid, data.RecordingUrl, db, tenant.tenant_id
     )
     return {"message": "ok"}
-
 
 
 @router.get("/{conversation_id}/stream")
@@ -157,7 +216,7 @@ async def testintent(
     log: Logger = Depends(get_logger),
 ):
     # Only use userInput for testing intent; callerSid is not required here.
-    with propagate_attributes(tags=["callerID", "testing"],session_id="test"):
-    
-        intent = await appointment_service.test_intent(userInput,thread_id, log)
+    with propagate_attributes(tags=["callerID", "testing"], session_id="test"):
+
+        intent = await appointment_service.test_intent(userInput, thread_id, log)
     return {"intent": intent}

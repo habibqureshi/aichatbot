@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import date, time, datetime
 from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict
 
+from db.models import Conversation, Patient as PatientModel
 from schemas.common import TimezoneMixin
 from schemas.doctor import DoctorBase
 from schemas.patient import Patient
+from langchain_core.messages import BaseMessage
+from langgraph.graph.state import CompiledStateGraph
 
 
 class AppointmentBase(BaseModel):
@@ -29,7 +33,7 @@ class Appointment(TimezoneMixin, AppointmentBase):
     patient: Patient | None = None
     doctor: DoctorBase | None = None
 
-    _timezone_fields: ClassVar[list[str]] = ["appointment_date", "created_at"]
+    _timezone_fields: ClassVar[list[str]] = ["created_at"]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -47,3 +51,25 @@ class AppointmentUpdate(BaseModel):
     call_sid: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class StreamState:
+    def __init__(self):
+        self.stream_sid: str | None = None
+        self.audio_buffer = bytearray()
+        self.messages: list[BaseMessage] = []
+
+        self.is_ai_responding = False
+        self.is_speaking = False
+        self.is_interrupted = False
+
+        self.silence_counter = 0
+        self.interruption_speech_duration = 0
+
+        self.conversation: Conversation | None = None
+        self.patient: PatientModel | None = None
+        self.graph: CompiledStateGraph | None = None
+
+        self.resample_state = None
+        self.processing_task: asyncio.Task | None = None
+        self.stop = False

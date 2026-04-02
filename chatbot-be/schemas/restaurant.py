@@ -59,9 +59,7 @@ class Reservation(TimezoneMixin, ReservationBase):
     table: RestaurantTable | None = None
 
     _timezone_fields: ClassVar[list[str]] = [
-        "reservation_date",
         "created_at",
-        "cancelled_at",
     ]
 
     model_config = ConfigDict(from_attributes=True)

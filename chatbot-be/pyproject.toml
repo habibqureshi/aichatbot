@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "setuptools<81",
     "langgraph>=0.2.0",
     "langchain>=0.3.0",
     "langchain-openai>=0.2.0",
@@ -34,4 +35,6 @@ dependencies = [
     "webrtcvad>=2.0.10",
     "openai-whisper>=20250625",
     "piper-tts>=1.4.1",
+    "soundfile>=0.13.1",
+    "sounddevice>=0.5.5",
 ]

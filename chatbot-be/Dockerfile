@@ -5,6 +5,9 @@ WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
+ENV UV_PYTHON=3.13
+
+RUN apt-get update && apt-get install -y build-essential python3-dev
 
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,target=/root/.cache/uv \

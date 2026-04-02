@@ -11,7 +11,6 @@ from chromadb.config import Settings
 chroma_client = None
 
 
-
 def init_ChromaDB():
     global chroma_client
     if chroma_client is not None:
@@ -30,6 +29,7 @@ def init_ChromaDB():
     )
     return chroma_client
 
+
 def get_collection():
     print(f"Getting collection {CHROMA_INDEX_NAME}")
     global chroma_client
@@ -37,6 +37,7 @@ def get_collection():
         print("ChromaDB not initialized, initializing...")
         chroma_client = init_ChromaDB()
     return chroma_client.get_or_create_collection(name=CHROMA_INDEX_NAME)
+
 
 def register_tools(mcp: FastMCP):
     @mcp.tool(tags=["common"])
@@ -59,7 +60,7 @@ def register_tools(mcp: FastMCP):
             # Retrieve relevant documents from the knowledge base
             results = collection.query(
                 query_texts=[query],
-                where={"tenant_id": str(ctx.get_state("tenant_id"))},
+                where={"tenant_id": int(ctx.get_state("tenant_id"))},
                 n_results=k,
                 include=[
                     "documents",
@@ -90,4 +91,4 @@ def register_tools(mcp: FastMCP):
             return formatted_results
 
         except Exception as e:
-            return f"Error searching knowledge base: {str(e)}"
+            return [f"Error searching knowledge base: {str(e)}"]

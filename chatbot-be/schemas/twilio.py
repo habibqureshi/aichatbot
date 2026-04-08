@@ -28,12 +28,6 @@ class TwilioRecordingCallback(BaseModel):
     RecordingTrack: str
     RecordingUrl: HttpUrl
 
-    @field_validator("RecordingStartTime", mode="before")
-    def parse_recording_start_time(cls, v):
-        if isinstance(v, datetime):
-            return v
-        return datetime.strptime(v, "%a, %d %b %Y %H:%M:%S %z")
-
 
 def parse_webhook(
     CallSid: str = Form(...),
@@ -56,4 +50,34 @@ def parse_webhook(
         ApiVersion=ApiVersion,
         SpeechResult=SpeechResult,
         Digits=Digits,
+    )
+
+
+def parse_twilio_recording(
+    AccountSid: str = Form(...),
+    CallSid: str = Form(...),
+    ErrorCode: int | None = Form(None),
+    RecordingChannels: int | None = Form(None),
+    RecordingDuration: int | None = Form(None),
+    RecordingSid: str = Form(...),
+    RecordingSource: str = Form(...),
+    RecordingStartTime: str = Form(...),
+    RecordingStatus: str = Form(...),
+    RecordingTrack: str = Form(...),
+    RecordingUrl: str = Form(...),
+) -> TwilioRecordingCallback:
+    return TwilioRecordingCallback(
+        AccountSid=AccountSid,
+        CallSid=CallSid,
+        ErrorCode=ErrorCode,
+        RecordingChannels=RecordingChannels,
+        RecordingDuration=RecordingDuration,
+        RecordingSid=RecordingSid,
+        RecordingSource=RecordingSource,
+        RecordingStartTime=datetime.strptime(
+            RecordingStartTime, "%a, %d %b %Y %H:%M:%S %z"
+        ),
+        RecordingStatus=RecordingStatus,
+        RecordingTrack=RecordingTrack,
+        RecordingUrl=RecordingUrl,
     )

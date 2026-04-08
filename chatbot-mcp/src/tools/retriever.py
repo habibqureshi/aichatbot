@@ -73,7 +73,7 @@ def register_tools(mcp: FastMCP):
                 or not results.get("documents")
                 or not results["documents"][0]
             ):
-                return []
+                return ["No relevant information found in the knowledge base."]
 
             # Format the results
             documents = results["documents"][0]

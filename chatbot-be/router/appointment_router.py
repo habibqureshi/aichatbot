@@ -12,7 +12,12 @@ from twilio.twiml.voice_response import VoiceResponse
 from db.db import get_db, AsyncSession
 from fastapi.responses import StreamingResponse
 from schemas.auth import TokenPayload
-from schemas.twilio import TwilioIncoming, parse_webhook, TwilioRecordingCallback
+from schemas.twilio import (
+    TwilioIncoming,
+    parse_webhook,
+    TwilioRecordingCallback,
+    parse_twilio_recording,
+)
 from services import appointment_service, auth_service, conversation_service
 import aiohttp
 import urllib.parse
@@ -158,7 +163,7 @@ async def status_change(
 
 @router.post("/recording/status")
 async def recording_status(
-    data: TwilioRecordingCallback = Form(...),
+    data: TwilioRecordingCallback = Depends(parse_twilio_recording),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
     log: Logger = Depends(get_logger),

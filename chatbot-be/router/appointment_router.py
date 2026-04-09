@@ -8,6 +8,7 @@ from fastapi import (
     HTTPException,
     WebSocket,
 )
+from langchain_openai import data
 from twilio.twiml.voice_response import VoiceResponse
 from db.db import get_db, AsyncSession
 from fastapi.responses import StreamingResponse
@@ -40,6 +41,7 @@ async def ws_greeting(
     data: TwilioIncoming = Depends(parse_webhook),
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
+    log: Logger = Depends(get_logger),
 ):
     stream_url = str(req.url_for("openai_stream_ws"))
     stream_url = (
@@ -53,6 +55,7 @@ async def ws_greeting(
         db=db,
         action_url=stream_url,
         tenant_id=tenant.tenant_id,
+        log=log,
     )
     return Response(content=str(resp), media_type="application/xml")
 
@@ -98,6 +101,7 @@ async def openai_stream_ws(
     tenant: TenantContext = Depends(get_tenant_context_ws),
     log: Logger = Depends(get_ws_logger),
 ):
+    log.info(f"twilio stream websocket started")
     await appointment_service.openai_stream(
         websocket=websocket, db=db, tenant_id=tenant.tenant_id, log=log
     )

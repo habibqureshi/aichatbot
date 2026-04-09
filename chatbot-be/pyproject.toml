@@ -35,4 +35,5 @@ dependencies = [
     "sounddevice>=0.5.5",
     "webrtcvad>=2.0.10",
     "deepgram-sdk>=6.1.1",
+    "cartesia>=3.0.2",
 ]

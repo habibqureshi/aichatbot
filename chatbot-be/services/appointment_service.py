@@ -36,7 +36,13 @@ from services import (
 from graph.bot_graph import get_graph
 from graph.intent_graph import voice_ai_graph
 from langgraph.graph.state import CompiledStateGraph, RunnableConfig
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    AIMessageChunk,
+)
 from graph.appointmnet_graph import AppointmentState
 from twilio.rest import Client
 from configs import OPENAI_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, MCP_URL
@@ -346,14 +352,23 @@ async def ws_greeting(
     db: AsyncSession,
     action_url: str,
     tenant_id: int,
+    log: Logger,
 ):
     resp = VoiceResponse()
+    log.info(f"Websocket greeting for {data.From}")
     patient = await patient_service.find_or_create(
         data.From, db=db, tenant_id=tenant_id
     )
+    log.info(
+        f"patient found {patient.name} {patient.id}"
+        if patient
+        else f"patient not found"
+    )
+
     await conversation_service.find_or_create(
         data=data, patient=patient, db=db, tenant_id=tenant_id
     )
+    log.info(f"conversation created for {data.CallSid}")
     connect = Connect()
     connect.stream(url=action_url)
     resp.append(connect)
@@ -875,13 +890,26 @@ OPENAI_URL = (
 # client = AsyncDeepgramClient(api_key="b597138cde1dd803ddea85a48ea77e6b7fa933dc")
 import logging
 
-logging.basicConfig(level=logging.INFO, filename="app.log")
+logging.basicConfig(
+    level=logging.INFO,
+    filename="app.log",
+    format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
+)
+
+from cartesia import AsyncCartesia
+
+cartesia_client = AsyncCartesia()
+openai_client = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
 
 
 async def openai_stream(
     websocket: WebSocket, db: AsyncSession, tenant_id: int, log: Logger
 ):
-    await websocket.accept()
+    stream_sid = None
+    messages: list[BaseMessage] = []
+    graph: CompiledStateGraph | None = None
+    patient = None
+    conversation = None
     openai_stt = await websockets.connect(
         OPENAI_URL,
         additional_headers={
@@ -897,8 +925,8 @@ async def openai_stream(
                     "modalities": ["text"],
                     "turn_detection": {
                         "type": "server_vad",
-                        "threshold": 0.5,
-                        "silence_duration_ms": 600,
+                        "threshold": 0.4,
+                        "silence_duration_ms": 200,
                         "prefix_padding_ms": 300,
                         "create_response": False,
                         "interrupt_response": False,
@@ -912,38 +940,219 @@ async def openai_stream(
             }
         )
     )
+    log.info("Connected to OpenAI STT WebSocket")
+    async with cartesia_client.tts.websocket_connect() as connection:
+        await websocket.accept()
 
-    async def receive_from_openai():
-        while True:
-            msg = await openai_stt.recv()
-            msg = json.loads(msg)
-            if (
-                msg.get("type")
-                == "conversation.item.input_audio_transcription.completed"
-            ):
-                user_text = msg.get("transcript", "")
-                log.info(f"User said (final): {user_text}")
-            if msg.get("type") == "conversation.item.input_audio_transcription.delta":
-                user_text = msg.get("transcript", "")
-                log.info(f"User said (interim): {msg}")
+        async def receive_from_openai():
+            nonlocal stream_sid, patient, messages, graph, conversation
+            while True:
+                msg = await openai_stt.recv()
+                msg = json.loads(msg)
 
-    async def send_to_openai():
-        while True:
-            message = await websocket.receive_json()
-            if message["event"] == "stop":
-                break
-            elif message["event"] == "media":
-                payload = message["media"]["payload"]
-                await openai_stt.send(
-                    json.dumps(
-                        {
-                            "type": "input_audio_buffer.append",
-                            "audio": payload,
-                        }
+                log.info(f"Received from OpenAI STT: {msg}")
+                match (msg.get("type")):
+                    case "conversation.item.input_audio_transcription.completed":
+                        user_text = msg.get("transcript", "")
+                        log.info(f"User said (final): {user_text}")
+                        if user_text.strip():
+                            log.info("Starting TTS synthesis and streaming to Twilio")
+                            ctx = connection.context()
+
+                            async def stream_llm():
+                                nonlocal messages, graph, patient, conversation
+                                messages.append(HumanMessage(content=user_text))
+                                await message_service.create(
+                                    conversation=conversation,
+                                    content=user_text,
+                                    role="user",
+                                    db=db,
+                                    tenant_id=tenant_id,
+                                )
+                                FORBIDDEN_WORDS = [
+                                    "**FINISH_CONVERSATION**",
+                                    "**NEEDS_HUMAN_INTERVENTION**",
+                                ]
+                                stream_buffer = ""
+
+                                async for chunk in graph.astream(
+                                    AppointmentState(
+                                        messages=messages,
+                                        user_input=user_text,
+                                        patient_name=patient.name,
+                                        patient_phone=patient.phone_number,
+                                    ),
+                                    config={"callbacks": [langfuse_handler]},
+                                    stream_mode=["messages", "updates"],
+                                ):
+                                    graph_update, chunk = chunk
+                                    match graph_update:
+                                        case "messages":
+                                            msg, metadata = chunk
+                                            if (
+                                                isinstance(msg, AIMessageChunk)
+                                                and msg.content
+                                            ):
+                                                stream_buffer += msg.content
+                                                for word in FORBIDDEN_WORDS:
+                                                    if word in stream_buffer:
+                                                        match word:
+                                                            case "**FINISH_CONVERSATION**":
+                                                                log.info(
+                                                                    "Graph signaled to finish conversation"
+                                                                )
+                                                            case "**NEEDS_HUMAN_INTERVENTION**":
+                                                                log.info(
+                                                                    "Graph signaled that human intervention is needed"
+                                                                )
+                                                        stream_buffer = (
+                                                            stream_buffer.replace(
+                                                                word, ""
+                                                            )
+                                                        )
+                                                is_partial_match = any(
+                                                    word.startswith(
+                                                        stream_buffer.strip()
+                                                    )
+                                                    for word in FORBIDDEN_WORDS
+                                                )
+
+                                                if (
+                                                    not is_partial_match
+                                                    and stream_buffer
+                                                ):
+
+                                                    await ctx.send(
+                                                        transcript=stream_buffer,
+                                                        continue_=True,
+                                                        model_id="sonic-3",
+                                                        voice={
+                                                            "id": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+                                                            "mode": "id",
+                                                        },
+                                                        output_format={
+                                                            "container": "raw",
+                                                            "encoding": "pcm_mulaw",
+                                                            "sample_rate": 8000,
+                                                        },
+                                                    )
+                                                    log.info(
+                                                        f"Sending to cartesia: {stream_buffer}"
+                                                    )
+                                                    stream_buffer = ""
+
+                                        case "updates":
+                                            log.info(f"Graph state update: {chunk}")
+                                            if "classify_intent" in chunk:
+                                                messages_update = chunk[
+                                                    "classify_intent"
+                                                ].get("messages", [])
+                                                if len(messages_update) > 0:
+                                                    last_msg = messages_update[-1]
+                                                    if (
+                                                        isinstance(last_msg, AIMessage)
+                                                        and last_msg.content.strip()
+                                                    ):
+                                                        log.info(
+                                                            f"AI Said: {last_msg.content}"
+                                                        )
+                                                        last_msg.content = (
+                                                            last_msg.content.replace(
+                                                                "**FINISH_CONVERSATION**",
+                                                                "",
+                                                            )
+                                                            .replace(
+                                                                "**NEEDS_HUMAN_INTERVENTION**",
+                                                                "",
+                                                            )
+                                                            .strip()
+                                                        )
+                                                        messages.append(last_msg)
+                                                        await message_service.create(
+                                                            conversation=conversation,
+                                                            content=last_msg.content,
+                                                            role="assistant",
+                                                            db=db,
+                                                            tenant_id=tenant_id,
+                                                        )
+
+                            async def stream_audio_to_twilio():
+                                async for response in ctx.receive():
+                                    if response.type == "chunk" and response.audio:
+                                        log.info(
+                                            f"chunk received from Cartesia TTS: {len(response.audio)} bytes"
+                                        )
+                                        for i in range(0, len(response.audio), 160):
+                                            sub_chunk = response.audio[i : i + 160]
+                                            if len(sub_chunk) < 160:
+                                                sub_chunk = sub_chunk.ljust(
+                                                    160, b"\xff"
+                                                )
+                                            await websocket.send_json(
+                                                {
+                                                    "event": "media",
+                                                    "streamSid": stream_sid,
+                                                    "media": {
+                                                        "payload": base64.b64encode(
+                                                            sub_chunk
+                                                        ).decode("utf-8")
+                                                    },
+                                                }
+                                            )
+                                log.info("Audio chunk sent to Twilio")
+
+                            asyncio.gather(stream_llm(), stream_audio_to_twilio())
+
+        async def send_to_openai():
+            nonlocal stream_sid, graph, patient, messages, conversation
+            while True:
+                message = await websocket.receive_json()
+                if message["event"] == "stop":
+                    break
+                if message["event"] == "connected":
+                    log.info(f"WebSocket event: {message['event']}")
+                if message["event"] == "start":
+                    log.info(f"WebSocket event: {message['event']}")
+                    conversation = await conversation_service.find_by_call_sid(
+                        message["start"]["callSid"], db=db, tenant_id=tenant_id
                     )
-                )
+                    if not conversation or conversation.status != "active":
+                        log.info("Conversation already ended")
+                        break
+                    patient = await patient_service.find_by_id(
+                        conversation.patient_id, db, tenant_id=tenant_id
+                    )
+                    graph = await get_graph(
+                        message["start"]["callSid"],
+                        patient.phone_number,
+                        db=db,
+                        tenant_id=tenant_id,
+                        log=log,
+                    )
+                    stream_sid = message["start"]["streamSid"]
+                    if patient.phone_number:
+                        messages.insert(
+                            0,
+                            HumanMessage(
+                                content=f"[Caller phone: {patient.phone_number}]"
+                            ),
+                        )
+                    if patient.name:
+                        messages.insert(
+                            0, HumanMessage(content=f"[Caller: {patient.name}]")
+                        )
+                elif message["event"] == "media":
+                    payload = message["media"]["payload"]
+                    await openai_stt.send(
+                        json.dumps(
+                            {
+                                "type": "input_audio_buffer.append",
+                                "audio": payload,
+                            }
+                        )
+                    )
 
-    await asyncio.gather(receive_from_openai(), send_to_openai())
+        await asyncio.gather(receive_from_openai(), send_to_openai())
 
     # try:
     #     async with client.listen.v1.connect(

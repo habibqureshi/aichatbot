@@ -29,9 +29,9 @@ async def create_appointment_graph(
     """
     Creates and returns a LangGraph StateGraph for appointment scheduling.
     """
-    menu_setting = await app_setting_service.get_app_setting_by_key_value(
-        db=db, key="MENU", tenant_id=tenant_id
-    )
+    # menu_setting = await app_setting_service.get_app_setting_by_key_value(
+    #     db=db, key="MENU", tenant_id=tenant_id
+    # )
     business_setting = await app_setting_service.get_app_setting_by_key_value(
         db=db, key="INSTALLED_FOR", tenant_id=tenant_id
     )
@@ -96,6 +96,7 @@ async def create_appointment_graph(
         - NEVER call the same tool twice for the same question
         - NEVER invent information. User messages is your only source of truth about the caller and their needs.
         - Always confirm details with the caller before taking any action
+        - Always respond in English
         - After completing any action, ask if they need anything else
 
         For questions about the business OR custom capabilities:

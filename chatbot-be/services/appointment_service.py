@@ -11,6 +11,7 @@ from fastapi import (
     WebSocketDisconnect,
     WebSocketException,
 )
+import os
 import websockets
 
 # import audioop
@@ -871,6 +872,51 @@ async def stream_call(
 OPENAI_URL = (
     "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17"
 )
+# Default websockets open handshake is short; Realtime can be slow on constrained networks.
+_OPENAI_REALTIME_OPEN_TIMEOUT = float(
+    os.getenv("OPENAI_REALTIME_OPEN_TIMEOUT", "60")
+)
+_OPENAI_REALTIME_CONNECT_RETRIES = int(os.getenv("OPENAI_REALTIME_CONNECT_RETRIES", "3"))
+
+
+async def _connect_openai_realtime_stt(log: Logger):
+    """Connect to OpenAI Realtime with a generous handshake timeout and retries."""
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "OpenAI-Beta": "realtime=v1",
+    }
+    last_exc: Exception | None = None
+    for attempt in range(1, _OPENAI_REALTIME_CONNECT_RETRIES + 1):
+        try:
+            ws = await websockets.connect(
+                OPENAI_URL,
+                open_timeout=_OPENAI_REALTIME_OPEN_TIMEOUT,
+                ping_interval=20,
+                ping_timeout=20,
+                close_timeout=10,
+                additional_headers=headers,
+            )
+            if attempt > 1:
+                log.info(
+                    "OpenAI Realtime WebSocket connected on attempt %s", attempt
+                )
+            return ws
+        except (TimeoutError, OSError, websockets.exceptions.InvalidHandshake) as e:
+            last_exc = e
+            log.warning(
+                "OpenAI Realtime WebSocket connect failed (attempt %s/%s): %s",
+                attempt,
+                _OPENAI_REALTIME_CONNECT_RETRIES,
+                e,
+            )
+            if attempt < _OPENAI_REALTIME_CONNECT_RETRIES:
+                await asyncio.sleep(min(2**attempt, 10))
+    assert last_exc is not None
+    log.error(
+        "Giving up on OpenAI Realtime after %s attempts",
+        _OPENAI_REALTIME_CONNECT_RETRIES,
+    )
+    raise last_exc
 
 # AAI_WS_URL = (
 #     "wss://streaming.assemblyai.com/v3/ws"
@@ -919,13 +965,7 @@ async def openai_stream(
     human_event = asyncio.Event()
     patient = None
     conversation = None
-    openai_stt = await websockets.connect(
-        OPENAI_URL,
-        additional_headers={
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "OpenAI-Beta": "realtime=v1",
-        },
-    )
+    openai_stt = await _connect_openai_realtime_stt(log)
     await openai_stt.send(
         json.dumps(
             {
@@ -936,7 +976,8 @@ async def openai_stream(
                     "turn_detection": {
                         "type": "server_vad",
                         "threshold": 0.4,
-                        "silence_duration_ms": 200,
+                        # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
+                        "silence_duration_ms": 650,
                         "prefix_padding_ms": 300,
                         "create_response": False,
                         "interrupt_response": False,

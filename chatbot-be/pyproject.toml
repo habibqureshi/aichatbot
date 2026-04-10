@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "chatbot"
 version = "0.1.0"
@@ -37,3 +41,22 @@ dependencies = [
     "deepgram-sdk>=6.1.1",
     "cartesia>=3.0.2",
 ]
+
+# Flat layout: many top-level dirs — setuptools needs explicit discovery for editable installs.
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "aimodels*",
+    "db*",
+    "graph*",
+    "graph_state*",
+    "nodes*",
+    "rag*",
+    "router*",
+    "schemas*",
+    "services*",
+    "utils*",
+]
+
+[tool.setuptools]
+py-modules = ["main", "configs", "logger", "twilio_media_stream_mimic"]

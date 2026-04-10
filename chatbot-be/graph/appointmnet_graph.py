@@ -16,6 +16,18 @@ from datetime import datetime, timezone
 from logging import Logger
 
 
+def _mcp_tool_tag_set(tool) -> set[str]:
+    """Tags from MCP tool meta (FastMCP 3.x uses 'fastmcp'; older uses '_fastmcp')."""
+    meta = tool.meta or {}
+    ns = meta.get("fastmcp") or meta.get("_fastmcp") or {}
+    tags = ns.get("tags") or []
+    return {str(t).lower() for t in tags}
+
+
+def _tenant_tool_tag_filter(*parts: Optional[str]) -> set[str]:
+    return {str(p).lower() for p in parts if p is not None and str(p).strip() != ""}
+
+
 class AppointmentState(BaseModel):
     messages: Annotated[List[BaseMessage], add_messages]
     user_input: Optional[str] = None
@@ -35,21 +47,27 @@ async def create_appointment_graph(
     business_setting = await app_setting_service.get_app_setting_by_key_value(
         db=db, key="INSTALLED_FOR", tenant_id=tenant_id
     )
-    tags = ["common", business_setting]
+    tag_filter = _tenant_tool_tag_filter("common", business_setting)
     tools = [
         convert_mcp_tool_to_langchain_tool(session=mcp_client.session, tool=tool)
         for tool in await mcp_client.client.list_tools()
-        if not tags or set(tool.meta.get("_fastmcp", {}).get("tags", [])) & set(tags)
+        if not tag_filter or _mcp_tool_tag_set(tool) & tag_filter
     ]
-    # INSERT_YOUR_CODE
     log.info("Appointment Graph: tools added to workflow:")
     for t in tools:
         log.info(f"  - {getattr(t, 'name', getattr(t, '__name__', str(t)))}")
 
+    def _tool_node_error(exc: Exception) -> str:
+        log.exception("MCP tool failed: %s", exc)
+        return (
+            "Tool error: the ordering or database service failed. "
+            f"Details: {exc}"
+        )
+
     llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0).bind_tools(tools=tools)
 
     def classify_intent(state: AppointmentState):
-        log.info(state)
+        log.info("User said: %s", state.user_input or "")
         # prompt = f"""
         # You are an inbound calling assistant. The business type is {business_setting or "clinic"}. The system includes core capabilities (schedule/reserve, reschedule, cancel) and may include additional custom capabilities defined in App Settings.
         # Your responsibilities:
@@ -99,10 +117,35 @@ async def create_appointment_graph(
         - Always respond in English
         - After completing any action, ask if they need anything else
 
-        For questions about the business OR custom capabilities:
+        For questions about the business OR custom capabilities (hours, location, policies, general FAQ):
         1. Call retriever with caller's query
         2. Answer ONLY from retrieved info
         3. If no info found: "I'm sorry, I don't have that information right now."
+
+        MENU ITEM NAMES, PRICES, AND "WHAT DO YOU HAVE TO EAT":
+        - Do NOT use the retriever or your own knowledge for the live menu. Those are wrong sources for dish lists.
+        - If ordering tools include list_menu: you MUST call list_menu for any menu / dish / price question. The menu in the
+          database is exactly what list_menu returns—nothing else is authoritative.
+
+        ORDER TAKING (only if ordering tools like create_order, list_menu, add_order_item, confirm_order are available):
+        MANDATORY — tools are the only way a real order exists:
+        - You MUST NOT say you are "placing", "submitting", "setting up", or "getting that ready" unless you are issuing
+          tool calls in this turn (create_order / add_order_item / confirm_order). Plain text is NOT an order in the system.
+        - When the user has confirmed what to eat (item + quantity): (1) call list_menu if you do not already have
+          menu_item_ids matching their items; (2) call create_order once (use customer_name from [Caller: ...] in the
+          conversation if present—do NOT ask for their name again unless it is missing); (3) call add_order_item for each
+          line with order_id, menu_item_id (the id before ":" in list_menu output), and quantity; (4) reply with a short
+          spoken summary INCLUDING the order id from the tool result.
+        - If their item is not on list_menu, say so and offer alternatives from list_menu—never invent menu items or prices.
+        - Opening the flow: you may ask once whether they know what they want or want a short menu summary; then follow the
+          mandatory tool steps above as soon as items are clear.
+        - For voice, keep list_menu summaries short; offer more on request.
+        - Before finalizing: recap; call confirm_order only after clear yes. Use cancel_order / line updates when they ask.
+        - Prices and availability come only from ordering tools, not memory or retriever.
+        - If user_input looks like garbled speech or off-topic during ordering, do NOT use the retriever; briefly ask them
+          to repeat or steer back to the order.
+        - "NEVER call the same tool twice for the same question" means no duplicate identical calls; calling list_menu
+          again for a new category is fine.
 
         SPECIAL CASES:
         - If the caller wants to talk to a human, analyze the conversation and return a warm, apologetic message and end with **NEEDS_HUMAN_INTERVENTION**.
@@ -121,11 +164,19 @@ async def create_appointment_graph(
                 HumanMessage(content=f"User just said: {state.user_input}"),
             ]
         )
+        content = getattr(response, "content", None) or ""
+        tool_calls = getattr(response, "tool_calls", None) or []
+        if tool_calls:
+            log.info("Assistant tool_calls: %s | text: %s", tool_calls, content)
+        else:
+            log.info("Assistant: %s", content)
         return {"messages": [response]}
 
     workflow = StateGraph(AppointmentState)
     workflow.add_node("classify_intent", classify_intent)
-    workflow.add_node("tools", ToolNode(tools=tools))
+    workflow.add_node(
+        "tools", ToolNode(tools=tools, handle_tool_errors=_tool_node_error)
+    )
 
     workflow.set_entry_point("classify_intent")
     workflow.add_conditional_edges(
@@ -133,5 +184,5 @@ async def create_appointment_graph(
     )
     workflow.add_edge("tools", "classify_intent")
     workflow.add_node("log", lambda s: print(s))
-    workflow.set_finish_point("log")
+    workflow.add_edge("log", END)
     return workflow.compile()

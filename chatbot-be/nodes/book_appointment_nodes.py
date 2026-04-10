@@ -9,8 +9,21 @@ from langchain_mcp_adapters.tools import (
 )
 from datetime import datetime, timezone
 from logging import Logger
+from typing import Optional
+
 from aimodels.llm import llm
 from graph.constants import BookingStatus, IntentGraphState
+
+
+def _mcp_tool_tag_set(tool) -> set[str]:
+    meta = tool.meta or {}
+    ns = meta.get("fastmcp") or meta.get("_fastmcp") or {}
+    tags = ns.get("tags") or []
+    return {str(t).lower() for t in tags}
+
+
+def _tenant_tool_tag_filter(*parts: Optional[str]) -> set[str]:
+    return {str(p).lower() for p in parts if p is not None and str(p).strip() != ""}
 
 
 async def get_appointment_graph(
@@ -22,11 +35,11 @@ async def get_appointment_graph(
     # business_setting = await app_setting_service.get_app_setting_by_key_value(
     #     db=db, key="INSTALLED_FOR", tenant_id=tenant_id
     # )
-    tags = ["common", "appointment_tool"]
+    tag_filter = _tenant_tool_tag_filter("common", "appointment_tool")
     tools = [
         convert_mcp_tool_to_langchain_tool(session=mcp_client.session, tool=tool)
         for tool in await mcp_client.client.list_tools()
-        if not tags or set(tool.meta.get("_fastmcp", {}).get("tags", [])) & set(tags)
+        if not tag_filter or _mcp_tool_tag_set(tool) & tag_filter
     ]
 
     # Bind MCP tools to the LLM for tool calling inside this sub-graph

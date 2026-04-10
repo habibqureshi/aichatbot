@@ -224,6 +224,15 @@ async def run_media_stream(
                     data = json.loads(msg)
                 except json.JSONDecodeError:
                     continue
+                if data.get("event") == "clear":
+                    print("<- received clear: purging inbound audio queue")
+                    # Empty the queue by repeatedly getting until empty
+                    while not inbound_audio_q.empty():
+                        try:
+                            inbound_audio_q.get_nowait()
+                        except asyncio.QueueEmpty:
+                            break
+                    continue
                 if data.get("event") != "media":
                     continue
                 payload = data.get("media", {}).get("payload")
@@ -232,11 +241,17 @@ async def run_media_stream(
                 mu_law = base64.b64decode(payload)
                 pcm = audioop.ulaw2lin(mu_law, PCM_WIDTH)
                 expected = SAMPLES_PER_FRAME * PCM_WIDTH
-                if len(pcm) < expected:
-                    pcm = pcm.ljust(expected, b"\x00")
-                elif len(pcm) > expected:
-                    pcm = pcm[:expected]
-                await inbound_audio_q.put(pcm)
+                for i in range(0, len(pcm), expected):
+                    chunk = pcm[i : i + expected]
+                    # Pad the final small chunk if necessary
+                    if len(chunk) < expected:
+                        chunk = chunk.ljust(expected, b"\x00")
+                    try:
+                        await inbound_audio_q.put(chunk)
+                    except asyncio.QueueFull:
+                        # If speakers are behind, drop old audio to maintain real-time
+                        _ = inbound_audio_q.get_nowait()
+                        await inbound_audio_q.put(chunk)
 
         print("Interactive stream started. Speak into mic. Press Ctrl+C to stop.")
         with sd.RawInputStream(

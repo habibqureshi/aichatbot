@@ -14,7 +14,7 @@ def register_tools(mcp: FastMCP):
         except (TypeError, ValueError):
             return 1
 
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["yolo"])
     async def create_order(
         ctx: Context,
         customer_name: Optional[str] = None,
@@ -40,7 +40,7 @@ def register_tools(mcp: FastMCP):
             )
             return f"Order #{order.id} created as draft. What would you like to add?"
 
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["yolo"])
     async def add_order_item(
         order_id: int,
         menu_item_id: int,
@@ -130,7 +130,7 @@ def register_tools(mcp: FastMCP):
                 db=db, order_id=order_id, reason=reason, tenant_id=tenant_id
             )
 
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["yolo"])
     async def confirm_order(order_id: int, ctx: Context) -> str:
         """
         Finalize an order (sets status to confirmed).
@@ -172,7 +172,7 @@ def register_tools(mcp: FastMCP):
                 db=db, order_id=order_id, tenant_id=tenant_id
             )
 
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["yolo"])
     async def list_menu(
         ctx: Context,
         category: Optional[str] = None,

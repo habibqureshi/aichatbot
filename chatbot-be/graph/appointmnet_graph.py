@@ -5,7 +5,13 @@ from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
 from services import app_setting_service
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage, AIMessage
+from langchain_core.messages import (
+    SystemMessage,
+    HumanMessage,
+    ToolMessage,
+    AIMessage,
+    AIMessageChunk,
+)
 from langgraph.prebuilt import ToolNode, tools_condition
 from utils.mcp_client import MCPClient
 from langchain_mcp_adapters.tools import (
@@ -64,9 +70,13 @@ async def create_appointment_graph(
             f"Details: {exc}"
         )
 
-    llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0).bind_tools(tools=tools)
+    llm = ChatOpenAI(
+        model_name="gpt-4o-mini",
+        temperature=0,
+        streaming=True,
+    ).bind_tools(tools=tools)
 
-    def classify_intent(state: AppointmentState):
+    async def classify_intent(state: AppointmentState):
         log.info("User said: %s", state.user_input or "")
         # prompt = f"""
         # You are an inbound calling assistant. The business type is {business_setting or "clinic"}. The system includes core capabilities (schedule/reserve, reschedule, cancel) and may include additional custom capabilities defined in App Settings.
@@ -153,7 +163,7 @@ async def create_appointment_graph(
 
         Current time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
         """
-        response = llm.invoke(
+        msg_in = (
             [
                 message
                 for message in state.messages
@@ -164,6 +174,22 @@ async def create_appointment_graph(
                 HumanMessage(content=f"User just said: {state.user_input}"),
             ]
         )
+        # Stream tokens so LangGraph can emit AIMessageChunk early (faster TTS start).
+        gathered: AIMessageChunk | None = None
+        async for chunk in llm.astream(msg_in):
+            gathered = chunk if gathered is None else gathered + chunk
+
+        if gathered is None:
+            response = AIMessage(content="")
+        else:
+            tc = getattr(gathered, "tool_calls", None) or []
+            response = AIMessage(
+                content=gathered.content,
+                tool_calls=list(tc),
+                id=gathered.id,
+                usage_metadata=getattr(gathered, "usage_metadata", None),
+                response_metadata=getattr(gathered, "response_metadata", None),
+            )
         content = getattr(response, "content", None) or ""
         tool_calls = getattr(response, "tool_calls", None) or []
         if tool_calls:

@@ -80,6 +80,59 @@ client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 VOICE = "Polly.Joanna-Neural"
 
 
+def _stream_chunk_text(chunk) -> str:
+    """Extract text delta from an AIMessageChunk (string or block list)."""
+    c = getattr(chunk, "content", None)
+    if not c:
+        return ""
+    if isinstance(c, str):
+        return c
+    if isinstance(c, list):
+        parts: list[str] = []
+        for part in c:
+            if isinstance(part, dict) and part.get("type") == "text":
+                parts.append(str(part.get("text", "")))
+            elif isinstance(part, str):
+                parts.append(part)
+        return "".join(parts)
+    return str(c)
+
+
+def _norm_joined_tts(s: str) -> str:
+    """Normalize assistant text for comparing streamed TTS vs final AIMessage.content."""
+    return " ".join(s.split())
+
+
+def _tool_hold_phrase(tool_calls: list) -> str:
+    """Short voice line while MCP tools run (tool-only model turns have no streamed text)."""
+    if not tool_calls:
+        return "One moment, please."
+    first = tool_calls[0]
+    if isinstance(first, dict):
+        name = str(first.get("name") or "")
+    else:
+        name = str(getattr(first, "name", "") or "")
+    match name:
+        case "list_menu":
+            return "Let me pull up the menu for you."
+        case "create_order":
+            return "I'm setting up your order now. One moment."
+        case "add_order_item":
+            return "Adding that to your order."
+        case "confirm_order":
+            return "Confirming your order now."
+        case "cancel_order":
+            return "Updating your order."
+        case "update_order_item" | "remove_order_item":
+            return "Updating your order."
+        case "get_order" | "price_order":
+            return "Let me check your order."
+        case "knowledge_retriever":
+            return "Let me look that up for you."
+        case _:
+            return "One moment, please."
+
+
 async def greeting(
     data: TwilioIncoming,
     db: AsyncSession,
@@ -1019,158 +1072,309 @@ async def openai_stream(
                         if user_text.strip():
                             log.info("Starting TTS synthesis and streaming to Twilio")
                             interrupt_event.clear()
-                            ctx = connection.context()
 
-                            async def stream_llm():
-                                nonlocal messages, graph, patient, conversation, interrupt_event
-                                messages.append(HumanMessage(content=user_text))
-                                await message_service.create(
-                                    conversation=conversation,
-                                    content=user_text,
-                                    role="user",
-                                    db=db,
-                                    tenant_id=tenant_id,
-                                )
-                                FORBIDDEN_WORDS = [
-                                    "**FINISH_CONVERSATION**",
-                                    "**NEEDS_HUMAN_INTERVENTION**",
-                                ]
-                                stream_buffer = ""
+                            async def run_full_ai_cycle():
+                                tts_queue: asyncio.Queue[bytes | None] = asyncio.Queue()
+                                cartesia_kw = {
+                                    "model_id": "sonic-3",
+                                    "voice": {
+                                        "id": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+                                        "mode": "id",
+                                    },
+                                    "output_format": {
+                                        "container": "raw",
+                                        "encoding": "pcm_mulaw",
+                                        "sample_rate": 8000,
+                                    },
+                                }
 
-                                async for chunk in graph.astream(
-                                    AppointmentState(
-                                        messages=messages,
-                                        user_input=user_text,
-                                        patient_name=patient.name,
-                                        patient_phone=patient.phone_number,
-                                    ),
-                                    config={"callbacks": [langfuse_handler]},
-                                    stream_mode=["messages", "updates"],
-                                ):
-                                    graph_update, chunk = chunk
-                                    match graph_update:
-                                        case "messages":
-                                            msg, metadata = chunk
-                                            if (
-                                                isinstance(msg, AIMessageChunk)
-                                                and msg.content
-                                            ):
-                                                stream_buffer += msg.content
-                                                for word in FORBIDDEN_WORDS:
-                                                    if word in stream_buffer:
-                                                        match word:
-                                                            case "**FINISH_CONVERSATION**":
-                                                                log.info(
-                                                                    "Graph signaled to finish conversation"
-                                                                )
-                                                                stop_event.set()
-                                                            case "**NEEDS_HUMAN_INTERVENTION**":
-                                                                log.info(
-                                                                    "Graph signaled that human intervention is needed"
-                                                                )
-                                                                human_event.set()
-                                                        stream_buffer = (
-                                                            stream_buffer.replace(
-                                                                word, ""
-                                                            )
-                                                        )
-                                                is_partial_match = any(
-                                                    word.startswith(
-                                                        stream_buffer.strip()
-                                                    )
-                                                    for word in FORBIDDEN_WORDS
-                                                )
-
-                                                if (
-                                                    not is_partial_match
-                                                    and stream_buffer
-                                                    and not interrupt_event.is_set()
-                                                ):
-
-                                                    await ctx.send(
-                                                        transcript=stream_buffer,
-                                                        continue_=True,
-                                                        model_id="sonic-3",
-                                                        voice={
-                                                            "id": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
-                                                            "mode": "id",
-                                                        },
-                                                        output_format={
-                                                            "container": "raw",
-                                                            "encoding": "pcm_mulaw",
-                                                            "sample_rate": 8000,
-                                                        },
-                                                    )
-                                                    log.info(
-                                                        f"Sending to cartesia: {stream_buffer}"
-                                                    )
-                                                    stream_buffer = ""
-
-                                        case "updates":
-                                            log.info(f"Graph state update: {chunk}")
-                                            if "classify_intent" in chunk:
-                                                messages_update = chunk[
-                                                    "classify_intent"
-                                                ].get("messages", [])
-                                                if len(messages_update) > 0:
-                                                    last_msg = messages_update[-1]
-                                                    if (
-                                                        isinstance(last_msg, AIMessage)
-                                                        and last_msg.content.strip()
-                                                    ):
-                                                        log.info(
-                                                            f"AI Said: {last_msg.content}"
-                                                        )
-                                                        last_msg.content = (
-                                                            last_msg.content.replace(
-                                                                "**FINISH_CONVERSATION**",
-                                                                "",
-                                                            )
-                                                            .replace(
-                                                                "**NEEDS_HUMAN_INTERVENTION**",
-                                                                "",
-                                                            )
-                                                            .strip()
-                                                        )
-                                                        messages.append(last_msg)
-                                                        await message_service.create(
-                                                            conversation=conversation,
-                                                            content=last_msg.content,
-                                                            role="assistant",
-                                                            db=db,
-                                                            tenant_id=tenant_id,
-                                                        )
-
-                            async def stream_audio_to_twilio():
-                                nonlocal stream_sid, interrupt_event
-                                async for response in ctx.receive():
-                                    if response.type == "chunk" and response.audio:
-                                        log.info(
-                                            f"chunk received from Cartesia TTS: {len(response.audio)} bytes"
-                                        )
-
-                                        if interrupt_event.is_set():
-                                            log.info(
-                                                "Audio streaming interrupted, stopping sending audio to Twilio"
-                                            )
+                                async def twilio_forwarder():
+                                    nonlocal stream_sid
+                                    while True:
+                                        audio = await tts_queue.get()
+                                        if audio is None:
                                             return
-
+                                        if interrupt_event.is_set():
+                                            continue
                                         await websocket.send_json(
                                             {
                                                 "event": "media",
                                                 "streamSid": stream_sid,
                                                 "media": {
                                                     "payload": base64.b64encode(
-                                                        response.audio
+                                                        audio
                                                     ).decode("utf-8")
                                                 },
                                             }
                                         )
-                                log.info("Audio chunk sent to Twilio")
+                                        log.info("Audio chunk sent to Twilio")
 
-                            async def run_full_ai_cycle():
+                                async def pump_cartesia(receive_ctx):
+                                    try:
+                                        async for response in receive_ctx.receive():
+                                            if (
+                                                response.type == "chunk"
+                                                and response.audio
+                                            ):
+                                                if interrupt_event.is_set():
+                                                    return
+                                                log.info(
+                                                    "chunk received from Cartesia TTS: "
+                                                    f"{len(response.audio)} bytes"
+                                                )
+                                                await tts_queue.put(response.audio)
+                                    except Exception as e:
+                                        log.exception(
+                                            "Cartesia receive pump ended: %s", e
+                                        )
+
+                                async def stream_llm():
+                                    nonlocal messages, graph, patient, conversation, interrupt_event
+                                    messages.append(HumanMessage(content=user_text))
+                                    await message_service.create(
+                                        conversation=conversation,
+                                        content=user_text,
+                                        role="user",
+                                        db=db,
+                                        tenant_id=tenant_id,
+                                    )
+                                    FORBIDDEN_WORDS = [
+                                        "**FINISH_CONVERSATION**",
+                                        "**NEEDS_HUMAN_INTERVENTION**",
+                                    ]
+                                    stream_buffer = ""
+                                    last_classify_spoken: list[str] = []
+                                    ctx = connection.context()
+                                    pump_task = asyncio.create_task(
+                                        pump_cartesia(ctx)
+                                    )
+
+                                    async def _rotate_cartesia_after_tools() -> None:
+                                        nonlocal ctx, pump_task
+                                        if interrupt_event.is_set():
+                                            return
+                                        await pump_task
+                                        ctx = connection.context()
+                                        pump_task = asyncio.create_task(
+                                            pump_cartesia(ctx)
+                                        )
+
+                                    async def _cartesia_send(
+                                        transcript: str,
+                                        log_label: str,
+                                        *,
+                                        continue_: bool = True,
+                                    ) -> None:
+                                        if (
+                                            not transcript.strip()
+                                            or interrupt_event.is_set()
+                                        ):
+                                            return
+                                        await ctx.send(
+                                            transcript=transcript,
+                                            continue_=continue_,
+                                            **cartesia_kw,
+                                        )
+                                        last_classify_spoken.append(transcript)
+                                        log.info(f"{log_label}: {transcript}")
+
+                                    async for ev in graph.astream_events(
+                                        AppointmentState(
+                                            messages=messages,
+                                            user_input=user_text,
+                                            patient_name=patient.name,
+                                            patient_phone=patient.phone_number,
+                                        ),
+                                        config={"callbacks": [langfuse_handler]},
+                                        version="v2",
+                                    ):
+                                        ev_type = ev.get("event")
+                                        meta = ev.get("metadata") or {}
+                                        if (
+                                            ev_type == "on_chat_model_stream"
+                                            and meta.get("langgraph_node")
+                                            == "classify_intent"
+                                        ):
+                                            ch = ev.get("data", {}).get("chunk")
+                                            if ch is None:
+                                                continue
+                                            delta = _stream_chunk_text(ch)
+                                            if not delta:
+                                                continue
+                                            stream_buffer += delta
+                                            for word in FORBIDDEN_WORDS:
+                                                if word in stream_buffer:
+                                                    match word:
+                                                        case "**FINISH_CONVERSATION**":
+                                                            log.info(
+                                                                "Graph signaled to finish conversation"
+                                                            )
+                                                            stop_event.set()
+                                                        case "**NEEDS_HUMAN_INTERVENTION**":
+                                                            log.info(
+                                                                "Graph signaled that human intervention is needed"
+                                                            )
+                                                            human_event.set()
+                                                    stream_buffer = (
+                                                        stream_buffer.replace(
+                                                            word, ""
+                                                        )
+                                                    )
+                                            is_partial_match = any(
+                                                word.startswith(
+                                                    stream_buffer.strip()
+                                                )
+                                                for word in FORBIDDEN_WORDS
+                                            )
+                                            if (
+                                                not is_partial_match
+                                                and stream_buffer
+                                                and not interrupt_event.is_set()
+                                            ):
+                                                await _cartesia_send(
+                                                    stream_buffer,
+                                                    "Sending to cartesia",
+                                                )
+                                                stream_buffer = ""
+
+                                        elif ev_type == "on_chain_end" and ev.get(
+                                            "name"
+                                        ) in (
+                                            "classify_intent",
+                                            "tools",
+                                        ):
+                                            output = ev.get("data", {}).get("output")
+                                            log.info(
+                                                "Graph node finished: %s",
+                                                ev.get("name"),
+                                            )
+                                            if not isinstance(output, dict):
+                                                continue
+                                            if ev.get("name") == "tools":
+                                                last_classify_spoken.clear()
+                                                await _rotate_cartesia_after_tools()
+                                            for m in output.get("messages", []):
+                                                messages.append(m)
+                                                if not isinstance(m, AIMessage):
+                                                    continue
+                                                raw = m.content or ""
+                                                text = (
+                                                    raw.strip()
+                                                    if isinstance(raw, str)
+                                                    else _stream_chunk_text(
+                                                        m
+                                                    ).strip()
+                                                )
+                                                tcs = (
+                                                    getattr(m, "tool_calls", None)
+                                                    or []
+                                                )
+                                                if (
+                                                    ev.get("name")
+                                                    == "classify_intent"
+                                                    and tcs
+                                                    and not interrupt_event.is_set()
+                                                    and not text.strip()
+                                                    and not "".join(
+                                                        last_classify_spoken
+                                                    ).strip()
+                                                ):
+                                                    await _cartesia_send(
+                                                        _tool_hold_phrase(tcs),
+                                                        "Sending to cartesia (tool hold)",
+                                                        continue_=False,
+                                                    )
+                                                if (
+                                                    text
+                                                    and not tcs
+                                                    and not interrupt_event.is_set()
+                                                ):
+                                                    spoken_j = "".join(
+                                                        last_classify_spoken
+                                                    )
+                                                    if _norm_joined_tts(
+                                                        spoken_j
+                                                    ) != _norm_joined_tts(text):
+                                                        s = spoken_j.strip()
+                                                        t_st = text.strip()
+                                                        if not s:
+                                                            to_send = t_st
+                                                        elif t_st.startswith(s):
+                                                            to_send = t_st[
+                                                                len(s) :
+                                                            ].lstrip()
+                                                        else:
+                                                            to_send = t_st
+                                                        for word in FORBIDDEN_WORDS:
+                                                            if word in to_send:
+                                                                match word:
+                                                                    case "**FINISH_CONVERSATION**":
+                                                                        stop_event.set()
+                                                                    case "**NEEDS_HUMAN_INTERVENTION**":
+                                                                        human_event.set()
+                                                                to_send = to_send.replace(
+                                                                    word, ""
+                                                                ).strip()
+                                                        if to_send:
+                                                            await _cartesia_send(
+                                                                to_send,
+                                                                "Sending to cartesia (completion fallback)",
+                                                            )
+                                                if not text or tcs:
+                                                    continue
+                                                log.info(f"AI Said: {text}")
+                                                clean = (
+                                                    text.replace(
+                                                        "**FINISH_CONVERSATION**",
+                                                        "",
+                                                    )
+                                                    .replace(
+                                                        "**NEEDS_HUMAN_INTERVENTION**",
+                                                        "",
+                                                    )
+                                                    .strip()
+                                                )
+                                                m.content = clean
+                                                await message_service.create(
+                                                    conversation=conversation,
+                                                    content=m.content,
+                                                    role="assistant",
+                                                    db=db,
+                                                    tenant_id=tenant_id,
+                                                )
+
+                                    if stream_buffer.strip() and not interrupt_event.is_set():
+                                        for word in FORBIDDEN_WORDS:
+                                            if word in stream_buffer:
+                                                stream_buffer = (
+                                                    stream_buffer.replace(
+                                                        word, ""
+                                                    )
+                                                )
+                                        tail = stream_buffer.strip()
+                                        if tail:
+                                            await _cartesia_send(
+                                                tail,
+                                                "Sending to cartesia (buffer flush)",
+                                            )
+
+                                    if not interrupt_event.is_set():
+                                        try:
+                                            await ctx.send(
+                                                transcript="",
+                                                continue_=False,
+                                                **cartesia_kw,
+                                            )
+                                        except Exception as e:
+                                            log.warning(
+                                                "Cartesia end-of-turn flush: %s",
+                                                e,
+                                            )
+                                    await pump_task
+                                    await tts_queue.put(None)
+
                                 await asyncio.gather(
-                                    stream_llm(), stream_audio_to_twilio()
+                                    stream_llm(), twilio_forwarder()
                                 )
 
                             asyncio.create_task(run_full_ai_cycle())

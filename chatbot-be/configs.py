@@ -38,3 +38,4 @@ LANGFUSE_PUBLIC_KEY = os.getenv(
 )
 LANGFUSE_BASE_URL = os.getenv("LANGFUSE_BASE_URL", "http://localhost:3000")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+CARTESIA_API_KEY = os.getenv("CARTESIA_API_KEY", "")

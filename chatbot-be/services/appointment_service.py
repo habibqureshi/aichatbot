@@ -2,7 +2,7 @@ import datetime
 import json
 from logging import Logger
 from fastapi.websockets import WebSocketState
-from sqlalchemy import event
+from sqlalchemy import event, log
 from twilio.twiml.voice_response import Connect, VoiceResponse, Start, Gather
 from fastapi import (
     HTTPException,
@@ -45,7 +45,13 @@ from langchain_core.messages import (
 )
 from graph.appointmnet_graph import AppointmentState
 from twilio.rest import Client
-from configs import OPENAI_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, MCP_URL
+from configs import (
+    CARTESIA_API_KEY,
+    OPENAI_API_KEY,
+    TWILIO_ACCOUNT_SID,
+    TWILIO_AUTH_TOKEN,
+    MCP_URL,
+)
 from langfuse import get_client
 from langfuse.langchain import CallbackHandler
 
@@ -898,7 +904,7 @@ logging.basicConfig(
 
 from cartesia import AsyncCartesia
 
-cartesia_client = AsyncCartesia()
+cartesia_client = AsyncCartesia(api_key=CARTESIA_API_KEY)
 openai_client = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
 
 
@@ -908,6 +914,9 @@ async def openai_stream(
     stream_sid = None
     messages: list[BaseMessage] = []
     graph: CompiledStateGraph | None = None
+    interrupt_event = asyncio.Event()
+    stop_event = asyncio.Event()
+    human_event = asyncio.Event()
     patient = None
     conversation = None
     openai_stt = await websockets.connect(
@@ -923,6 +932,7 @@ async def openai_stream(
                 "type": "session.update",
                 "session": {
                     "modalities": ["text"],
+                    "input_audio_noise_reduction": {"type": "near_field"},
                     "turn_detection": {
                         "type": "server_vad",
                         "threshold": 0.4,
@@ -945,22 +955,33 @@ async def openai_stream(
         await websocket.accept()
 
         async def receive_from_openai():
-            nonlocal stream_sid, patient, messages, graph, conversation
+            nonlocal stream_sid, patient, messages, graph, conversation, interrupt_event
             while True:
-                msg = await openai_stt.recv()
-                msg = json.loads(msg)
+                if stop_event.is_set() or human_event.is_set():
+                    log.info("Termination event detected. Stopping OpenAI receiver.")
+                    break
+                try:
+                    msg = await openai_stt.recv()
+                    msg = json.loads(msg)
+                except websockets.exceptions.ConnectionClosed:
+                    log.info("OpenAI STT WebSocket connection closed")
+                    break
 
                 log.info(f"Received from OpenAI STT: {msg}")
                 match (msg.get("type")):
                     case "conversation.item.input_audio_transcription.completed":
+                        if stop_event.is_set() or human_event.is_set():
+                            log.info("Ignoring transcript because session is ending.")
+                            continue
                         user_text = msg.get("transcript", "")
                         log.info(f"User said (final): {user_text}")
                         if user_text.strip():
                             log.info("Starting TTS synthesis and streaming to Twilio")
+                            interrupt_event.clear()
                             ctx = connection.context()
 
                             async def stream_llm():
-                                nonlocal messages, graph, patient, conversation
+                                nonlocal messages, graph, patient, conversation, interrupt_event
                                 messages.append(HumanMessage(content=user_text))
                                 await message_service.create(
                                     conversation=conversation,
@@ -1001,10 +1022,12 @@ async def openai_stream(
                                                                 log.info(
                                                                     "Graph signaled to finish conversation"
                                                                 )
+                                                                stop_event.set()
                                                             case "**NEEDS_HUMAN_INTERVENTION**":
                                                                 log.info(
                                                                     "Graph signaled that human intervention is needed"
                                                                 )
+                                                                human_event.set()
                                                         stream_buffer = (
                                                             stream_buffer.replace(
                                                                 word, ""
@@ -1020,6 +1043,7 @@ async def openai_stream(
                                                 if (
                                                     not is_partial_match
                                                     and stream_buffer
+                                                    and not interrupt_event.is_set()
                                                 ):
 
                                                     await ctx.send(
@@ -1077,31 +1101,46 @@ async def openai_stream(
                                                         )
 
                             async def stream_audio_to_twilio():
+                                nonlocal stream_sid, interrupt_event
                                 async for response in ctx.receive():
                                     if response.type == "chunk" and response.audio:
                                         log.info(
                                             f"chunk received from Cartesia TTS: {len(response.audio)} bytes"
                                         )
-                                        for i in range(0, len(response.audio), 160):
-                                            sub_chunk = response.audio[i : i + 160]
-                                            if len(sub_chunk) < 160:
-                                                sub_chunk = sub_chunk.ljust(
-                                                    160, b"\xff"
-                                                )
-                                            await websocket.send_json(
-                                                {
-                                                    "event": "media",
-                                                    "streamSid": stream_sid,
-                                                    "media": {
-                                                        "payload": base64.b64encode(
-                                                            sub_chunk
-                                                        ).decode("utf-8")
-                                                    },
-                                                }
+
+                                        if interrupt_event.is_set():
+                                            log.info(
+                                                "Audio streaming interrupted, stopping sending audio to Twilio"
                                             )
+                                            return
+
+                                        await websocket.send_json(
+                                            {
+                                                "event": "media",
+                                                "streamSid": stream_sid,
+                                                "media": {
+                                                    "payload": base64.b64encode(
+                                                        response.audio
+                                                    ).decode("utf-8")
+                                                },
+                                            }
+                                        )
                                 log.info("Audio chunk sent to Twilio")
 
-                            asyncio.gather(stream_llm(), stream_audio_to_twilio())
+                            async def run_full_ai_cycle():
+                                await asyncio.gather(
+                                    stream_llm(), stream_audio_to_twilio()
+                                )
+
+                            asyncio.create_task(run_full_ai_cycle())
+                    case "conversation.item.input_audio_transcription.delta":
+                        delta_text = msg.get("delta", "").strip()
+                        if delta_text:
+                            log.info(f"User speaking: '{delta_text}'. Silencing AI.")
+                            interrupt_event.set()
+                            await websocket.send_json(
+                                {"event": "clear", "streamSid": stream_sid}
+                            )
 
         async def send_to_openai():
             nonlocal stream_sid, graph, patient, messages, conversation

@@ -1,3 +1,8 @@
+import certifi
+import os
+
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError

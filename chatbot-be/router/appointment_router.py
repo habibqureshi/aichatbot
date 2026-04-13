@@ -43,6 +43,7 @@ async def ws_greeting(
     tenant: TenantContext = Depends(get_tenant_context),
     log: Logger = Depends(get_logger),
 ):
+    print(f"ws_greeting called")
     stream_url = str(req.url_for("openai_stream_ws"))
     stream_url = (
         f"{stream_url}"

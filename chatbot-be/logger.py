@@ -34,6 +34,11 @@ def get_ws_logger(websocket: WebSocket):
         "callId": websocket.query_params.get("CallSid", "WS_CALL"),
         "requestId": uuid.uuid4(),
     }
+
+    logging.basicConfig(
+        filename="app.log",
+        format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
+    )
     if not logger.hasHandlers():
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)

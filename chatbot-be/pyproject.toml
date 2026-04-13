@@ -40,6 +40,7 @@ dependencies = [
     "webrtcvad>=2.0.10",
     "deepgram-sdk>=6.1.1",
     "cartesia>=3.0.2",
+    "certifi>=2026.2.25",
 ]
 
 # Flat layout: many top-level dirs — setuptools needs explicit discovery for editable installs.

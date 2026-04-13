@@ -163,7 +163,7 @@ async def create_appointment_graph(
 
         Current time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
         """
-        msg_in = (
+        msg_in = ( 
             [
                 message
                 for message in state.messages
@@ -176,9 +176,32 @@ async def create_appointment_graph(
         )
         # Stream tokens so LangGraph can emit AIMessageChunk early (faster TTS start).
         gathered: AIMessageChunk | None = None
+        # Stream tokens immediately back to the graph as they are generated.
+        gathered: AIMessageChunk | None = None
         async for chunk in llm.astream(msg_in):
+            # Immediately yield or return each chunk as a partial message.
+            partial_content = chunk.content if hasattr(chunk, "content") else None
+            partial_tool_calls = getattr(chunk, "tool_calls", None) or []
+            response_partial = AIMessage(
+                content=partial_content,
+                tool_calls=list(partial_tool_calls),
+                id=getattr(chunk, "id", None),
+                usage_metadata=getattr(chunk, "usage_metadata", None),
+                response_metadata=getattr(chunk, "response_metadata", None),
+            )
+            # Log the partial as it's streamed, if useful
+            content = getattr(response_partial, "content", None) or ""
+            tool_calls = getattr(response_partial, "tool_calls", None) or []
+            if tool_calls:
+                log.info("Assistant streaming tool_calls: %s | text: %s", tool_calls, content)
+            else:
+                log.info("Assistant streaming: %s", content)
+            # Immediately yield as a streamed message (Graph streaming API must support this)
+            yield {"messages": [response_partial]}
+            # Gather up full for final return if caller expects it
             gathered = chunk if gathered is None else gathered + chunk
 
+        # Also return the final completed response for possible postprocessing
         if gathered is None:
             response = AIMessage(content="")
         else:
@@ -196,7 +219,7 @@ async def create_appointment_graph(
             log.info("Assistant tool_calls: %s | text: %s", tool_calls, content)
         else:
             log.info("Assistant: %s", content)
-        return {"messages": [response]}
+        yield {"messages": [response]}
 
     workflow = StateGraph(AppointmentState)
     workflow.add_node("classify_intent", classify_intent)

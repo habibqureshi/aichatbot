@@ -993,13 +993,13 @@ async def _connect_openai_realtime_stt(log: Logger):
 #     ListenV1SpeechStarted, ListenV1UtteranceEnd, ListenV1Results, ListenV1Metadata
 # ]
 # client = AsyncDeepgramClient(api_key="b597138cde1dd803ddea85a48ea77e6b7fa933dc")
-import logging
+# import logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    filename="app.log",
-    format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
-)
+# # logging.basicConfig(
+# #     level=logging.INFO,
+# #     filename="app.log",
+# #     format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
+# # )
 
 from cartesia import AsyncCartesia
 
@@ -1018,7 +1018,9 @@ async def openai_stream(
     human_event = asyncio.Event()
     patient = None
     conversation = None
+    print(f"connecting to openai_stt")
     openai_stt = await _connect_openai_realtime_stt(log)
+    print(f"openai_stt connected")
     await openai_stt.send(
         json.dumps(
             {
@@ -1030,7 +1032,7 @@ async def openai_stream(
                         "type": "server_vad",
                         "threshold": 0.4,
                         # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
-                        "silence_duration_ms": 650,
+                        "silence_duration_ms": 300,
                         "prefix_padding_ms": 300,
                         "create_response": False,
                         "interrupt_response": False,
@@ -1050,12 +1052,15 @@ async def openai_stream(
 
         async def receive_from_openai():
             nonlocal stream_sid, patient, messages, graph, conversation, interrupt_event
+            print(f"receiving from openai")
             while True:
                 if stop_event.is_set() or human_event.is_set():
                     log.info("Termination event detected. Stopping OpenAI receiver.")
                     break
                 try:
+                    print(f"receiving from openai_stt")
                     msg = await openai_stt.recv()
+                    print(f"msg received from openai_stt: {msg}")
                     msg = json.loads(msg)
                 except websockets.exceptions.ConnectionClosed:
                     log.info("OpenAI STT WebSocket connection closed")
@@ -1092,6 +1097,7 @@ async def openai_stream(
                                     nonlocal stream_sid
                                     while True:
                                         audio = await tts_queue.get()
+                                        log.info(f"audio: {audio}")
                                         if audio is None:
                                             return
                                         if interrupt_event.is_set():
@@ -1129,8 +1135,9 @@ async def openai_stream(
                                         )
 
                                 async def stream_llm():
-                                    nonlocal messages, graph, patient, conversation, interrupt_event
+                                    nonlocal messages, graph, patient, conversation, interrupt_event , log
                                     messages.append(HumanMessage(content=user_text))
+                                    print(f"adding user message to messages in db: {user_text}")
                                     await message_service.create(
                                         conversation=conversation,
                                         content=user_text,
@@ -1138,6 +1145,7 @@ async def openai_stream(
                                         db=db,
                                         tenant_id=tenant_id,
                                     )
+                                    print(f"user message added to messages in db")
                                     FORBIDDEN_WORDS = [
                                         "**FINISH_CONVERSATION**",
                                         "**NEEDS_HUMAN_INTERVENTION**",
@@ -1165,6 +1173,7 @@ async def openai_stream(
                                         *,
                                         continue_: bool = True,
                                     ) -> None:
+                                        log.info(f"sending to cartesia: {transcript}")
                                         if (
                                             not transcript.strip()
                                             or interrupt_event.is_set()
@@ -1177,7 +1186,9 @@ async def openai_stream(
                                         )
                                         last_classify_spoken.append(transcript)
                                         log.info(f"{log_label}: {transcript}")
-
+                                    log.info(f"starting to stream events from graph")
+                                    log.info(f"messages: {messages}")
+                                   
                                     async for ev in graph.astream_events(
                                         AppointmentState(
                                             messages=messages,
@@ -1199,9 +1210,11 @@ async def openai_stream(
                                             if ch is None:
                                                 continue
                                             delta = _stream_chunk_text(ch)
+                                            # log.info(f"delta: {delta}")
                                             if not delta:
                                                 continue
                                             stream_buffer += delta
+                                            log.info(f"stream_buffer: {stream_buffer}")
                                             for word in FORBIDDEN_WORDS:
                                                 if word in stream_buffer:
                                                     match word:
@@ -1389,9 +1402,11 @@ async def openai_stream(
 
         async def send_to_openai():
             nonlocal stream_sid, graph, patient, messages, conversation
+            print(f"sending to openai")
             while True:
                 message = await websocket.receive_json()
                 if message["event"] == "stop":
+                    print(f"stop event received from openai")
                     break
                 if message["event"] == "connected":
                     log.info(f"WebSocket event: {message['event']}")
@@ -1414,6 +1429,7 @@ async def openai_stream(
                         log=log,
                     )
                     stream_sid = message["start"]["streamSid"]
+                    print(f"stream_sid: {stream_sid}")
                     if patient.phone_number:
                         messages.insert(
                             0,

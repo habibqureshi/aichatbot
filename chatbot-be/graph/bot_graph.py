@@ -14,6 +14,7 @@ from langchain_mcp_adapters.tools import (
 from sqlalchemy.ext.asyncio import AsyncSession
 from aimodels import llm
 from graph.appointmnet_graph import create_appointment_graph
+from graph.order_graph import create_order_graph
 from rag.indexing.store import init_ChromaDB
 from logging import Logger
 # Load environment variables as early as possible
@@ -104,6 +105,26 @@ async def get_graph(
     graph = await create_appointment_graph(mcp_client, db, tenant_id, log)
     # compiled_graph = graph.compile(checkpointer=my_checkpointer)
     return graph
+
+
+async def get_order_graph(
+    call_id: str, customer_phone: str, db: AsyncSession, tenant_id: int, log: Logger
+):
+    """MCP session for ordering; header name kept as x-patient-no for MCP compatibility."""
+    mcp_client = MCPClient()
+    success = await mcp_client.connect(
+        url=MCP_URL,
+        headers={
+            "x-call-id": call_id,
+            # MCP UserMiddleware reads x-patient-no (and optional x-customer-no fallback).
+            "x-patient-no": customer_phone,
+            "x-customer-no": customer_phone,
+            "x-tenant-id": str(tenant_id),
+        },
+    )
+    if not success:
+        raise ConnectionError("Error during setup. Contact administrator!")
+    return await create_order_graph(mcp_client, db, tenant_id, log)
 
 
 async def get_chat_graph():

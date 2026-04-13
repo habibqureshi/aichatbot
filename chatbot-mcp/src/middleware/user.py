@@ -9,9 +9,13 @@ class UserMiddleware(Middleware):
         context.fastmcp_context.set_state(
             "call_sid", headers.get("x-call-id", "invalid")
         )
-        context.fastmcp_context.set_state(
-            "patient_number", headers.get("x-patient-no", "invalid")
+        raw_phone = (
+            headers.get("x-patient-no")
+            or headers.get("x-customer-no")
+            or "invalid"
         )
+        context.fastmcp_context.set_state("patient_number", raw_phone)
+        context.fastmcp_context.set_state("customer_number", raw_phone)
         context.fastmcp_context.set_state("tenant_id", int(headers.get("x-tenant-id")))
         result = await call_next(context)
         return result

@@ -46,7 +46,8 @@ class Conversation(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), index=True, nullable=False)
-    patient_id = Column(Integer, ForeignKey("patients.id"))
+    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True, index=True)
     call_sid = Column(String(50), index=True)
     __table_args__ = (
         UniqueConstraint("tenant_id", "call_sid", name="uix_conversation_call_sid_tenant"),
@@ -59,6 +60,7 @@ class Conversation(Base):
     resolved_status = Column(String(20), default="satisfied")
 
     patient = relationship("Patient", back_populates="conversations")
+    customer = relationship("Customer", back_populates="conversations")
     messages = relationship("Message", back_populates="conversation")
 
 
@@ -266,6 +268,7 @@ class Customer(Base):
     )
 
     orders = relationship("Order", back_populates="customer")
+    conversations = relationship("Conversation", back_populates="customer")
 
 
 class Menu(Base):

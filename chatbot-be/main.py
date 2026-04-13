@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from router import (
     appointment_crud_router,
     appointment_router,
+    order_router,
     chatbot_router,
     conversation_router,
     doctor_router,
@@ -45,6 +46,7 @@ async def health_check():
 app.include_router(chatbot_router.router)
 app.include_router(rag_router.router)
 app.include_router(appointment_router.router)
+app.include_router(order_router.router)
 app.include_router(conversation_router.router)
 app.include_router(doctor_router.router)
 app.include_router(appointment_crud_router.router)

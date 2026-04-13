@@ -1,8 +1,9 @@
 from pydantic import BaseModel, ConfigDict, computed_field, Field
-from typing import ClassVar
+from typing import ClassVar, Optional
 from datetime import datetime
 from schemas.common import TimezoneMixin
 from schemas.patient import Patient
+from schemas.customer import Customer
 
 
 class Conversation(TimezoneMixin, BaseModel):
@@ -11,7 +12,8 @@ class Conversation(TimezoneMixin, BaseModel):
     ended_at: datetime | None
     status: str
     call_sid: str
-    patient: Patient
+    patient: Optional[Patient] = None
+    customer: Optional[Customer] = None
     summary: str | None
     recording_link: str | None = Field(None, exclude=True)
     _timezone_fields: ClassVar[list[str]] = ["started_at", "ended_at"]

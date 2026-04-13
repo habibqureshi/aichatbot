@@ -1,4 +1,4 @@
-from db.models import Conversation, Patient
+from db.models import Conversation, Patient, Customer
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.twilio import TwilioIncoming
 from sqlalchemy.exc import IntegrityError
@@ -47,6 +47,39 @@ async def find_or_create(
         return result.scalars().first()
 
 
+async def find_or_create_for_customer(
+    data: TwilioIncoming, customer: Customer, db: AsyncSession, tenant_id: int
+) -> Conversation:
+    result = await db.execute(
+        select(Conversation).where(
+            Conversation.call_sid == data.CallSid, Conversation.tenant_id == tenant_id
+        )
+    )
+    conversation = result.scalars().first()
+    if conversation:
+        return conversation
+    conversation = Conversation(
+        call_sid=data.CallSid,
+        customer_id=customer.id,
+        tenant_id=tenant_id,
+        patient_id=None,
+    )
+    db.add(conversation)
+    try:
+        await db.commit()
+        await db.refresh(conversation)
+        return conversation
+    except IntegrityError:
+        await db.rollback()
+        result = await db.execute(
+            select(Conversation).where(
+                Conversation.call_sid == data.CallSid,
+                Conversation.tenant_id == tenant_id,
+            )
+        )
+        return result.scalars().first()
+
+
 async def find_by_call_sid(
     call_sid: str, db: AsyncSession, tenant_id: int
 ) -> Conversation:
@@ -77,7 +110,10 @@ async def get_all_conversations(
     offset = (page - 1) * limit
     query = (
         select(Conversation)
-        .options(joinedload(Conversation.patient))
+        .options(
+            joinedload(Conversation.patient),
+            joinedload(Conversation.customer),
+        )
         .where(Conversation.tenant_id == tenant_id)
         .order_by(Conversation.started_at.desc())
     )
@@ -85,8 +121,17 @@ async def get_all_conversations(
         query = query.where(Conversation.status == status)
     if q:
         search = f"%{q}%"
-        query = query.where(
-            or_(Patient.name.ilike(search), Patient.phone_number.ilike(search)),
+        query = (
+            query.outerjoin(Patient, Conversation.patient_id == Patient.id)
+            .outerjoin(Customer, Conversation.customer_id == Customer.id)
+            .where(
+                or_(
+                    Patient.name.ilike(search),
+                    Patient.phone_number.ilike(search),
+                    Customer.name.ilike(search),
+                    Customer.phone_number.ilike(search),
+                )
+            )
         )
     result = await db.execute(query.limit(limit).offset(offset))
     conversations = [

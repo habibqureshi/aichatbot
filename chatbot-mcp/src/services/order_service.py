@@ -11,26 +11,63 @@ async def get_or_create_customer_db(
     db,
     *,
     tenant_id: int,
-    customer_name: str | None,
+    phone_number: str | None,
+    display_name: str | None,
 ) -> Customer:
-    # Prefer a stable lookup by name when available; otherwise create an anonymous customer.
-    if customer_name:
+    """
+    Align with chatbot-be: resolve by (tenant_id, phone_number) when phone is present.
+    Do not store the phone string in name. Optional display_name fills Customer.name.
+    """
+    phone = (
+        phone_number.strip()
+        if phone_number and str(phone_number).strip() and phone_number != "invalid"
+        else None
+    )
+    name = display_name.strip() if display_name and str(display_name).strip() else None
+
+    if phone:
         existing = await db.execute(
             select(Customer)
             .where(
                 Customer.tenant_id == tenant_id,
-                Customer.name == customer_name,
+                Customer.phone_number == phone,
+            )
+            .limit(1)
+        )
+        customer = existing.scalars().first()
+        if customer:
+            if name and not (customer.name and str(customer.name).strip()):
+                customer.name = name
+                await db.flush()
+            return customer
+        customer = Customer(
+            tenant_id=tenant_id,
+            phone_number=phone,
+            name=name,
+        )
+        db.add(customer)
+        await db.flush()
+        return customer
+
+    if name:
+        existing = await db.execute(
+            select(Customer)
+            .where(
+                Customer.tenant_id == tenant_id,
+                Customer.name == name,
+                Customer.phone_number.is_(None),
             )
             .limit(1)
         )
         customer = existing.scalars().first()
         if customer:
             return customer
+        customer = Customer(tenant_id=tenant_id, phone_number=None, name=name)
+        db.add(customer)
+        await db.flush()
+        return customer
 
-    customer = Customer(
-        tenant_id=tenant_id,
-        name=customer_name,
-    )
+    customer = Customer(tenant_id=tenant_id, phone_number=None, name=None)
     db.add(customer)
     await db.flush()
     return customer
@@ -38,6 +75,7 @@ async def get_or_create_customer_db(
 
 async def create_order_db(
     db,
+    phone_number: str | None,
     customer_name: str | None,
     notes: str | None,
     call_sid: str | None,
@@ -46,7 +84,8 @@ async def create_order_db(
     customer = await get_or_create_customer_db(
         db,
         tenant_id=tenant_id,
-        customer_name=customer_name,
+        phone_number=phone_number,
+        display_name=customer_name,
     )
     order = Order(
         tenant_id=tenant_id,

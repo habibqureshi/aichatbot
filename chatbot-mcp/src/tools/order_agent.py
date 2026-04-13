@@ -24,16 +24,28 @@ def register_tools(mcp: FastMCP):
         Create a new draft order for the caller.
 
         Args:
-            customer_name: Optional display name; defaults to caller phone from context if omitted.
+            customer_name: Optional display name for the customer (not the phone number).
             notes: Optional free-text notes for the order.
         """
-        phone = ctx.get_state("patient_number")
-        name = customer_name or (phone if phone and phone != "invalid" else None)
+        raw = ctx.get_state("customer_number") or ctx.get_state("patient_number")
+        phone = (
+            raw.strip()
+            if isinstance(raw, str) and raw.strip() and raw != "invalid"
+            else None
+        )
+        display = (
+            customer_name.strip()
+            if customer_name and str(customer_name).strip()
+            else None
+        )
+        if phone and display and display.strip() == phone.strip():
+            display = None
         tenant_id = _tenant_id_from_ctx(ctx)
         async with get_db() as db:
             order = await order_service.create_order_db(
                 db=db,
-                customer_name=name,
+                phone_number=phone,
+                customer_name=display,
                 notes=notes,
                 call_sid=ctx.get_state("call_sid"),
                 tenant_id=tenant_id,
@@ -67,7 +79,7 @@ def register_tools(mcp: FastMCP):
                 tenant_id=tenant_id,
             )
 
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["yolo"])
     async def update_order_item(
         order_id: int,
         line_item_id: int,
@@ -92,7 +104,7 @@ def register_tools(mcp: FastMCP):
                 tenant_id=tenant_id,
             )
 
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["yolo"])
     async def remove_order_item(
         order_id: int,
         line_item_id: int,
@@ -111,7 +123,7 @@ def register_tools(mcp: FastMCP):
                 db=db, order_id=order_id, line_item_id=line_item_id, tenant_id=tenant_id
             )
 
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["yolo"])
     async def cancel_order(
         order_id: int,
         ctx: Context,
@@ -144,7 +156,7 @@ def register_tools(mcp: FastMCP):
                 db=db, order_id=order_id, tenant_id=tenant_id
             )
 
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["yolo"])
     async def get_order(order_id: int, ctx: Context) -> str:
         """
         Return order status, total, and line items.
@@ -158,7 +170,7 @@ def register_tools(mcp: FastMCP):
                 db=db, order_id=order_id, tenant_id=tenant_id
             )
 
-    @mcp.tool(tags=["restaurant"])
+    @mcp.tool(tags=["yolo"])
     async def price_order(order_id: int, ctx: Context) -> str:
         """
         Return current total for an order.

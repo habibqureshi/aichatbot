@@ -1,0 +1,304 @@
+"""
+LangChain tools for order management – run directly against the local DB
+(no MCP round-trip).  Each tool uses ``get_stream_writer()`` to emit
+meaningful progress messages that ``order_service.stream_llm`` consumes
+via ``astream_events  →  on_custom_event``.
+"""
+from __future__ import annotations
+
+from typing import Any, Optional
+from logging import Logger
+
+from langchain_core.tools import tool
+from sqlalchemy.ext.asyncio import AsyncSession
+
+try:
+    from langgraph.config import get_stream_writer as _get_stream_writer
+except ImportError:  # pragma: no cover
+    _get_stream_writer = None  # type: ignore[misc, assignment]
+
+from services import order_tool_service
+
+
+def _emit(payload: dict[str, Any], log: Logger) -> None:
+    """Write a custom stream chunk and log it unconditionally."""
+    sw_status = "skipped"
+    if _get_stream_writer is not None:
+        try:
+            writer = _get_stream_writer()
+            if writer is not None:
+                writer({"type": "order_mcp_tool", **payload})
+                sw_status = "ok"
+            else:
+                sw_status = "no_op_writer"
+        except Exception as e:
+            sw_status = f"exc:{type(e).__name__}"
+    else:
+        sw_status = "import_missing"
+    log.info(
+        "ORDER_TOOL_PROGRESS | tool=%s phase=%s stream_writer=%s",
+        payload.get("tool"),
+        payload.get("phase"),
+        sw_status,
+    )
+
+
+def build_order_tools(
+    db: AsyncSession,
+    tenant_id: int,
+    log: Logger,
+    customer_phone: str | None = None,
+    customer_name: str | None = None,
+    call_sid: str | None = None,
+) -> list:
+    """Return a list of LangChain tools bound to the given DB session / tenant."""
+
+    @tool
+    async def create_order(
+        customer_name: Optional[str] = None,
+        notes: Optional[str] = None,
+    ) -> str:
+        """Create a new draft order for the caller.
+
+        Args:
+            customer_name: Optional display name for the customer (not the phone number).
+            notes: Optional free-text notes for the order.
+        """
+        _emit({"tool": "create_order", "phase": "start"}, log)
+        try:
+            phone = customer_phone
+            display = (
+                customer_name.strip()
+                if customer_name and str(customer_name).strip()
+                else None
+            )
+            if phone and display and display.strip() == phone.strip():
+                display = None
+
+            result = await order_tool_service.create_order(
+                db,
+                phone_number=phone,
+                customer_name=display,
+                notes=notes,
+                call_sid=call_sid,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "create_order", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("create_order tool failed: %s", e)
+            _emit({"tool": "create_order", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def add_order_item(
+        order_id: int,
+        menu_item_id: int,
+        quantity: int,
+    ) -> str:
+        """Add a menu item line to an existing order.
+
+        Args:
+            order_id: Target order id.
+            menu_item_id: Menu row id (from list_menu).
+            quantity: Number of units (>= 1).
+        """
+        if quantity < 1:
+            return "Quantity must be at least 1."
+        _emit({"tool": "add_order_item", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.add_order_item(
+                db,
+                order_id=order_id,
+                menu_item_id=menu_item_id,
+                quantity=quantity,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "add_order_item", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("add_order_item tool failed: %s", e)
+            _emit({"tool": "add_order_item", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def update_order_item(
+        order_id: int,
+        line_item_id: int,
+        quantity: int,
+    ) -> str:
+        """Change the quantity on an existing order line.
+
+        Args:
+            order_id: Order id.
+            line_item_id: Line item id.
+            quantity: New quantity (>= 1).
+        """
+        _emit({"tool": "update_order_item", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.update_order_item(
+                db,
+                order_id=order_id,
+                line_item_id=line_item_id,
+                quantity=quantity,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "update_order_item", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("update_order_item tool failed: %s", e)
+            _emit({"tool": "update_order_item", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def remove_order_item(
+        order_id: int,
+        line_item_id: int,
+    ) -> str:
+        """Remove one line item from an order.
+
+        Args:
+            order_id: Order id.
+            line_item_id: Order line id (see get_order).
+        """
+        _emit({"tool": "remove_order_item", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.remove_order_item(
+                db,
+                order_id=order_id,
+                line_item_id=line_item_id,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "remove_order_item", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("remove_order_item tool failed: %s", e)
+            _emit({"tool": "remove_order_item", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def cancel_order(
+        order_id: int,
+        reason: Optional[str] = None,
+    ) -> str:
+        """Cancel an order.
+
+        Args:
+            order_id: Order id to cancel.
+            reason: Optional cancellation reason.
+        """
+        _emit({"tool": "cancel_order", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.cancel_order(
+                db,
+                order_id=order_id,
+                reason=reason,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "cancel_order", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("cancel_order tool failed: %s", e)
+            _emit({"tool": "cancel_order", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def confirm_order(order_id: int) -> str:
+        """Finalize an order (sets status to confirmed).
+
+        Args:
+            order_id: Order id to confirm.
+        """
+        _emit({"tool": "confirm_order", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.confirm_order(
+                db,
+                order_id=order_id,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "confirm_order", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("confirm_order tool failed: %s", e)
+            _emit({"tool": "confirm_order", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def get_order(order_id: int) -> str:
+        """Return order status, total, and line items.
+
+        Args:
+            order_id: Order id.
+        """
+        _emit({"tool": "get_order", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.get_order_summary(
+                db,
+                order_id=order_id,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "get_order", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("get_order tool failed: %s", e)
+            _emit({"tool": "get_order", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def price_order(order_id: int) -> str:
+        """Return current total for an order.
+
+        Args:
+            order_id: Order id.
+        """
+        _emit({"tool": "price_order", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.price_order(
+                db,
+                order_id=order_id,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "price_order", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("price_order tool failed: %s", e)
+            _emit({"tool": "price_order", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def list_menu(
+        category: Optional[str] = None,
+        limit: int = 20,
+    ) -> str:
+        """List available menu items (id, name, price).
+
+        Args:
+            category: Optional category filter.
+            limit: Max rows to return.
+        """
+        _emit({"tool": "list_menu", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.list_menu(
+                db,
+                category=category,
+                limit=int(limit),
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "list_menu", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("list_menu tool failed: %s", e)
+            _emit({"tool": "list_menu", "phase": "error", "error": str(e)}, log)
+            raise
+
+    return [
+        create_order,
+        add_order_item,
+        update_order_item,
+        remove_order_item,
+        cancel_order,
+        confirm_order,
+        get_order,
+        price_order,
+        list_menu,
+    ]

@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot-be
+    env_file:
+      - .env
+    environment:
+      # Override host-based defaults for container networking
+      DB_HOST: mysql
+      DB_PORT: 3306
+      CHROMA_DB_HOST: chromadb
+      CHROMA_DB_PORT: 8000
+      # Optional: if MCP runs in another compose/service, set service DNS name
+      # MCP_URL: http://mcp:8002/mcp
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: chatbot-mysql
+    command: --default-authentication-plugin=mysql_native_password
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+      # MYSQL_USER: ${DB_USER}
+      # MYSQL_PASSWORD: ${DB_PASS}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -u${DB_USER} -p${DB_PASS} --silent",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chatbot-chromadb
+    ports:
+      - "8001:8000" # host:container (backend still uses service name + 8000)
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      IS_PERSISTENT: "TRUE"
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  chroma_data:

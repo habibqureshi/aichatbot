@@ -110,21 +110,31 @@ async def get_graph(
 async def get_order_graph(
     call_id: str, customer_phone: str, db: AsyncSession, tenant_id: int, log: Logger
 ):
-    """MCP session for ordering; header name kept as x-patient-no for MCP compatibility."""
+    """Order graph with local DB + Chroma tools; MCP adds extra tools when reachable."""
     mcp_client = MCPClient()
     success = await mcp_client.connect(
         url=MCP_URL,
         headers={
             "x-call-id": call_id,
-            # MCP UserMiddleware reads x-patient-no (and optional x-customer-no fallback).
             "x-patient-no": customer_phone,
             "x-customer-no": customer_phone,
             "x-tenant-id": str(tenant_id),
         },
     )
     if not success:
-        raise ConnectionError("Error during setup. Contact administrator!")
-    return await create_order_graph(mcp_client, db, tenant_id, log)
+        log.warning(
+            "Order graph: MCP unreachable at %s; continuing with local tools only.",
+            MCP_URL,
+        )
+        mcp_client = None
+    return await create_order_graph(
+        mcp_client,
+        db,
+        tenant_id,
+        log,
+        customer_phone=customer_phone,
+        call_sid=call_id,
+    )
 
 
 async def get_chat_graph():

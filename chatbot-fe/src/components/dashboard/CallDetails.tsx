@@ -5,6 +5,7 @@ import {
   Message,
   streamConversationRecording,
   getConversationMessages,
+  getConversationCaller,
 } from "@/app/actions/conversations";
 import { toast } from "react-toastify";
 import MessageItem from "./MessageItem";
@@ -202,8 +203,9 @@ export default function CallDetails({
     };
   }, [audioSrc]);
   // Fallback values if no conversation is selected
-  const caller = conversation?.patient?.name || "N/A";
-  const phone = conversation?.patient?.phone_number || "N/A";
+  const callerInfo = getConversationCaller(conversation);
+  const caller = callerInfo?.name || "N/A";
+  const phone = callerInfo?.phone_number || "N/A";
   const status = conversation?.status || "Unknown";
   const summary =
     (conversation && (conversation as unknown as { summary?: string }).summary) ||
@@ -425,7 +427,7 @@ export default function CallDetails({
                             <MessageItem
                               key={message.id}
                               message={message}
-                              patientName={conversation?.patient?.name || "User"}
+                              patientName={callerInfo?.name || "User"}
                               formattedTime={formatTime(message.timestamp)}
                             />
                           ))

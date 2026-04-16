@@ -1,7 +1,9 @@
 import { SortCriteria } from "@/app/types/settings";
 
 export const ENDPOINTS = {
-  BASE_URL: "http://192.168.1.16:8001",
+  BASE_URL:
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://chatbot-test-652968847102.europe-west1.run.app",
   AUTH: {
     LOGIN: "/api/v1/auth/login",
     REGISTER: "/auth/register",
@@ -27,7 +29,7 @@ export const ENDPOINTS = {
       limit: number = 10,
       user_timezone: string = "UTC",
       specialty_id?: number,
-      name?: string
+      name?: string,
     ) => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -51,7 +53,7 @@ export const ENDPOINTS = {
       doctor_id?: number,
       patient_id?: number,
       status?: string,
-      name?: string
+      name?: string,
     ) => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -79,7 +81,7 @@ export const ENDPOINTS = {
       limit: number = 10,
       user_timezone: string = "UTC",
       status?: string,
-      name?: string
+      name?: string,
     ) => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -94,17 +96,26 @@ export const ENDPOINTS = {
       }
       return `/api/v1/conversation/?${params.toString()}`;
     },
-    MESSAGES: (conversationId: number, page: number = 1, limit: number = 10) => {
+    MESSAGES: (
+      conversationId: number,
+      page: number = 1,
+      limit: number = 10,
+    ) => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
       });
       return `/api/v1/conversation/${conversationId}/messages?${params.toString()}`;
     },
-    STREAM: (conversationId: number) => `/api/v1/appointment/${conversationId}/stream`,
+    STREAM: (conversationId: number) =>
+      `/api/v1/appointment/${conversationId}/stream`,
   },
   SPECIALITIES: {
-    LIST: (page: number = 1, limit: number = 10, user_timezone: string = "UTC") => {
+    LIST: (
+      page: number = 1,
+      limit: number = 10,
+      user_timezone: string = "UTC",
+    ) => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
@@ -114,7 +125,8 @@ export const ENDPOINTS = {
     },
     GET: (specialityId: number, user_timezone: string = "UTC") =>
       `/api/v1/specialities/${specialityId}?user_timezone=${user_timezone}`,
-    CREATE: (user_timezone: string = "UTC") => `/api/v1/specialities/?user_timezone=${user_timezone}`,
+    CREATE: (user_timezone: string = "UTC") =>
+      `/api/v1/specialities/?user_timezone=${user_timezone}`,
     UPDATE: (specialityId: number, user_timezone: string = "UTC") =>
       `/api/v1/specialities/${specialityId}?user_timezone=${user_timezone}`,
     DELETE: (specialityId: number) => `/api/v1/specialities/${specialityId}`,
@@ -126,17 +138,19 @@ export const ENDPOINTS = {
       sortCriteria: SortCriteria[] = [
         { field: "key", sortOrder: 1 },
         { field: "createdTs", sortOrder: 0 },
-      ]
+      ],
     ) =>
       `/api/v1/applicationSettings?page=${page}&size=${size}&sortCriteria=${encodeURIComponent(
-        JSON.stringify(sortCriteria)
+        JSON.stringify(sortCriteria),
       )}`,
     UPDATE: (id: number) => `/settings/${id}`,
   },
   KNOWLEDGE: {
-    LIST: (page: number = 1, limit: number = 10) => `/api/v1/rag/?page=${page}&limit=${limit}`,
+    LIST: (page: number = 1, limit: number = 10) =>
+      `/api/v1/rag/?page=${page}&limit=${limit}`,
     CREATE: "/api/v1/rag/upload-file",
-    UPDATE_ACTIVE: (knowledgeId: number) => `/api/v1/rag/activate/${knowledgeId}`,
+    UPDATE_ACTIVE: (knowledgeId: number) =>
+      `/api/v1/rag/activate/${knowledgeId}`,
     DELETE: (knowledgeId: number) => `/api/v1/rag/${knowledgeId}`,
   },
   APP_SETTINGS: {
@@ -144,7 +158,8 @@ export const ENDPOINTS = {
     UPDATE: (settingId: number) => `/api/v1/app-settings/${settingId}`,
   },
   STATS: {
-    TOTAL_CALLS: (start: string, end: string) => `/api/v1/stats/total_calls?start=${start}&end=${end}`,
+    TOTAL_CALLS: (start: string, end: string) =>
+      `/api/v1/stats/total_calls?start=${start}&end=${end}`,
     AVERAGE_DURATION: (start: string, end: string) =>
       `/api/v1/stats/average_duration?start=${start}&end=${end}`,
     CONVERSION_RATE: (start: string, end: string) =>

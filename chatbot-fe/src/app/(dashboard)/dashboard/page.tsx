@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Conversation, getConversationsList } from "@/app/actions/conversations";
+import {
+  Conversation,
+  getConversationsList,
+  getConversationCaller,
+} from "@/app/actions/conversations";
 import { getTimeseries, TimeseriesResponse } from "@/app/actions/dashboardStats";
 
 import MetricCard from "@/components/dashboard/dashboard/MetricCard";
@@ -25,14 +29,15 @@ export default function DashboardPage() {
       accessorKey: "patient.name",
       header: "Patient Information",
       minWidth: "200px",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium text-gray-900 truncate">{row.original.patient?.name || "N/A"}</div>
-          <div className="text-sm text-gray-500 truncate">
-            {row.original.patient?.phone_number || "N/A"}
+      cell: ({ row }) => {
+        const caller = getConversationCaller(row.original);
+        return (
+          <div>
+            <div className="font-medium text-gray-900 truncate">{caller?.name || "N/A"}</div>
+            <div className="text-sm text-gray-500 truncate">{caller?.phone_number || "N/A"}</div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       accessorKey: "started_at",

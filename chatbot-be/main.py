@@ -31,15 +31,12 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://chatbot-fe-652968847102.us-central1.run.app",
-        "https://dashboard.callsynthra.com",
-    ],  # your React/Next.js app origin
+    # Avoid mixing `allow_credentials=True` with `allow_origins=['*']`
+    # (browsers will reject the response). Use an origin regex instead.
+    allow_origin_regex=os.getenv("CORS_ALLOW_ORIGIN_REGEX", r"^https?://.*$"),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_origin_regex=r"https://.*\.callsynthra\.com",
 )
 
 

@@ -37,6 +37,7 @@ chatbot-be/.venv/
 chatbot-be/venv/
 chatbot-be/.python-version
 chatbot-be/.env
+chatbot-be/gcp-sa.json
 
 # App data (RAG/Chroma) - large/generated
 chatbot-be/chroma-data/

@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { getConversationsList, Conversation } from "@/app/actions/conversations";
+import {
+  getConversationsList,
+  Conversation,
+  getConversationCaller,
+} from "@/app/actions/conversations";
 
 export default function LiveCallActivity() {
   const [liveData, setLiveData] = useState<Conversation[] | null>(null);
@@ -53,6 +57,8 @@ export default function LiveCallActivity() {
       .slice(0, 2);
   };
 
+  const activeCaller = liveData && liveData.length > 0 ? getConversationCaller(liveData[0]) : null;
+
   return (
     <div className="bg-brand-card text-white rounded-[8px] p-4 shadow-md h-[347px]">
       <div className="text-[24px] font-semibold leading[1.32] tracking-normal text-white">
@@ -96,12 +102,12 @@ export default function LiveCallActivity() {
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0 w-[46px] h-[46px] rounded-full overflow-hidden bg-[#FFCB14] flex items-center justify-center">
                 <span className="text-white font-medium text-[22px]">
-                  {liveData && liveData.length > 0 ? getInitials(liveData[0].patient.name) : "U"}
+                  {activeCaller?.name ? getInitials(activeCaller.name) : "U"}
                 </span>
               </div>
               <div>
                 <div className="text-base font-bold leading[1.32] tracking-normal text-white truncate max-w-[120px]">
-                  {liveData && liveData.length > 0 ? liveData[0].patient.name : "No Active Calls"}
+                  {activeCaller?.name || "No Active Calls"}
                 </div>
                 <div className="text-base font-normal leading[1.32] tracking-normal text-white">
                   {liveData && liveData.length > 0 ? "On Call" : ""}

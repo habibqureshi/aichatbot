@@ -219,7 +219,7 @@ class Reservation(Base):
     __tablename__ = "reservations"
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), index=True, nullable=False)
-    customer_id = Column(Integer, ForeignKey("patients.id"))
+    customer_id = Column(Integer, ForeignKey("customers.id"))
     table_id = Column(Integer, ForeignKey("restaurant_tables.id"))
     reservation_date = Column(DateTime, nullable=False)
     party_size = Column(Integer, nullable=False)
@@ -235,7 +235,7 @@ class Reservation(Base):
         default="pending",
         index=True,
     )
-    customer = relationship("Patient", lazy="joined") 
+    customer = relationship("Customer", lazy="joined")
     special_request = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     cancelled_at = Column(DateTime, nullable=True)

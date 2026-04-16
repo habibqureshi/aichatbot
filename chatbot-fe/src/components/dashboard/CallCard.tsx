@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Conversation } from "@/app/actions/conversations";
+import { Conversation, getConversationCaller } from "@/app/actions/conversations";
 import Image from "next/image";
 import { StatusBadge } from "@/lib/statusUtils";
 
@@ -85,8 +85,9 @@ const calculateDuration = (startedAt: string, endedAt: string | null): string =>
 };
 
 export default function CallCard({ conversation, onClick, isSelected = false }: Props) {
-  const caller = conversation?.patient?.name || "";
-  const phone = conversation?.patient?.phone_number || "N/A";
+  const callerInfo = getConversationCaller(conversation);
+  const caller = callerInfo?.name || "";
+  const phone = callerInfo?.phone_number || "N/A";
   const summary = (conversation as unknown as { summary?: string })?.summary || "";
   const sentiment = sentimentFromSummary(summary);
 

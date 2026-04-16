@@ -1,5 +1,8 @@
 """
-LangGraph for phone order-taking (restaurant / ordering tools).
+LangGraph for restaurant phone support.
+Supports two services:
+1) order taking (tool-backed),
+2) table reservation (tool-backed).
 Uses customer_* fields in state; logic mirrors appointmnet_graph ordering rules.
 Order tools and knowledge_retriever run directly against the local DB / ChromaDB
 (no MCP round-trip) and emit stream_writer progress events.  Any remaining MCP
@@ -29,6 +32,7 @@ from datetime import datetime, timezone
 from logging import Logger
 
 from tools.order_tools import build_order_tools
+from tools.reservation_tools import build_reservation_tools
 from tools.retriever_tools import build_retriever_tools
 
 
@@ -73,8 +77,19 @@ async def create_order_graph(
         customer_name=customer_name,
         call_sid=call_sid,
     )
+    local_reservation_tools = build_reservation_tools(
+        db=db,
+        tenant_id=tenant_id,
+        log=log,
+        customer_phone=customer_phone,
+        customer_name=customer_name,
+    )
     local_retriever_tools = build_retriever_tools(tenant_id=tenant_id, log=log)
-    local_tools = list(local_order_tools) + list(local_retriever_tools)
+    local_tools = (
+        list(local_order_tools)
+        + list(local_reservation_tools)
+        + list(local_retriever_tools)
+    )
     local_tool_names = {
         getattr(t, "name", getattr(t, "__name__", "")) for t in local_tools
     }
@@ -111,18 +126,22 @@ async def create_order_graph(
     def _tool_node_error(exc: Exception) -> str:
         log.exception("Tool execution failed: %s", exc)
         return (
-            "Tool error: the ordering or database service failed. "
+            "Tool error: the ordering/reservation or database service failed. "
             f"Details: {exc}"
         )
 
     biz = business_setting or "restaurant"
     _system_prompt = (
-        f"You are a brief, conversational phone-order assistant for a {biz}.\n"
+        f"You are a brief, conversational phone assistant for a {biz}.\n"
         "RULES:\n"
         "- Be short (this is a voice call). Collect missing info one at a time.\n"
         "- Never invent info; user messages are your only truth.\n"
         "- Confirm details before acting. After any action, ask if they need more.\n"
         "- Respond in English only.\n"
+        "\n"
+        "SERVICES:\n"
+        "- You provide two services: (1) order taking, (2) table reservation for dine-in.\n"
+        "- First identify what the caller wants. If unclear, ask: \"Would you like to place an order or reserve a table?\"\n"
         "\n"
         "BUSINESS / FAQ:\n"
         "- Use knowledge_retriever for hours, location, policies. Answer only from results.\n"
@@ -141,6 +160,15 @@ async def create_order_graph(
         "- Prices come only from tools.\n"
         "- Garbled or off-topic speech during ordering: ask to repeat, don't use retriever.\n"
         "- No duplicate identical tool calls; new category = new list_menu is fine.\n"
+        "\n"
+        "TABLE RESERVATION:\n"
+        "- Use check_table_availability before finalizing a reservation request when date/time or party size changes.\n"
+        "- If the caller mentions a seating/location preference such as rooftop, indoor, patio, window, or outdoor, pass it in `location_preference`.\n"
+        "- Use reserve_table to create a reservation once date, time, party size, location preference, and caller details are clear.\n"
+        "- Use update_reservation when caller changes date/time/party size/location/special request.\n"
+        "- Use cancel_reservation when caller asks to cancel.\n"
+        "- Never use ordering tools for reservation-only requests.\n"
+        "- If the caller switches from reservation to ordering (or wants both), handle each intent accordingly.\n"
         "\n"
         "SPECIAL:\n"
         "- Caller wants a human → apologetic message ending with **NEEDS_HUMAN_INTERVENTION**\n"

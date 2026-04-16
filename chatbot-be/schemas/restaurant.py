@@ -6,7 +6,7 @@ from typing import ClassVar
 from pydantic import BaseModel, ConfigDict
 
 from schemas.common import TimezoneMixin
-from schemas.patient import Patient
+from schemas.customer import Customer
 
 
 class RestaurantTableBase(BaseModel):
@@ -55,7 +55,7 @@ class Reservation(TimezoneMixin, ReservationBase):
     id: int
     created_at: datetime
     cancelled_at: datetime | None = None
-    customer: Patient | None = None
+    customer: Customer | None = None
     table: RestaurantTable | None = None
 
     _timezone_fields: ClassVar[list[str]] = [

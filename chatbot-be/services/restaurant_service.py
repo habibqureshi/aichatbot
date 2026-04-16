@@ -10,7 +10,6 @@ from db.models import (
     RestaurantTable as RestaurantTableModel,
     Reservation as ReservationModel,
     RestaurantSetting as RestaurantSettingModel,
-    Patient as PatientModel,
 )
 from schemas.common import PaginatedResponse
 from schemas.restaurant import (

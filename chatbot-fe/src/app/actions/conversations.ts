@@ -7,14 +7,24 @@ export interface Conversation {
   ended_at: string | null;
   status: string;
   call_sid: string;
-  patient: {
+  patient?: {
     id: number;
     phone_number: string;
     name: string;
     created_at: string;
-  };
+  } | null;
+  customer?: {
+    id: number;
+    phone_number: string;
+    name: string;
+    created_at: string;
+  } | null;
   summary: string | null;
   recording_available: boolean;
+}
+
+export function getConversationCaller(conversation?: Conversation | null) {
+  return conversation?.patient || conversation?.customer || null;
 }
 
 export interface ConversationsResponse {

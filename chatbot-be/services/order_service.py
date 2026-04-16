@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import datetime
+from collections.abc import AsyncIterator
 import json
 import os
 import re
@@ -83,6 +84,9 @@ client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 #     "/home/hammad/Documents/techbucks/custom-tts/en_US-lessac-medium.onnx"
 # )
 VOICE = "Polly.Joanna-Neural"
+DEFAULT_ORDER_GREETING = "How can I help you today?"
+ORDER_GREETING_KEY = "GREETING"
+_ORDER_GREETING_CACHE: dict[int, str] = {}
 
 
 def _stream_chunk_text(chunk) -> str:
@@ -151,15 +155,60 @@ def _tool_hold_phrase(tool_calls: list) -> str:
             return "Let me check your order."
         case "knowledge_retriever":
             return "Let me look that up for you."
+        case "check_table_availability":
+            return "Let me check table availability for you."
+        case "reserve_table":
+            return "Great, I'll reserve a table for you now."
+        case "update_reservation":
+            return "Sure, let me update your reservation."
+        case "cancel_reservation":
+            return "Okay, I'll cancel that reservation now."
         case _:
             return "One moment, please."
+
+
+async def _get_cached_order_greeting(db: AsyncSession, tenant_id: int) -> str:
+    cached = _ORDER_GREETING_CACHE.get(tenant_id)
+    if cached is not None:
+        return cached
+
+    greeting_setting = await app_setting_service.get_app_setting_by_key(
+        db=db,
+        key=ORDER_GREETING_KEY,
+        tenant_id=tenant_id,
+    )
+    greeting = (
+        greeting_setting.value.strip()
+        if greeting_setting and greeting_setting.value and greeting_setting.value.strip()
+        else DEFAULT_ORDER_GREETING
+    )
+    _ORDER_GREETING_CACHE[tenant_id] = greeting
+    return greeting
+
+
+async def _build_order_greeting_message(
+    db: AsyncSession,
+    tenant_id: int,
+    customer_name: str | None,
+) -> str:
+    greeting = await _get_cached_order_greeting(db=db, tenant_id=tenant_id)
+    if customer_name and customer_name.strip():
+        return f"Hi {customer_name.strip()}, {greeting}"
+    return f"Hi, {greeting}"
+
+
+async def _iter_cartesia_audio(ctx) -> AsyncIterator[bytes]:
+    async for response in ctx.receive():
+        if response.type == "chunk" and response.audio:
+            yield response.audio
 
 
 # All local LangChain tools that emit stream_writer events.
 _ORDER_STREAM_TOOL_NAMES = frozenset({
     "list_menu", "create_order", "add_order_item", "update_order_item",
     "remove_order_item", "cancel_order", "confirm_order", "get_order",
-    "price_order", "knowledge_retriever",
+    "price_order", "knowledge_retriever", "check_table_availability",
+    "reserve_table", "update_reservation", "cancel_reservation",
 })
 
 
@@ -975,6 +1024,18 @@ class SendVoiceSession:
         self.db = db
         self.tenant_id = tenant_id
         self.log = log
+        self.cartesia_kw = {
+            "model_id": "sonic-3",
+            "voice": {
+                "id": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+                "mode": "id",
+            },
+            "output_format": {
+                "container": "raw",
+                "encoding": "pcm_mulaw",
+                "sample_rate": 8000,
+            },
+        }
 
     # ============================================================
     # TWILIO → OPENAI STT
@@ -1051,6 +1112,7 @@ class SendVoiceSession:
         st.stream_sid = message["start"]["streamSid"]
 
         await self.initialize_conversation_messages()
+        await self.send_initial_greeting()
         self.log.info(
             "SESSION_READY | call_sid=%s | conversation_id=%s customer_id=%s | "
             "stream_sid=%s | order graph connected for MCP",
@@ -1076,6 +1138,56 @@ class SendVoiceSession:
                 0,
                 HumanMessage(content=f"[Caller: {st.customer.name}]"),
             )
+
+    async def send_initial_greeting(self):
+        st = self.state
+        if not st.conversation or not st.customer or not st.stream_sid:
+            self.log.warning(
+                "Skipping initial order greeting: conversation=%s customer=%s stream_sid=%s",
+                st.conversation is not None,
+                st.customer is not None,
+                bool(st.stream_sid),
+            )
+            return
+
+        greeting_message = await _build_order_greeting_message(
+            db=self.db,
+            tenant_id=self.tenant_id,
+            customer_name=st.customer.name,
+        )
+        st.messages.append(AIMessage(content=greeting_message))
+        await self.message_service.create(
+            conversation=st.conversation,
+            content=greeting_message,
+            role="assistant",
+            db=self.db,
+            tenant_id=self.tenant_id,
+        )
+        self.log.info("ORDER_GREETING | stored initial greeting=%r", greeting_message)
+
+        ctx = self.connection.context()
+        await ctx.send(
+            transcript=greeting_message,
+            continue_=False,
+            **self.cartesia_kw,
+        )
+
+        first_chunk = True
+        async for audio in _iter_cartesia_audio(ctx):
+            if first_chunk:
+                self.log.info(
+                    "ORDER_GREETING | first audio chunk sent to Twilio | bytes=%d",
+                    len(audio),
+                )
+                first_chunk = False
+            await self.websocket.send_json(
+                {
+                    "event": "media",
+                    "streamSid": st.stream_sid,
+                    "media": {"payload": base64.b64encode(audio).decode("utf-8")},
+                }
+            )
+        self.log.info("ORDER_GREETING | completed initial greeting playback")
 
     async def handle_media(self, message):
 

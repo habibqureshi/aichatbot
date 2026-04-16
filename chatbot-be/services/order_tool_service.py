@@ -5,11 +5,16 @@ LangChain tools in chatbot-be can work without an MCP round-trip.
 """
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from db.models import Customer, Menu, Order, OrderItem
+
+MENU_CACHE_TTL_SECONDS = 300
+_MENU_CACHE: dict[int, tuple[datetime, list[Menu]]] = {}
 
 
 async def get_or_create_customer(
@@ -274,13 +279,12 @@ async def list_menu(
     limit: int = 20,
     tenant_id: int,
 ) -> str:
-    q = select(Menu).where(Menu.available == 1)
-    q = q.where(Menu.tenant_id == tenant_id)
+    all_available = await _get_cached_available_menu(db=db, tenant_id=tenant_id)
+    rows = all_available
     if category:
-        q = q.where(Menu.category == category)
-    q = q.order_by(Menu.name.asc()).limit(limit)
-    result = await db.execute(q)
-    rows = list(result.scalars().all())
+        normalized = category.strip().lower()
+        rows = [m for m in rows if (m.category or "").strip().lower() == normalized]
+    rows = sorted(rows, key=lambda m: (m.name or "").lower())[:limit]
     if not rows:
         return "No menu items available right now."
     parts = [f"{m.id}:{m.name} ({float(m.price):.2f})" for m in rows]
@@ -311,3 +315,26 @@ def _format_order_summary(order: Order) -> str:
             f"line_total={float(it.line_total):.2f}"
         )
     return "\n".join(lines)
+
+
+async def _get_cached_available_menu(
+    db: AsyncSession,
+    *,
+    tenant_id: int,
+) -> list[Menu]:
+    now = datetime.utcnow()
+    cached = _MENU_CACHE.get(tenant_id)
+    if cached is not None:
+        cached_at, menu_rows = cached
+        if (now - cached_at).total_seconds() < MENU_CACHE_TTL_SECONDS:
+            return menu_rows
+
+    q = (
+        select(Menu)
+        .where(Menu.available == 1, Menu.tenant_id == tenant_id)
+        .order_by(Menu.name.asc())
+    )
+    result = await db.execute(q)
+    menu_rows = list(result.scalars().all())
+    _MENU_CACHE[tenant_id] = (now, menu_rows)
+    return menu_rows

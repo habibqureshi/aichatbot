@@ -17,7 +17,7 @@ try:
 except ImportError:  # pragma: no cover
     _get_stream_writer = None  # type: ignore[misc, assignment]
 
-from services import order_tool_service
+from services import order_tool_service, reservation_tool_service
 
 
 def _emit(payload: dict[str, Any], log: Logger) -> None:
@@ -56,12 +56,14 @@ def build_order_tools(
     @tool
     async def create_order(
         customer_name: Optional[str] = None,
+        delivery_address: Optional[str] = None,
         notes: Optional[str] = None,
     ) -> str:
         """Create a new draft order for the caller.
 
         Args:
             customer_name: Optional display name for the customer (not the phone number).
+            delivery_address: Optional delivery address to save for this caller.
             notes: Optional free-text notes for the order.
         """
         _emit({"tool": "create_order", "phase": "start"}, log)
@@ -79,6 +81,7 @@ def build_order_tools(
                 db,
                 phone_number=phone,
                 customer_name=display,
+                delivery_address=delivery_address,
                 notes=notes,
                 call_sid=call_sid,
                 tenant_id=tenant_id,
@@ -112,6 +115,7 @@ def build_order_tools(
                 order_id=order_id,
                 menu_item_id=menu_item_id,
                 quantity=quantity,
+                caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
             _emit({"tool": "add_order_item", "phase": "done"}, log)
@@ -141,6 +145,7 @@ def build_order_tools(
                 order_id=order_id,
                 line_item_id=line_item_id,
                 quantity=quantity,
+                caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
             _emit({"tool": "update_order_item", "phase": "done"}, log)
@@ -167,6 +172,7 @@ def build_order_tools(
                 db,
                 order_id=order_id,
                 line_item_id=line_item_id,
+                caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
             _emit({"tool": "remove_order_item", "phase": "done"}, log)
@@ -193,6 +199,7 @@ def build_order_tools(
                 db,
                 order_id=order_id,
                 reason=reason,
+                caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
             _emit({"tool": "cancel_order", "phase": "done"}, log)
@@ -214,6 +221,7 @@ def build_order_tools(
             result = await order_tool_service.confirm_order(
                 db,
                 order_id=order_id,
+                caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
             _emit({"tool": "confirm_order", "phase": "done"}, log)
@@ -221,6 +229,49 @@ def build_order_tools(
         except Exception as e:
             log.exception("confirm_order tool failed: %s", e)
             _emit({"tool": "confirm_order", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def get_my_latest_order_and_reservations(max_reservations: int = 5) -> str:
+        """Fetch this caller's latest order (by last update) and most recent reservations.
+
+        Use when the caller asks what they ordered, their last order, or their
+        reservations without giving an order or reservation id.
+
+        Args:
+            max_reservations: How many recent reservations to include (1–10). Default 5.
+        """
+        _emit({"tool": "get_my_latest_order_and_reservations", "phase": "start"}, log)
+        try:
+            lim = int(max_reservations)
+            if lim < 1:
+                lim = 1
+            elif lim > 10:
+                lim = 10
+            order_part = await order_tool_service.get_latest_order_summary_for_caller(
+                db,
+                caller_phone_number=customer_phone,
+                tenant_id=tenant_id,
+            )
+            res_part = await reservation_tool_service.get_latest_reservations_summary_for_caller(
+                db,
+                caller_phone_number=customer_phone,
+                tenant_id=tenant_id,
+                limit=lim,
+            )
+            result = f"{order_part}\n\n{res_part}"
+            _emit({"tool": "get_my_latest_order_and_reservations", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("get_my_latest_order_and_reservations tool failed: %s", e)
+            _emit(
+                {
+                    "tool": "get_my_latest_order_and_reservations",
+                    "phase": "error",
+                    "error": str(e),
+                },
+                log,
+            )
             raise
 
     @tool
@@ -235,6 +286,7 @@ def build_order_tools(
             result = await order_tool_service.get_order_summary(
                 db,
                 order_id=order_id,
+                caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
             _emit({"tool": "get_order", "phase": "done"}, log)
@@ -256,6 +308,7 @@ def build_order_tools(
             result = await order_tool_service.price_order(
                 db,
                 order_id=order_id,
+                caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
             _emit({"tool": "price_order", "phase": "done"}, log)
@@ -269,12 +322,14 @@ def build_order_tools(
     async def list_menu(
         category: Optional[str] = None,
         limit: int = 20,
+        include_price: bool = False,
     ) -> str:
         """List available menu items (id, name, price).
 
         Args:
             category: Optional category filter.
             limit: Max rows to return.
+            include_price: Set True only when caller asks for prices.
         """
         _emit({"tool": "list_menu", "phase": "start"}, log)
         try:
@@ -282,6 +337,7 @@ def build_order_tools(
                 db,
                 category=category,
                 limit=int(limit),
+                include_price=include_price,
                 tenant_id=tenant_id,
             )
             _emit({"tool": "list_menu", "phase": "done"}, log)
@@ -291,7 +347,54 @@ def build_order_tools(
             _emit({"tool": "list_menu", "phase": "error", "error": str(e)}, log)
             raise
 
+    @tool
+    async def get_customer_profile() -> str:
+        """Get known caller profile values (name and saved delivery address)."""
+        _emit({"tool": "get_customer_profile", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.get_customer_profile(
+                db,
+                phone_number=customer_phone,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "get_customer_profile", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("get_customer_profile tool failed: %s", e)
+            _emit({"tool": "get_customer_profile", "phase": "error", "error": str(e)}, log)
+            raise
+
+    @tool
+    async def update_customer_profile(
+        customer_name: Optional[str] = None,
+        delivery_address: Optional[str] = None,
+    ) -> str:
+        """Update caller profile values and save to customer table.
+
+        Args:
+            customer_name: Caller name to save.
+            delivery_address: Delivery address to save.
+        """
+        _emit({"tool": "update_customer_profile", "phase": "start"}, log)
+        try:
+            result = await order_tool_service.update_customer_profile(
+                db,
+                phone_number=customer_phone,
+                customer_name=customer_name,
+                delivery_address=delivery_address,
+                tenant_id=tenant_id,
+            )
+            _emit({"tool": "update_customer_profile", "phase": "done"}, log)
+            return result
+        except Exception as e:
+            log.exception("update_customer_profile tool failed: %s", e)
+            _emit({"tool": "update_customer_profile", "phase": "error", "error": str(e)}, log)
+            raise
+
     return [
+        get_customer_profile,
+        update_customer_profile,
+        get_my_latest_order_and_reservations,
         create_order,
         add_order_item,
         update_order_item,

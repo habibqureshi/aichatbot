@@ -129,6 +129,27 @@ def _spoken_covers_final_classify(spoken_joined: str, final_text: str) -> bool:
     return False
 
 
+def _extract_caller_name_from_text(user_text: str) -> str | None:
+    text = (user_text or "").strip()
+    if not text:
+        return None
+    patterns = [
+        r"(?:my name is|i am|i'm|this is)\s+([A-Za-z][A-Za-z\-' ]{1,60})",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if not match:
+            continue
+        candidate = " ".join(match.group(1).split()).strip(" .,!?:;")
+        if not candidate:
+            continue
+        parts = [p for p in candidate.split() if p]
+        if not parts:
+            continue
+        return " ".join(part.capitalize() for part in parts[:4])
+    return None
+
+
 def _tool_hold_phrase(tool_calls: list) -> str:
     """Short voice line while MCP tools run (tool-only model turns have no streamed text)."""
     if not tool_calls:
@@ -151,8 +172,12 @@ def _tool_hold_phrase(tool_calls: list) -> str:
             return "Updating your order."
         case "update_order_item" | "remove_order_item":
             return "Updating your order."
-        case "get_order" | "price_order":
-            return "Let me check your order."
+        case "get_order" | "price_order" | "get_my_latest_order_and_reservations":
+            return "Let me check your order and reservations."
+        case "get_customer_profile":
+            return "Let me check your saved details."
+        case "update_customer_profile":
+            return "Got it, updating your details now."
         case "knowledge_retriever":
             return "Let me look that up for you."
         case "check_table_availability":
@@ -165,6 +190,60 @@ def _tool_hold_phrase(tool_calls: list) -> str:
             return "Okay, I'll cancel that reservation now."
         case _:
             return "One moment, please."
+
+
+VOICE_FORBIDDEN_MARKERS: tuple[str, ...] = (
+    "**FINISH_CONVERSATION**",
+    "**NEEDS_HUMAN_INTERVENTION**",
+)
+
+_VOICE_FORBIDDEN_CORES: tuple[str, ...] = (
+    "FINISH_CONVERSATION",
+    "NEEDS_HUMAN_INTERVENTION",
+)
+
+_VOICE_FORBIDDEN_LEAK_RE = re.compile(
+    r"(?i)(\s*\*+)*(FINISH_CONVERSATION|NEEDS_HUMAN_INTERVENTION)(\*+|\s)*",
+)
+
+
+def _voice_stream_forbidden_hold(buffer: str, markers: tuple[str, ...]) -> bool:
+    """True while the buffer may be inside a finish/intervention marker — do not flush to TTS."""
+    if not buffer or not buffer.strip():
+        return False
+    b = buffer.strip()
+    for w in markers:
+        if w.startswith(b):
+            return True
+    if "**" in buffer:
+        tail = buffer[buffer.index("**") :].strip()
+        for w in markers:
+            if w.startswith(tail):
+                return True
+    if "**" not in buffer and len(b) >= 3:
+        u = b.upper()
+        for core in _VOICE_FORBIDDEN_CORES:
+            cu = core.upper()
+            if cu.startswith(u) or u.startswith(cu):
+                return True
+    return False
+
+
+def _strip_voice_forbidden_leaks(
+    text: str, markers: tuple[str, ...] = VOICE_FORBIDDEN_MARKERS
+) -> str:
+    """Remove graph control tokens and split-stream tails so they are never spoken."""
+    if not text or not str(text).strip():
+        return ""
+    t = str(text)
+    for w in markers:
+        t = t.replace(w, "")
+    t = _VOICE_FORBIDDEN_LEAK_RE.sub("", t)
+    if "**" in t:
+        i = t.index("**")
+        t = t[:i].rstrip()
+    t = re.sub(r"\s*\*+\s*$", "", t)
+    return t.strip()
 
 
 async def _get_cached_order_greeting(db: AsyncSession, tenant_id: int) -> str:
@@ -194,7 +273,7 @@ async def _build_order_greeting_message(
     greeting = await _get_cached_order_greeting(db=db, tenant_id=tenant_id)
     if customer_name and customer_name.strip():
         return f"Hi {customer_name.strip()}, {greeting}"
-    return f"Hi, {greeting}"
+    return f"Hi, {greeting} Before we begin, may I have your name?"
 
 
 async def _iter_cartesia_audio(ctx) -> AsyncIterator[bytes]:
@@ -207,7 +286,9 @@ async def _iter_cartesia_audio(ctx) -> AsyncIterator[bytes]:
 _ORDER_STREAM_TOOL_NAMES = frozenset({
     "list_menu", "create_order", "add_order_item", "update_order_item",
     "remove_order_item", "cancel_order", "confirm_order", "get_order",
-    "price_order", "knowledge_retriever", "check_table_availability",
+    "get_my_latest_order_and_reservations",
+    "price_order", "get_customer_profile", "update_customer_profile",
+    "knowledge_retriever", "check_table_availability",
     "reserve_table", "update_reservation", "cancel_reservation",
 })
 
@@ -511,6 +592,8 @@ class ReceiveVoiceSession:
         if not user_text:
             return
 
+        await self._maybe_store_customer_name_from_transcript(user_text)
+
         # self.log.info("Starting TTS synthesis and streaming to Twilio")
         self.log.info(
             "PIPELINE | run_full_ai_cycle scheduled (final transcript only; STT deltas not logged)"
@@ -519,6 +602,25 @@ class ReceiveVoiceSession:
         await self._prepare_new_voice_cycle()
         self.state.interrupt_event.clear()
         self._voice_cycle_task = asyncio.create_task(self.run_full_ai_cycle(user_text))
+
+    async def _maybe_store_customer_name_from_transcript(self, user_text: str) -> None:
+        st = self.state
+        customer = st.customer
+        if customer is None:
+            return
+        if customer.name and str(customer.name).strip():
+            return
+        inferred_name = _extract_caller_name_from_text(user_text)
+        if not inferred_name:
+            return
+        customer.name = inferred_name
+        try:
+            await self.db.commit()
+            await self.db.refresh(customer)
+            self.log.info("CUSTOMER_NAME_CAPTURED | customer_id=%s name=%r", customer.id, inferred_name)
+        except Exception as e:
+            await self.db.rollback()
+            self.log.warning("CUSTOMER_NAME_CAPTURE_FAILED | %s", e)
 
     # -------------------------------
     # User Interrupt
@@ -723,10 +825,7 @@ class ReceiveVoiceSession:
             tenant_id=self.tenant_id,
         )
 
-        FORBIDDEN_WORDS = [
-            "**FINISH_CONVERSATION**",
-            "**NEEDS_HUMAN_INTERVENTION**",
-        ]
+        FORBIDDEN_WORDS = list(VOICE_FORBIDDEN_MARKERS)
         _TTS_MIN_CHARS = 30
         _TTS_FLUSH_CHARS = ".!?,;:\n"
         stream_buffer = ""
@@ -801,12 +900,12 @@ class ReceiveVoiceSession:
                                     )
                                     st.human_event.set()
                             stream_buffer = stream_buffer.replace(word, "")
-                    is_partial_match = any(
-                        word.startswith(stream_buffer.strip())
-                        for word in FORBIDDEN_WORDS
+                    _markers_t = tuple(FORBIDDEN_WORDS)
+                    hold_forbidden = _voice_stream_forbidden_hold(
+                        stream_buffer, _markers_t
                     )
                     if (
-                        not is_partial_match
+                        not hold_forbidden
                         and stream_buffer
                         and not st.interrupt_event.is_set()
                     ):
@@ -821,7 +920,9 @@ class ReceiveVoiceSession:
                             or (not tts_first_sent and buf_len >= 2)
                         )
                         if should_flush:
-                            seg = stream_buffer
+                            seg = _strip_voice_forbidden_leaks(
+                                stream_buffer, _markers_t
+                            )
                             self.log.info(
                                 "TTS_STREAM_SEGMENT | flushed to Cartesia | "
                                 "chars=%d text=%r",
@@ -834,12 +935,13 @@ class ReceiveVoiceSession:
                                     len(seg),
                                     seg if len(seg) <= 300 else (seg[:300] + "..."),
                                 )
-                            await self._cartesia_send_stream(
-                                ctx,
-                                stream_buffer,
-                                "Sending to cartesia",
-                                last_classify_spoken,
-                            )
+                            if seg.strip():
+                                await self._cartesia_send_stream(
+                                    ctx,
+                                    seg,
+                                    "Sending to cartesia",
+                                    last_classify_spoken,
+                                )
                             stream_buffer = ""
                             tts_first_sent = True
 
@@ -914,6 +1016,9 @@ class ReceiveVoiceSession:
                                         to_send = (
                                             to_send.replace(word, "").strip()
                                         )
+                                to_send = _strip_voice_forbidden_leaks(
+                                    to_send, tuple(FORBIDDEN_WORDS)
+                                )
                                 if to_send:
                                     self.log.info(
                                         "TTS_COMPLETION_FALLBACK | text=%r",
@@ -954,8 +1059,12 @@ class ReceiveVoiceSession:
                 for word in FORBIDDEN_WORDS:
                     if word in stream_buffer:
                         stream_buffer = stream_buffer.replace(word, "")
-                tail = stream_buffer.strip()
-                if tail:
+                tail = _strip_voice_forbidden_leaks(
+                    stream_buffer.strip(), tuple(FORBIDDEN_WORDS)
+                )
+                if tail and not _voice_stream_forbidden_hold(
+                    tail, tuple(FORBIDDEN_WORDS)
+                ):
                     self.log.info(
                         "TTS_BUFFER_FLUSH | text=%r",
                         tail if len(tail) <= 500 else (tail[:500] + "..."),

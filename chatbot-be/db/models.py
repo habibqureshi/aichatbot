@@ -262,6 +262,7 @@ class Customer(Base):
     tenant_id = Column(Integer, ForeignKey("tenants.id"), index=True, nullable=False)
     phone_number = Column(String(100), index=True)
     name = Column(String(150), nullable=True)
+    delivery_address = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (
         UniqueConstraint("tenant_id", "phone_number", name="uix_customer_phone_tenant"),

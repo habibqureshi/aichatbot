@@ -14,6 +14,7 @@ from langgraph.graph.message import BaseMessage, add_messages
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
 from services import app_setting_service
+from services import order_tool_service
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
     SystemMessage,
@@ -67,6 +68,9 @@ async def create_order_graph(
 ) -> CompiledStateGraph:
     business_setting = await app_setting_service.get_app_setting_by_key_value(
         db=db, key="INSTALLED_FOR", tenant_id=tenant_id
+    )
+    menu_snapshot = await order_tool_service.get_menu_context_for_prompt(
+        db=db, tenant_id=tenant_id
     )
 
     local_order_tools = build_order_tools(
@@ -148,12 +152,20 @@ async def create_order_graph(
         "- If nothing found: \"I'm sorry, I don't have that information right now.\"\n"
         "\n"
         "MENU:\n"
-        "- ALWAYS call list_menu for any menu/dish/price question — never guess.\n"
+        "- A cached menu snapshot is included below; prefer it for normal menu/category questions.\n"
+        "- Call list_menu only when you need a refreshed view, category-specific deep list, or exact prices.\n"
+        "- Do not read out the entire menu at once; give categories first and ask which category the caller wants.\n"
+        "- Do not mention prices unless the caller asks for prices.\n"
         "- Do NOT use knowledge_retriever or your own knowledge for menu items.\n"
+        f"- Cached menu snapshot: {menu_snapshot}\n"
         "\n"
         "ORDERING:\n"
         "- Tools are the only way an order exists. Never say you're placing an order without issuing tool calls.\n"
-        "- Flow: list_menu (get ids) → create_order (once, use caller name if known) → add_order_item per line → spoken summary with order id.\n"
+        "- Customer profile flow: call get_customer_profile early in ordering.\n"
+        "- If caller name is missing, ask for it and save using update_customer_profile before finalizing.\n"
+        "- For delivery address: if a saved address exists, confirm it. If missing/changed, ask and save with update_customer_profile.\n"
+        "- Flow: get_customer_profile → (if needed update_customer_profile) → create_order (once) → add_order_item per line → spoken summary with order id.\n"
+        "- If the caller asks for their last order, current order, or reservations without ids, call get_my_latest_order_and_reservations (uses phone identity).\n"
         "- Unavailable items: say so and offer alternatives from list_menu.\n"
         "- Keep menu summaries short for voice; offer more on request.\n"
         "- Recap before confirming. Use cancel_order / update / remove when asked.\n"

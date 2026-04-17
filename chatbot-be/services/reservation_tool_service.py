@@ -12,6 +12,71 @@ from db.models import Customer, Reservation, RestaurantTable
 
 
 DEFAULT_RESERVATION_DURATION_MINUTES = 120
+_MAX_RESERVATION_SNAPSHOT = 10
+
+
+async def get_latest_reservations_summary_for_caller(
+    db: AsyncSession,
+    *,
+    caller_phone_number: str | None,
+    tenant_id: int,
+    limit: int = 5,
+) -> str:
+    """Most recently created reservations for this caller (table + datetime + status)."""
+    phone = (
+        caller_phone_number.strip()
+        if caller_phone_number and str(caller_phone_number).strip()
+        else None
+    )
+    if not phone:
+        return "Cannot look up reservations without caller phone."
+    cust_result = await db.execute(
+        select(Customer.id)
+        .where(Customer.tenant_id == tenant_id, Customer.phone_number == phone)
+        .limit(1)
+    )
+    customer_id = cust_result.scalar_one_or_none()
+    if customer_id is None:
+        return "No customer profile for this caller; no reservations on file."
+
+    lim = max(1, min(int(limit), _MAX_RESERVATION_SNAPSHOT))
+    rows = (
+        await db.execute(
+            select(Reservation, RestaurantTable)
+            .outerjoin(RestaurantTable, Reservation.table_id == RestaurantTable.id)
+            .where(
+                Reservation.tenant_id == tenant_id,
+                Reservation.customer_id == customer_id,
+            )
+            .order_by(Reservation.created_at.desc(), Reservation.id.desc())
+            .limit(lim)
+        )
+    ).all()
+    if not rows:
+        return "No reservations on file for this caller."
+
+    lines: list[str] = [
+        f"Latest reservations (newest booking first, showing up to {lim}):",
+    ]
+    for reservation, table in rows:
+        when = reservation.reservation_date.isoformat()
+        tbl = (
+            f"table {table.table_number}"
+            if table
+            else "table n/a"
+        )
+        loc = f", {table.location}" if table and table.location else ""
+        note = ""
+        if reservation.special_request and str(reservation.special_request).strip():
+            snip = str(reservation.special_request).strip().replace("\n", " ")[:120]
+            note = f" request={snip!r}"
+        lines.append(
+            f"  #{reservation.id} at {when} party={reservation.party_size} "
+            f"{tbl}{loc} status={reservation.status}{note}"
+        )
+    return "\n".join(lines)
+
+
 TABLE_CACHE_TTL_SECONDS = 300
 _TABLE_CACHE: dict[int, tuple[datetime, list[RestaurantTable]]] = {}
 

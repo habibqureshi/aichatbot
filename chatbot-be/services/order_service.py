@@ -900,12 +900,12 @@ class ReceiveVoiceSession:
                                     )
                                     st.human_event.set()
                             stream_buffer = stream_buffer.replace(word, "")
-                    _markers_t = tuple(FORBIDDEN_WORDS)
-                    hold_forbidden = _voice_stream_forbidden_hold(
-                        stream_buffer, _markers_t
+                    is_partial_match = any(
+                        word.startswith(stream_buffer.strip())
+                        for word in FORBIDDEN_WORDS
                     )
                     if (
-                        not hold_forbidden
+                        not is_partial_match
                         and stream_buffer
                         and not st.interrupt_event.is_set()
                     ):
@@ -920,9 +920,7 @@ class ReceiveVoiceSession:
                             or (not tts_first_sent and buf_len >= 2)
                         )
                         if should_flush:
-                            seg = _strip_voice_forbidden_leaks(
-                                stream_buffer, _markers_t
-                            )
+                            seg = stream_buffer
                             self.log.info(
                                 "TTS_STREAM_SEGMENT | flushed to Cartesia | "
                                 "chars=%d text=%r",
@@ -935,13 +933,12 @@ class ReceiveVoiceSession:
                                     len(seg),
                                     seg if len(seg) <= 300 else (seg[:300] + "..."),
                                 )
-                            if seg.strip():
-                                await self._cartesia_send_stream(
-                                    ctx,
-                                    seg,
-                                    "Sending to cartesia",
-                                    last_classify_spoken,
-                                )
+                            await self._cartesia_send_stream(
+                                ctx,
+                                stream_buffer,
+                                "Sending to cartesia",
+                                last_classify_spoken,
+                            )
                             stream_buffer = ""
                             tts_first_sent = True
 
@@ -1016,9 +1013,6 @@ class ReceiveVoiceSession:
                                         to_send = (
                                             to_send.replace(word, "").strip()
                                         )
-                                to_send = _strip_voice_forbidden_leaks(
-                                    to_send, tuple(FORBIDDEN_WORDS)
-                                )
                                 if to_send:
                                     self.log.info(
                                         "TTS_COMPLETION_FALLBACK | text=%r",
@@ -1059,12 +1053,8 @@ class ReceiveVoiceSession:
                 for word in FORBIDDEN_WORDS:
                     if word in stream_buffer:
                         stream_buffer = stream_buffer.replace(word, "")
-                tail = _strip_voice_forbidden_leaks(
-                    stream_buffer.strip(), tuple(FORBIDDEN_WORDS)
-                )
-                if tail and not _voice_stream_forbidden_hold(
-                    tail, tuple(FORBIDDEN_WORDS)
-                ):
+                tail = stream_buffer.strip()
+                if tail:
                     self.log.info(
                         "TTS_BUFFER_FLUSH | text=%r",
                         tail if len(tail) <= 500 else (tail[:500] + "..."),

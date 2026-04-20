@@ -129,6 +129,37 @@ def _spoken_covers_final_classify(spoken_joined: str, final_text: str) -> bool:
     return False
 
 
+def _should_skip_repeated_tts_segment(segment: str, spoken_parts: list[str]) -> bool:
+    """Avoid re-speaking long segments already spoken in the same turn."""
+    nseg = _norm_joined_tts(segment)
+    if len(nseg) < 15:
+        return False
+    if not spoken_parts:
+        return False
+    spoken_joined = _norm_joined_tts("".join(spoken_parts))
+    if not spoken_joined:
+        return False
+    return nseg in spoken_joined
+
+
+def _dedupe_repeated_lines(text: str) -> str:
+    """Collapse consecutive duplicate lines in assistant output."""
+    if not text or "\n" not in text:
+        return text
+    out: list[str] = []
+    prev_norm = ""
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        norm = _norm_joined_tts(line).lower()
+        if norm and norm == prev_norm:
+            continue
+        out.append(line)
+        prev_norm = norm
+    return "\n".join(out).strip()
+
+
 def _extract_caller_name_from_text(user_text: str) -> str | None:
     text = (user_text or "").strip()
     if not text:
@@ -161,7 +192,8 @@ def _tool_hold_phrase(tool_calls: list) -> str:
         name = str(getattr(first, "name", "") or "")
     match name:
         case "list_menu":
-            return "Let me pull up the menu for you."
+            # Keep menu fetch silent to avoid awkward prompts mid order-placement flow.
+            return ""
         case "create_order":
             return "I'm setting up your order now. One moment."
         case "add_order_item":
@@ -243,7 +275,8 @@ def _strip_voice_forbidden_leaks(
         i = t.index("**")
         t = t[:i].rstrip()
     t = re.sub(r"\s*\*+\s*$", "", t)
-    return t.strip()
+    # Preserve chunk whitespace boundaries for streamed-vs-final dedupe logic.
+    return t
 
 
 async def _get_cached_order_greeting(db: AsyncSession, tenant_id: int) -> str:
@@ -936,12 +969,20 @@ class ReceiveVoiceSession:
                                     seg if len(seg) <= 300 else (seg[:300] + "..."),
                                 )
                             if seg.strip():
-                                await self._cartesia_send_stream(
-                                    ctx,
-                                    seg,
-                                    "Sending to cartesia",
-                                    last_classify_spoken,
-                                )
+                                if _should_skip_repeated_tts_segment(
+                                    seg, last_classify_spoken
+                                ):
+                                    self.log.info(
+                                        "TTS_DEDUPE_SKIP | source=stream | text=%r",
+                                        seg if len(seg) <= 500 else (seg[:500] + "..."),
+                                    )
+                                else:
+                                    await self._cartesia_send_stream(
+                                        ctx,
+                                        seg,
+                                        "Sending to cartesia",
+                                        last_classify_spoken,
+                                    )
                             stream_buffer = ""
                             tts_first_sent = True
 
@@ -1020,18 +1061,28 @@ class ReceiveVoiceSession:
                                     to_send, tuple(FORBIDDEN_WORDS)
                                 )
                                 if to_send:
-                                    self.log.info(
-                                        "TTS_COMPLETION_FALLBACK | text=%r",
-                                        to_send
-                                        if len(to_send) <= 500
-                                        else (to_send[:500] + "..."),
-                                    )
-                                    await self._cartesia_send_stream(
-                                        ctx,
-                                        to_send,
-                                        "Sending to cartesia (completion fallback)",
-                                        last_classify_spoken,
-                                    )
+                                    if _should_skip_repeated_tts_segment(
+                                        to_send, last_classify_spoken
+                                    ):
+                                        self.log.info(
+                                            "TTS_DEDUPE_SKIP | source=completion_fallback | text=%r",
+                                            to_send
+                                            if len(to_send) <= 500
+                                            else (to_send[:500] + "..."),
+                                        )
+                                    else:
+                                        self.log.info(
+                                            "TTS_COMPLETION_FALLBACK | text=%r",
+                                            to_send
+                                            if len(to_send) <= 500
+                                            else (to_send[:500] + "..."),
+                                        )
+                                        await self._cartesia_send_stream(
+                                            ctx,
+                                            to_send,
+                                            "Sending to cartesia (completion fallback)",
+                                            last_classify_spoken,
+                                        )
                         if not text or tcs:
                             continue
                         self.log.info("AI Said: %s", text)
@@ -1040,6 +1091,7 @@ class ReceiveVoiceSession:
                             .replace("**NEEDS_HUMAN_INTERVENTION**", "")
                             .strip()
                         )
+                        clean = _dedupe_repeated_lines(clean)
                         self.log.info(
                             "ASSISTANT_FINAL_RESPONSE | stored_and_spoken=%r",
                             clean
@@ -1065,16 +1117,22 @@ class ReceiveVoiceSession:
                 if tail and not _voice_stream_forbidden_hold(
                     tail, tuple(FORBIDDEN_WORDS)
                 ):
-                    self.log.info(
-                        "TTS_BUFFER_FLUSH | text=%r",
-                        tail if len(tail) <= 500 else (tail[:500] + "..."),
-                    )
-                    await self._cartesia_send_stream(
-                        ctx,
-                        tail,
-                        "Sending to cartesia (buffer flush)",
-                        last_classify_spoken,
-                    )
+                    if _should_skip_repeated_tts_segment(tail, last_classify_spoken):
+                        self.log.info(
+                            "TTS_DEDUPE_SKIP | source=buffer_flush | text=%r",
+                            tail if len(tail) <= 500 else (tail[:500] + "..."),
+                        )
+                    else:
+                        self.log.info(
+                            "TTS_BUFFER_FLUSH | text=%r",
+                            tail if len(tail) <= 500 else (tail[:500] + "..."),
+                        )
+                        await self._cartesia_send_stream(
+                            ctx,
+                            tail,
+                            "Sending to cartesia (buffer flush)",
+                            last_classify_spoken,
+                        )
 
             self.log.info(
                 "GRAPH_ASYNC | astream_events loop finished (turn processing complete)"

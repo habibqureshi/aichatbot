@@ -742,12 +742,12 @@ class ReceiveVoiceSession:
         try:
             async for ev in st.graph.astream_events(
                 OrderState(
-                    messages=st.messages,
+                    messages=[HumanMessage(content=user_text)],
                 user_input=user_text,
                     customer_name=st.customer.name,
                     customer_phone=st.customer.phone_number,
             ),
-                config={"callbacks": [langfuse_handler]},
+                config={"callbacks": [langfuse_handler],"configurable": {"thread_id": st.conversation.call_sid}},
             version="v2",
         ):
                 ev_type = ev.get("event")

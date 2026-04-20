@@ -30,7 +30,7 @@ from langchain_mcp_adapters.tools import (
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 from logging import Logger
-
+from langgraph.checkpoint.memory import InMemorySaver
 from tools.order_tools import build_order_tools
 from tools.reservation_tools import build_reservation_tools
 from tools.retriever_tools import build_retriever_tools
@@ -183,6 +183,7 @@ async def create_order_graph(
 
     async def classify_intent(state: OrderState):
         log.info("User said: %s", state.user_input or "")
+        log.info(f"state messages: {state.messages}")
 
         has_system = state.system_prompt_injected or any(
             isinstance(m, SystemMessage) for m in state.messages
@@ -265,4 +266,4 @@ async def create_order_graph(
     workflow.add_edge("tools", "classify_intent")
     workflow.add_node("log", lambda s: print(s))
     workflow.add_edge("log", END)
-    return workflow.compile()
+    return workflow.compile(checkpointer=InMemorySaver())

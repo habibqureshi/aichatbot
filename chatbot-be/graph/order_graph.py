@@ -8,6 +8,7 @@ Order tools and knowledge_retriever run directly against the local DB / ChromaDB
 (no MCP round-trip) and emit stream_writer progress events.  Any remaining MCP
 tools that match the tenant tag filter are still loaded from the MCP server.
 """
+
 from pydantic import BaseModel
 from typing import Annotated, Any, List, Optional
 from langgraph.graph.message import BaseMessage, add_messages
@@ -119,7 +120,9 @@ async def create_order_graph(
                 e,
             )
     else:
-        log.info("Order graph: MCP not connected; using local order + retriever tools only.")
+        log.info(
+            "Order graph: MCP not connected; using local order + retriever tools only."
+        )
 
     tools = local_tools + mcp_tools
 
@@ -143,9 +146,20 @@ async def create_order_graph(
         "- Confirm details before acting. After any action, ask if they need more.\n"
         "- Respond in English only.\n"
         "\n"
+        "VOICE & EMOTION:\n"
+        "- Speak like a polite human, not a robot.\n"
+        '- DEFAULT tone: <emotion value="anxious"/> with calm pacing.\n'
+        '- Complaints / issues → <emotion value="affectionate"/> and slightly slower <speed ratio="0.9"/>\n'
+        '- Good news / confirmations → <emotion value="happy"/>\n'
+        '- Urgent or time-sensitive → slightly faster <speed ratio="1.1"/>\n'
+        "- Asking for info → neutral/friendly tone, no overacting\n"
+        '- Not understanding → <emotion value="apologetic"/>'
+        "- Never stack multiple emotion tags unnecessarily.\n"
+        "- The tags will be self closing."
+        "\n"
         "SERVICES:\n"
         "- You provide two services: (1) order taking, (2) table reservation for dine-in.\n"
-        "- First identify what the caller wants. If unclear, ask: \"Would you like to place an order or reserve a table?\"\n"
+        '- First identify what the caller wants. If unclear, ask: "Would you like to place an order or reserve a table?"\n'
         "\n"
         "BUSINESS / FAQ:\n"
         "- Use knowledge_retriever for hours, location, policies. Answer only from results.\n"
@@ -206,12 +220,16 @@ async def create_order_graph(
             msg_in.append(SystemMessage(content=_system_prompt))
 
         for message in state.messages:
-            if isinstance(message, (HumanMessage, ToolMessage, AIMessage, SystemMessage)):
+            if isinstance(
+                message, (HumanMessage, ToolMessage, AIMessage, SystemMessage)
+            ):
                 msg_in.append(message)
 
-        now_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         msg_in.append(
-            HumanMessage(content=f"[Time: {now_str}] User just said: {state.user_input}")
+            HumanMessage(
+                content=f"[Time: {now_str}] User just said: {state.user_input}"
+            )
         )
 
         gathered: AIMessageChunk | None = None
@@ -237,7 +255,11 @@ async def create_order_graph(
                     log.info(
                         "yolo1 | first_llm_chunk | chars=%d | text=%r",
                         len(first_delta),
-                        first_delta if len(first_delta) <= 300 else (first_delta[:300] + "..."),
+                        (
+                            first_delta
+                            if len(first_delta) <= 300
+                            else (first_delta[:300] + "...")
+                        ),
                     )
                     first_chunk_logged = True
             gathered = chunk if gathered is None else gathered + chunk

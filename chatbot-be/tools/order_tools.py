@@ -4,6 +4,7 @@ LangChain tools for order management – run directly against the local DB
 meaningful progress messages that ``order_service.stream_llm`` consumes
 via ``astream_events  →  on_custom_event``.
 """
+
 from __future__ import annotations
 
 from typing import Any, Optional
@@ -260,7 +261,9 @@ def build_order_tools(
                 limit=lim,
             )
             result = f"{order_part}\n\n{res_part}"
-            _emit({"tool": "get_my_latest_order_and_reservations", "phase": "done"}, log)
+            _emit(
+                {"tool": "get_my_latest_order_and_reservations", "phase": "done"}, log
+            )
             return result
         except Exception as e:
             log.exception("get_my_latest_order_and_reservations tool failed: %s", e)
@@ -361,7 +364,9 @@ def build_order_tools(
             return result
         except Exception as e:
             log.exception("get_customer_profile tool failed: %s", e)
-            _emit({"tool": "get_customer_profile", "phase": "error", "error": str(e)}, log)
+            _emit(
+                {"tool": "get_customer_profile", "phase": "error", "error": str(e)}, log
+            )
             raise
 
     @tool
@@ -388,7 +393,10 @@ def build_order_tools(
             return result
         except Exception as e:
             log.exception("update_customer_profile tool failed: %s", e)
-            _emit({"tool": "update_customer_profile", "phase": "error", "error": str(e)}, log)
+            _emit(
+                {"tool": "update_customer_profile", "phase": "error", "error": str(e)},
+                log,
+            )
             raise
 
     return [

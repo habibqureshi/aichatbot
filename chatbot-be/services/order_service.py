@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 import json
 import os
 import re
+import time
 import websockets
 import websockets.exceptions
 from logging import Logger
@@ -20,6 +21,7 @@ from fastapi import (
 )
 import numpy as np
 from langchain_openai import ChatOpenAI
+import random
 
 
 # import webrtcvad
@@ -165,6 +167,14 @@ CHUNK_SIZE = 160
 VAD_AGGRESSIVENESS = 3
 SILENCE_THRESHOLD_MS = 500
 
+# How long (in seconds) to wait for the user to speak after Twilio finishes
+# playing the AI's audio before prompting "Hello are you still there?".
+# The same value is reused after the 2nd unanswered prompt before the call
+# is ended with a goodbye message.
+SILENCE_PROMPT_WAIT_SEC: float = float(os.getenv("SILENCE_PROMPT_WAIT_SEC", "3"))
+# Maximum number of "still there?" prompts before ending the call.
+SILENCE_MAX_PROMPTS: int = int(os.getenv("SILENCE_MAX_PROMPTS", "2"))
+
 # Initialize Langfuse client
 langfuse = get_client()
 
@@ -248,6 +258,103 @@ def _extract_caller_name_from_text(user_text: str) -> str | None:
     return None
 
 
+DEFAULT_PHRASES = [
+    "One moment, please.",
+    "Just a second.",
+    "Let me take care of that.",
+    "Checking that for you now.",
+    "One moment while I handle it.",
+]
+
+TOOL_PHRASES = {
+    "list_menu": [
+        "Let me pull up the menu for you.",
+        "Just checking the menu right now.",
+        "One moment while I get the menu.",
+    ],
+    "create_order": [
+        "I'm setting up your order now. One moment.",
+        "Got it, starting your order now.",
+        "Let me create your order real quick.",
+    ],
+    "add_order_item": [
+        "Adding that to your order.",
+        "Got it, adding it now.",
+        "One moment, I'm updating your order.",
+    ],
+    "confirm_order": [
+        "Confirming your order now.",
+        "Let me finalize your order.",
+        "Almost done, confirming everything now.",
+    ],
+    "cancel_order": [
+        "Updating your order.",
+        "Cancelling that for you now.",
+        "One moment, I’ll handle the cancellation.",
+    ],
+    "update_order_item": [
+        "Updating your order.",
+        "Making that change now.",
+        "One moment, updating it.",
+    ],
+    "remove_order_item": [
+        "Updating your order.",
+        "Removing that for you now.",
+        "One moment, I’m updating it.",
+    ],
+    "get_order": [
+        "Let me check your order and reservations.",
+        "One moment while I pull up your order.",
+        "Checking your current order now.",
+    ],
+    "price_order": [
+        "Getting pricing details for you.",
+        "Let me check the total for you.",
+        "One moment while I calculate that.",
+    ],
+    "get_my_latest_order_and_reservations": [
+        "Let me check your order and reservations.",
+        "Pulling your latest details now.",
+        "Checking your recent activity.",
+    ],
+    "get_customer_profile": [
+        "Let me check your saved details.",
+        "One moment while I pull your profile.",
+        "Checking your information now.",
+    ],
+    "update_customer_profile": [
+        "Got it, updating your details now.",
+        "Saving your changes now.",
+        "Updating your profile.",
+    ],
+    "knowledge_retriever": [
+        "Let me look that up for you.",
+        "Checking that for you now.",
+        "One moment while I find that information.",
+    ],
+    "check_table_availability": [
+        "Let me check table availability for you.",
+        "Checking tables for that time now.",
+        "One moment while I check availability.",
+    ],
+    "reserve_table": [
+        "Great, I'll reserve a table for you now.",
+        "Booking your table now.",
+        "One moment while I make the reservation.",
+    ],
+    "update_reservation": [
+        "Sure, let me update your reservation.",
+        "Updating your booking now.",
+        "One moment, changing your reservation.",
+    ],
+    "cancel_reservation": [
+        "Okay, I'll cancel that reservation now.",
+        "Cancelling your booking now.",
+        "One moment, removing your reservation.",
+    ],
+}
+
+
 def _tool_hold_phrase(tool_calls: list) -> str:
     """Short voice line while MCP tools run (tool-only model turns have no streamed text)."""
     if not tool_calls:
@@ -273,45 +380,6 @@ _VOICE_FORBIDDEN_CORES: tuple[str, ...] = (
 _VOICE_FORBIDDEN_LEAK_RE = re.compile(
     r"(?i)(\s*\*+)*(FINISH_CONVERSATION|NEEDS_HUMAN_INTERVENTION)(\*+|\s)*",
 )
-
-
-def _voice_stream_forbidden_hold(buffer: str, markers: tuple[str, ...]) -> bool:
-    """True while the buffer may be inside a finish/intervention marker — do not flush to TTS."""
-    if not buffer or not buffer.strip():
-        return False
-    b = buffer.strip()
-    for w in markers:
-        if w.startswith(b):
-            return True
-    if "**" in buffer:
-        tail = buffer[buffer.index("**") :].strip()
-        for w in markers:
-            if w.startswith(tail):
-                return True
-    if "**" not in buffer and len(b) >= 3:
-        u = b.upper()
-        for core in _VOICE_FORBIDDEN_CORES:
-            cu = core.upper()
-            if cu.startswith(u) or u.startswith(cu):
-                return True
-    return False
-
-
-def _strip_voice_forbidden_leaks(
-    text: str, markers: tuple[str, ...] = VOICE_FORBIDDEN_MARKERS
-) -> str:
-    """Remove graph control tokens and split-stream tails so they are never spoken."""
-    if not text or not str(text).strip():
-        return ""
-    t = str(text)
-    for w in markers:
-        t = t.replace(w, "")
-    t = _VOICE_FORBIDDEN_LEAK_RE.sub("", t)
-    if "**" in t:
-        i = t.index("**")
-        t = t[:i].rstrip()
-    t = re.sub(r"\s*\*+\s*$", "", t)
-    return t.strip()
 
 
 async def _get_cached_order_greeting(db: AsyncSession, tenant_id: int) -> str:
@@ -505,6 +573,7 @@ async def openai_stream(
                     "input_audio_transcription": {
                         "model": "gpt-4o-mini-transcribe",
                         "language": "en",
+                        "prompt": ("Restaurant phone ordering in English."),
                     },
                 },
             }
@@ -521,29 +590,32 @@ async def openai_stream(
                 "SESSION | WebSocket accepted; spawning receive (STT→graph) + send (Twilio→STT)"
             )
 
+            receive_session = ReceiveVoiceSession(
+                websocket,
+                openai_stt,
+                connection,
+                state,
+                message_service,
+                db,
+                tenant_id,
+                log,
+            )
+            send_session = SendVoiceSession(
+                websocket,
+                openai_stt,
+                connection,
+                state,
+                conversation_service,
+                customer_service,
+                message_service,
+                db,
+                tenant_id,
+                log,
+                receive_session=receive_session,
+            )
             await asyncio.gather(
-                ReceiveVoiceSession(
-                    websocket,
-                    openai_stt,
-                    connection,
-                    state,
-                    message_service,
-                    db,
-                    tenant_id,
-                    log,
-                ).receive_from_openai(),
-                SendVoiceSession(
-                    websocket,
-                    openai_stt,
-                    connection,
-                    state,
-                    conversation_service,
-                    customer_service,
-                    message_service,
-                    db,
-                    tenant_id,
-                    log,
-                ).send_to_openai(),
+                receive_session.receive_from_openai(),
+                send_session.send_to_openai(),
             )
     except websockets.exceptions.InvalidStatus as exc:
         # Cartesia returns HTTP 402 when billing/credits are insufficient or key is invalid.
@@ -600,6 +672,16 @@ class ReceiveVoiceSession:
         self.tenant_id = tenant_id
         self.tts_queue: asyncio.Queue[bytes | None] = asyncio.Queue()
         self._voice_cycle_task: asyncio.Task | None = None
+        self._silence_task: asyncio.Task | None = None
+        self._silence_prompts_sent: int = 0
+        # Track outbound audio so silence timer waits for Twilio playback to drain
+        # instead of firing while the user is still hearing the response.
+        self._playback_started_at: float | None = None
+        self._playback_bytes_sent: int = 0
+        # Playback-done signal driven by Twilio mark event echo for exact timing.
+        self._playback_done_event: asyncio.Event = asyncio.Event()
+        self._pending_mark_name: str | None = None
+        self._mark_counter: int = 0
         self.log = log
 
         self.cartesia_kw = {
@@ -614,6 +696,204 @@ class ReceiveVoiceSession:
                 "sample_rate": 8000,
             },
         }
+
+    # -------------------------------
+    # Silence Watchdog
+    # -------------------------------
+
+    def _reset_playback_tracker(self) -> None:
+        self._playback_started_at = None
+        self._playback_bytes_sent = 0
+
+    def _note_playback_chunk(self, audio_bytes: int) -> None:
+        if self._playback_started_at is None:
+            self._playback_started_at = time.monotonic()
+        self._playback_bytes_sent += max(0, int(audio_bytes))
+
+    def _estimate_remaining_playback_seconds(self) -> float:
+        # mulaw 8kHz mono → 8000 bytes per second
+        if self._playback_started_at is None or self._playback_bytes_sent <= 0:
+            return 0.0
+        expected = self._playback_bytes_sent / 8000.0
+        elapsed = time.monotonic() - self._playback_started_at
+        return max(0.0, expected - elapsed)
+
+    async def _wait_for_playback_drain(self, log_label: str) -> None:
+        remaining = self._estimate_remaining_playback_seconds()
+        if remaining <= 0:
+            return
+        self.log.info(
+            "SILENCE_PLAYBACK_WAIT | %s | remaining_sec=%.2f | bytes=%d",
+            log_label,
+            remaining,
+            self._playback_bytes_sent,
+        )
+        await asyncio.sleep(remaining)
+
+    async def _send_playback_done_mark(self, label: str) -> str | None:
+        st = self.state
+        if not st.stream_sid:
+            return None
+        self._mark_counter += 1
+        name = f"silence_ready_{self._mark_counter}"
+        self._pending_mark_name = name
+        self._playback_done_event.clear()
+        try:
+            await self.websocket.send_json(
+                {
+                    "event": "mark",
+                    "streamSid": st.stream_sid,
+                    "mark": {"name": name},
+                }
+            )
+            self.log.info(
+                "TWILIO_MARK_SENT | label=%s | name=%s | bytes_sent_so_far=%d",
+                label,
+                name,
+                self._playback_bytes_sent,
+            )
+            return name
+        except Exception as e:
+            self.log.warning("TWILIO_MARK_SEND_FAILED | %s | err=%s", label, e)
+            self._pending_mark_name = None
+            return None
+
+    def on_twilio_mark(self, name: str) -> None:
+        if not name:
+            return
+        if self._pending_mark_name and name == self._pending_mark_name:
+            self.log.info(
+                "TWILIO_MARK_RECEIVED | name=%s | playback confirmed finished",
+                name,
+            )
+            self._pending_mark_name = None
+            self._playback_done_event.set()
+        else:
+            self.log.info("TWILIO_MARK_IGNORED | name=%s (no matching pending)", name)
+
+    async def _wait_until_twilio_finished_playing(self, label: str) -> None:
+        """Use Twilio mark echo to wait for actual end of playback.
+        Falls back to byte-based estimate if the mark isn't received in time.
+        """
+        name = await self._send_playback_done_mark(label)
+        if not name:
+            await self._wait_for_playback_drain(label)
+            return
+        estimate_sec = self._estimate_remaining_playback_seconds()
+        # If Twilio doesn't echo mark reliably, don't add a long penalty.
+        # Wait roughly until estimated playback end (+small jitter buffer),
+        # then continue so SILENCE_PROMPT_WAIT_SEC starts on time.
+        fallback_timeout = max(0.5, estimate_sec + 0.5)
+        try:
+            await asyncio.wait_for(
+                self._playback_done_event.wait(), timeout=fallback_timeout
+            )
+            self.log.info("TWILIO_MARK_WAIT_DONE | label=%s | via_mark=True", label)
+        except asyncio.TimeoutError:
+            self.log.warning(
+                "TWILIO_MARK_TIMEOUT | label=%s | fallback to estimate "
+                "after %.2fs (estimate_sec=%.2f, bytes=%d)",
+                label,
+                fallback_timeout,
+                estimate_sec,
+                self._playback_bytes_sent,
+            )
+            self._pending_mark_name = None
+
+    async def _speak_inactivity_text(self, text: str) -> None:
+        st = self.state
+        if (
+            not text.strip()
+            or not st.stream_sid
+            or st.stop_event.is_set()
+            or st.human_event.is_set()
+        ):
+            return
+        self._reset_playback_tracker()
+        ctx = self.connection.context()
+        await ctx.send(
+            transcript=text,
+            continue_=False,
+            **self.cartesia_kw,
+        )
+        async for audio in _iter_cartesia_audio(ctx):
+            if st.stop_event.is_set() or st.human_event.is_set():
+                break
+            self._note_playback_chunk(len(audio))
+            await self.websocket.send_json(
+                {
+                    "event": "media",
+                    "streamSid": st.stream_sid,
+                    "media": {"payload": base64.b64encode(audio).decode("utf-8")},
+                }
+            )
+
+    def _cancel_silence_timer(self) -> None:
+        had_task = self._silence_task is not None and not self._silence_task.done()
+        if had_task:
+            self._silence_task.cancel()
+            self.log.info(
+                "SILENCE_TIMER_CANCEL | prompts_sent_so_far=%d",
+                self._silence_prompts_sent,
+            )
+        self._silence_task = None
+        self._silence_prompts_sent = 0
+
+    def _start_silence_timer(self) -> None:
+        if self.state.stop_event.is_set() or self.state.human_event.is_set():
+            return
+        if self._silence_task is not None and not self._silence_task.done():
+            self._silence_task.cancel()
+        remaining_ms = int(self._estimate_remaining_playback_seconds() * 1000)
+        self.log.info(
+            "SILENCE_TIMER_START | expected_playback_remaining_ms=%d | audio_bytes_sent=%d",
+            remaining_ms,
+            self._playback_bytes_sent,
+        )
+        self._silence_task = asyncio.create_task(self._silence_deadline())
+
+    async def _silence_deadline(self) -> None:
+        st = self.state
+        try:
+            await self._wait_until_twilio_finished_playing(
+                "waiting_for_ai_playback_end"
+            )
+            while self._silence_prompts_sent < SILENCE_MAX_PROMPTS:
+                self.log.info(
+                    "SILENCE_TIMER_TICK | waiting %.2fs of user silence "
+                    "(prompt_next=%d/%d)",
+                    SILENCE_PROMPT_WAIT_SEC,
+                    self._silence_prompts_sent + 1,
+                    SILENCE_MAX_PROMPTS,
+                )
+                await asyncio.sleep(SILENCE_PROMPT_WAIT_SEC)
+                if st.stop_event.is_set() or st.human_event.is_set():
+                    return
+                self._silence_prompts_sent += 1
+                self.log.info(
+                    "SILENCE_PROMPT_SPEAK | count=%d | text=%r",
+                    self._silence_prompts_sent,
+                    "Hello are you still there?",
+                )
+                await self._speak_inactivity_text("Hello are you still there?")
+                await self._wait_until_twilio_finished_playing(
+                    "after_inactivity_prompt"
+                )
+            self.log.info(
+                "SILENCE_TIMER_TICK | waiting %.2fs after final prompt before ending call",
+                SILENCE_PROMPT_WAIT_SEC,
+            )
+            await asyncio.sleep(SILENCE_PROMPT_WAIT_SEC)
+            if st.stop_event.is_set() or st.human_event.is_set():
+                return
+            self.log.info("SILENCE_TIMEOUT_END | ending call after two prompts")
+            await self._speak_inactivity_text(
+                "I did not hear anything, so I will end the call now. Goodbye."
+            )
+            await self._wait_until_twilio_finished_playing("after_goodbye")
+            st.stop_event.set()
+        except asyncio.CancelledError:
+            return
 
     def _drain_tts_queue(self) -> None:
         while True:
@@ -727,6 +1007,8 @@ class ReceiveVoiceSession:
         if not delta_text:
             return
 
+        self._cancel_silence_timer()
+
         self.log.info("User speaking: '%s'. Silencing AI.", delta_text)
 
         self.state.interrupt_event.set()
@@ -752,13 +1034,18 @@ class ReceiveVoiceSession:
         self.log.info(
             "RUN_FULL_AI_CYCLE | begin | tasks: stream_llm (graph+LLM async) + twilio_forwarder"
         )
+        self._reset_playback_tracker()
         await asyncio.gather(
             self.stream_llm(user_text),
             self.twilio_forwarder(),
         )
         self.log.info(
-            "RUN_FULL_AI_CYCLE | end | stream_llm and twilio_forwarder completed"
+            "RUN_FULL_AI_CYCLE | end | stream_llm and twilio_forwarder completed | "
+            "audio_bytes_sent=%d | est_playback_remaining_sec=%.2f",
+            self._playback_bytes_sent,
+            self._estimate_remaining_playback_seconds(),
         )
+        self._start_silence_timer()
 
     # -------------------------------
     # Send Audio To Twilio
@@ -783,6 +1070,7 @@ class ReceiveVoiceSession:
 
             _chunks += 1
             _bytes += len(audio)
+            self._note_playback_chunk(len(audio))
             if _chunks == 1:
                 self.log.info(
                     "TWILIO_FWD | first audio chunk sent to Twilio | %d bytes",
@@ -1100,6 +1388,29 @@ class ReceiveVoiceSession:
                                 continue_=True,
                             )
                         if text and not tcs and not st.interrupt_event.is_set():
+                            # Flush any pending streamed tail first (e.g. numeric suffix like "00")
+                            # so coverage check compares against what was actually spoken.
+                            if stream_buffer.strip():
+                                for word in FORBIDDEN_WORDS:
+                                    if word in stream_buffer:
+                                        stream_buffer = stream_buffer.replace(word, "")
+                                pending_tail = stream_buffer.strip()
+                                if pending_tail:
+                                    self.log.info(
+                                        "TTS_BUFFER_FLUSH_PRE_COMPLETION | text=%r",
+                                        (
+                                            pending_tail
+                                            if len(pending_tail) <= 500
+                                            else (pending_tail[:500] + "...")
+                                        ),
+                                    )
+                                    await self._cartesia_send_stream(
+                                        ctx,
+                                        pending_tail,
+                                        "Sending to cartesia (pre-completion tail flush)",
+                                        last_classify_spoken,
+                                    )
+                                stream_buffer = ""
                             spoken_j = "".join(last_classify_spoken)
                             if not _spoken_covers_final_classify(spoken_j, text):
                                 s = spoken_j.strip()
@@ -1219,6 +1530,7 @@ class SendVoiceSession:
         db,
         tenant_id,
         log,
+        receive_session: "ReceiveVoiceSession | None" = None,
     ):
         self.websocket = websocket
         self.openai_stt = openai_stt
@@ -1230,6 +1542,7 @@ class SendVoiceSession:
         self.db = db
         self.tenant_id = tenant_id
         self.log = log
+        self.receive_session = receive_session
         self.cartesia_kw = {
             "model_id": "sonic-3",
             "voice": {
@@ -1266,6 +1579,11 @@ class SendVoiceSession:
 
             elif event_type == "media":
                 await self.handle_media(message)
+
+            elif event_type == "mark":
+                name = (message.get("mark") or {}).get("name") or ""
+                if self.receive_session is not None:
+                    self.receive_session.on_twilio_mark(name)
 
     async def handle_connected(self, message):
 
@@ -1376,7 +1694,11 @@ class SendVoiceSession:
             **self.cartesia_kw,
         )
 
+        if self.receive_session is not None:
+            self.receive_session._reset_playback_tracker()
+
         first_chunk = True
+        total_bytes = 0
         async for audio in _iter_cartesia_audio(ctx):
             if first_chunk:
                 self.log.info(
@@ -1384,6 +1706,9 @@ class SendVoiceSession:
                     len(audio),
                 )
                 first_chunk = False
+            total_bytes += len(audio)
+            if self.receive_session is not None:
+                self.receive_session._note_playback_chunk(len(audio))
             await self.websocket.send_json(
                 {
                     "event": "media",
@@ -1391,7 +1716,12 @@ class SendVoiceSession:
                     "media": {"payload": base64.b64encode(audio).decode("utf-8")},
                 }
             )
-        self.log.info("ORDER_GREETING | completed initial greeting playback")
+        self.log.info(
+            "ORDER_GREETING | completed initial greeting playback | audio_bytes=%d",
+            total_bytes,
+        )
+        if self.receive_session is not None:
+            self.receive_session._start_silence_timer()
 
     async def handle_media(self, message):
 

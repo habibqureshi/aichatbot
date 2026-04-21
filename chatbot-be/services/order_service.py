@@ -380,6 +380,7 @@ async def ws_greeting(
     data: TwilioIncoming,
     db: AsyncSession,
     action_url: str,
+    recording_status_callback: URL,
     tenant_id: int,
     log: Logger,
 ):
@@ -398,6 +399,13 @@ async def ws_greeting(
         data=data, customer=customer, db=db, tenant_id=tenant_id
     )
     log.info(f"conversation created for {data.CallSid}")
+    start = Start()
+    start.recording(
+        recording_status_callback=recording_status_callback,
+        track="both",
+        channels="mono",
+    )
+    resp.append(start)
     connect = Connect()
     connect.stream(url=action_url)
     resp.append(connect)
@@ -486,9 +494,9 @@ async def openai_stream(
                     "input_audio_noise_reduction": {"type": "near_field"},
                     "turn_detection": {
                         "type": "server_vad",
-                        "threshold": 0.4,
+                        "threshold": 0.45,
                         # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
-                        "silence_duration_ms": 700,
+                        "silence_duration_ms": 400,
                         "prefix_padding_ms": 300,
                         "create_response": False,
                         "interrupt_response": False,
@@ -934,7 +942,7 @@ class ReceiveVoiceSession:
         try:
             async for ev in st.graph.astream_events(
                 OrderState(
-                    messages=[HumanMessage(content=user_text)],
+                    messages=st.messages,
                     user_input=user_text,
                     customer_name=st.customer.name,
                     customer_phone=st.customer.phone_number,

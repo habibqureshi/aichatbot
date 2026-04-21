@@ -300,4 +300,4 @@ async def create_order_graph(
     workflow.add_edge("tools", "classify_intent")
     workflow.add_node("log", lambda s: print(s))
     workflow.add_edge("log", END)
-    return workflow.compile(checkpointer=InMemorySaver())
+    return workflow.compile()

@@ -4,7 +4,11 @@ from db.db import get_db, AsyncSession
 from schemas.twilio import TwilioIncoming, parse_webhook
 from services import order_service
 import urllib.parse
-from utils.tenant_context import TenantContext, get_tenant_context, get_tenant_context_ws
+from utils.tenant_context import (
+    TenantContext,
+    get_tenant_context,
+    get_tenant_context_ws,
+)
 from logger import get_logger, get_ws_logger
 
 router = APIRouter(prefix="/api/v1/order", tags=["order_voice"])
@@ -31,6 +35,7 @@ async def order_ws_greeting(
         action_url=stream_url,
         tenant_id=tenant.tenant_id,
         log=log,
+        recording_status_callback=req.url_for("recording_status"),
     )
     return Response(content=str(resp), media_type="application/xml")
 

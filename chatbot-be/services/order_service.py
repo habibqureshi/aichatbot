@@ -415,6 +415,9 @@ async def openai_stream(
                     "input_audio_transcription": {
                         "model": "gpt-4o-mini-transcribe",
                         "language": "en",
+                        "prompt": (
+                            "Restaurant phone ordering in English."
+                        ),
                     },
                 },
             }
@@ -993,6 +996,27 @@ class ReceiveVoiceSession:
                                 continue_=True,
                             )
                         if text and not tcs and not st.interrupt_event.is_set():
+                            # Flush any pending streamed tail first (e.g. numeric suffix like "00")
+                            # so coverage check compares against what was actually spoken.
+                            if stream_buffer.strip():
+                                for word in FORBIDDEN_WORDS:
+                                    if word in stream_buffer:
+                                        stream_buffer = stream_buffer.replace(word, "")
+                                pending_tail = stream_buffer.strip()
+                                if pending_tail:
+                                    self.log.info(
+                                        "TTS_BUFFER_FLUSH_PRE_COMPLETION | text=%r",
+                                        pending_tail
+                                        if len(pending_tail) <= 500
+                                        else (pending_tail[:500] + "..."),
+                                    )
+                                    await self._cartesia_send_stream(
+                                        ctx,
+                                        pending_tail,
+                                        "Sending to cartesia (pre-completion tail flush)",
+                                        last_classify_spoken,
+                                    )
+                                stream_buffer = ""
                             spoken_j = "".join(last_classify_spoken)
                             if not _spoken_covers_final_classify(spoken_j, text):
                                 s = spoken_j.strip()

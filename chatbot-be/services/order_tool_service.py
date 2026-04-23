@@ -757,22 +757,31 @@ async def get_menu_context_for_prompt(
     if not rows:
         return "empty"
 
-    grouped = {}
-
+    lines = ["category,name,price,description"]
     for m in rows:
-        cat = (m.category or "").strip() or "uncategorized"
-        grouped.setdefault(cat, []).append(f"{m.name}~{float(m.price)}")
+        category = (m.category or "").strip() or "uncategorized"
+        name = m.name or ""
+        price = float(m.price) if m.price is not None else ""
+        desc = (m.description or "").replace(",", " ").strip()
 
-    out = []
+        lines.append(f"{category},{name},{price},{desc}")
 
-    for cat in sorted(grouped.keys(), key=str.lower):
-        items = grouped[cat][:max_items_per_category]
-        extra = len(grouped[cat]) - len(items)
+    # grouped = {}
 
-        line = f"{cat}:{', '.join(items)}"
-        if extra > 0:
-            line += f" +{extra} more"
+    # for m in rows:
+    #     cat = (m.category or "").strip() or "uncategorized"
+    #     grouped.setdefault(cat, []).append(f"{m.name}~{float(m.price)}")
 
-        out.append(line)
+    # out = []
 
-    return "\n".join(out)
+    # for cat in sorted(grouped.keys(), key=str.lower):
+    #     items = grouped[cat][:max_items_per_category]
+    #     extra = len(grouped[cat]) - len(items)
+
+    #     line = f"{cat}:{', '.join(items)}"
+    #     if extra > 0:
+    #         line += f" +{extra} more"
+
+    #     out.append(line)
+
+    return "\n".join(lines)

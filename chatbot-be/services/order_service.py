@@ -575,7 +575,7 @@ async def openai_stream(
                         "type": "server_vad",
                         "threshold": 0.45,
                         # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
-                        "silence_duration_ms": 400,
+                        "silence_duration_ms": 450,
                         "prefix_padding_ms": 300,
                         "create_response": False,
                         "interrupt_response": False,

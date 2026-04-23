@@ -96,17 +96,24 @@ def build_order_tools(
 
     @tool
     async def add_order_item(
-        order_id: int, item_name: str, quantity: int, user_confirmation: bool = False
+        order_id: int,
+        item_name: str | list[str] | list[dict[str, Any]] = "",
+        quantity: int | list[int] = 1,
+        user_confirmation: bool = False,
     ) -> str:
-        """Add a menu item line to an existing order.
+        """Add one or multiple menu item lines to an existing order.
 
         Args:
             order_id: Target order id.
-            item_name: name of item.
-            quantity: Number of units (>= 1).
+            item_name: Single name, or array payload.
+                Preferred batch payload:
+                [{"name": "...", "quantity": 2}, ...]
+                Legacy batch payload:
+                item_name=["..."], quantity=[...]
+            quantity: Single quantity or legacy quantity array.
             user_confirmation: if user confirmed or not
         """
-        if quantity < 1:
+        if isinstance(quantity, int) and quantity < 1:
             return "Quantity must be at least 1."
         if not user_confirmation:
             raise Exception("User Confirmation required")

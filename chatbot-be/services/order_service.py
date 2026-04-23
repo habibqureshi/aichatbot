@@ -851,17 +851,12 @@ class ReceiveVoiceSession:
         self._silence_prompts_sent = 0
 
     def _start_silence_timer(self) -> None:
-        if self.state.stop_event.is_set() or self.state.human_event.is_set():
-            return
+        # Silence detection is intentionally disabled for now.
         if self._silence_task is not None and not self._silence_task.done():
             self._silence_task.cancel()
-        remaining_ms = int(self._estimate_remaining_playback_seconds() * 1000)
-        self.log.info(
-            "SILENCE_TIMER_START | expected_playback_remaining_ms=%d | audio_bytes_sent=%d",
-            remaining_ms,
-            self._playback_bytes_sent,
-        )
-        self._silence_task = asyncio.create_task(self._silence_deadline())
+        self._silence_task = None
+        self._silence_prompts_sent = 0
+        self.log.info("SILENCE_TIMER_DISABLED | skipping silence watchdog start")
 
     async def _silence_deadline(self) -> None:
         st = self.state
@@ -1143,7 +1138,6 @@ class ReceiveVoiceSession:
     # -------------------------------
 
     async def cartesia_send(self, ctx, transcript, continue_=True):
-
         if not transcript.strip() or self.state.interrupt_event.is_set():
             return
 
@@ -1233,6 +1227,23 @@ class ReceiveVoiceSession:
         last_classify_spoken: list[str] = []
         ctx = self.connection.context()
         pump_task = asyncio.create_task(self.pump_cartesia(ctx))
+
+        async def _ensure_cartesia_pump_alive() -> None:
+            nonlocal ctx, pump_task
+            if not pump_task.done() or st.interrupt_event.is_set():
+                return
+            try:
+                await pump_task
+            except Exception as e:
+                self.log.warning(
+                    "CARTESIA_PUMP_EARLY_FINISH | restarting context | err=%s", e
+                )
+            else:
+                self.log.warning(
+                    "CARTESIA_PUMP_EARLY_FINISH | restarting context | no error raised"
+                )
+            ctx = self.connection.context()
+            pump_task = asyncio.create_task(self.pump_cartesia(ctx))
 
         self.log.info(
             "GRAPH_ASYNC | starting graph.astream_events (order LangGraph, async stream, v2)"
@@ -1339,6 +1350,7 @@ class ReceiveVoiceSession:
                                     len(seg),
                                     seg if len(seg) <= 300 else (seg[:300] + "..."),
                                 )
+                            await _ensure_cartesia_pump_alive()
                             await self._cartesia_send_stream(
                                 ctx,
                                 stream_buffer,
@@ -1391,6 +1403,7 @@ class ReceiveVoiceSession:
                                 len(tcs),
                                 hold,
                             )
+                            await _ensure_cartesia_pump_alive()
                             await self._cartesia_send_stream(
                                 ctx,
                                 hold,
@@ -1415,6 +1428,7 @@ class ReceiveVoiceSession:
                                             else (pending_tail[:500] + "...")
                                         ),
                                     )
+                                    await _ensure_cartesia_pump_alive()
                                     await self._cartesia_send_stream(
                                         ctx,
                                         pending_tail,
@@ -1449,6 +1463,7 @@ class ReceiveVoiceSession:
                                             else (to_send[:500] + "...")
                                         ),
                                     )
+                                    await _ensure_cartesia_pump_alive()
                                     await self._cartesia_send_stream(
                                         ctx,
                                         to_send,
@@ -1486,6 +1501,7 @@ class ReceiveVoiceSession:
                         "TTS_BUFFER_FLUSH | text=%r",
                         tail if len(tail) <= 500 else (tail[:500] + "..."),
                     )
+                    await _ensure_cartesia_pump_alive()
                     await self._cartesia_send_stream(
                         ctx,
                         tail,

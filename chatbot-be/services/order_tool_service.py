@@ -221,11 +221,78 @@ async def add_order_item(
     db: AsyncSession,
     *,
     order_id: int,
-    item_name: str,
-    quantity: int,
     caller_phone_number: str | None,
     tenant_id: int,
+    item_name: str | list[str] | list[dict[str, str | int]] | None = None,
+    quantity: int | list[int] | None = None,
 ) -> str:
+    normalized_items: list[tuple[str, int]] = []
+    if isinstance(item_name, list) and item_name and isinstance(item_name[0], dict):
+        for idx, raw in enumerate(item_name):
+            raw_name = str(raw.get("name", "")).strip()
+            raw_quantity = raw.get("quantity", 0)
+            try:
+                parsed_quantity = int(raw_quantity)
+            except (TypeError, ValueError):
+                return (
+                    f"Quantity at index {idx} for item "
+                    f"'{raw_name or 'unknown'}' must be a whole number."
+                )
+            if not raw_name:
+                return f"item_name[{idx}].name must be non-empty."
+            if parsed_quantity < 1:
+                return (
+                    f"Quantity for item '{raw_name}' at index {idx} "
+                    "must be at least 1."
+                )
+            normalized_items.append((raw_name, parsed_quantity))
+
+        if not normalized_items:
+            return "item_name array cannot be empty."
+    else:
+        is_name_list = isinstance(item_name, list)
+        is_qty_list = isinstance(quantity, list)
+        if is_name_list != is_qty_list:
+            return "item_name and quantity must both be arrays when using batch mode."
+
+        if is_name_list and is_qty_list:
+            names = item_name if isinstance(item_name, list) else []
+            quantities = quantity if isinstance(quantity, list) else []
+            if not names:
+                return "item_name array cannot be empty."
+            if len(names) != len(quantities):
+                return "item_name and quantity arrays must have the same length."
+            for idx, raw_name in enumerate(names):
+                normalized_name = str(raw_name).strip()
+                raw_qty = quantities[idx]
+                try:
+                    parsed_quantity = int(raw_qty)
+                except (TypeError, ValueError):
+                    return (
+                        f"Quantity at index {idx} for item "
+                        f"'{normalized_name or 'unknown'}' must be a whole number."
+                    )
+                if not normalized_name:
+                    return f"item_name at index {idx} must be non-empty."
+                if parsed_quantity < 1:
+                    return (
+                        f"Quantity for item '{normalized_name}' at index {idx} "
+                        "must be at least 1."
+                    )
+                normalized_items.append((normalized_name, parsed_quantity))
+        elif isinstance(item_name, str) and isinstance(quantity, int):
+            normalized_name = item_name.strip()
+            if not normalized_name:
+                return "item_name must be non-empty."
+            if quantity < 1:
+                return "Quantity must be at least 1."
+            normalized_items.append((normalized_name, quantity))
+        else:
+            return (
+                "Provide item_name as string, [string], or "
+                "[{name, quantity}] payload."
+            )
+
     caller_customer_id = await _get_caller_customer_id(
         db=db,
         tenant_id=tenant_id,
@@ -250,50 +317,66 @@ async def add_order_item(
     if order.status not in ("draft", "pending"):
         return f"Order #{order_id} cannot be modified in status '{order.status}'."
 
-    menu_query = select(Menu).where(Menu.name == item_name, Menu.tenant_id == tenant_id)
-    menu_result = await db.execute(menu_query.limit(1))
-    menu = menu_result.scalars().first()
-    if not menu:
-        return f"Menu item {item_name} not found."
-    if not menu.available:
-        return f"Menu item '{menu.name}' is not available."
-
-    unit_price = float(menu.price)
-    item_name = (menu.name or "")[:100]
-    line_total = unit_price * quantity
-
-    existing_result = await db.execute(
-        select(OrderItem).where(
-            OrderItem.order_id == order.id,
-            OrderItem.tenant_id == tenant_id,
-            OrderItem.item_name == item_name,
+    resolved_items: list[tuple[Menu, int]] = []
+    for selected_name, selected_qty in normalized_items:
+        menu_query = select(Menu).where(
+            Menu.name == selected_name,
+            Menu.tenant_id == tenant_id,
         )
-    )
-    existing = None
-    for row in existing_result.scalars().all():
-        if abs(float(row.unit_price) - unit_price) < 1e-6:
-            existing = row
-            break
+        menu_result = await db.execute(menu_query.limit(1))
+        menu = menu_result.scalars().first()
+        if not menu:
+            return f"Menu item {selected_name} not found."
+        if not menu.available:
+            return f"Menu item '{menu.name}' is not available."
+        resolved_items.append((menu, selected_qty))
 
-    if existing:
-        existing.quantity = int(existing.quantity) + quantity
-        existing.line_total = float(existing.unit_price) * int(existing.quantity)
-    else:
-        db.add(
-            OrderItem(
-                tenant_id=order.tenant_id,
-                order_id=order.id,
-                item_name=item_name,
-                quantity=quantity,
-                unit_price=unit_price,
-                line_total=line_total,
+    added_summary: list[str] = []
+    batch_total = 0.0
+    for menu, selected_qty in resolved_items:
+        unit_price = float(menu.price)
+        normalized_name = (menu.name or "")[:100]
+        line_total = unit_price * selected_qty
+        existing_result = await db.execute(
+            select(OrderItem).where(
+                OrderItem.order_id == order.id,
+                OrderItem.tenant_id == tenant_id,
+                OrderItem.item_name == normalized_name,
             )
         )
-    order.total_amount = float(order.total_amount or 0) + line_total
+        existing = None
+        for row in existing_result.scalars().all():
+            if abs(float(row.unit_price) - unit_price) < 1e-6:
+                existing = row
+                break
+
+        if existing:
+            existing.quantity = int(existing.quantity) + selected_qty
+            existing.line_total = float(existing.unit_price) * int(existing.quantity)
+        else:
+            db.add(
+                OrderItem(
+                    tenant_id=order.tenant_id,
+                    order_id=order.id,
+                    item_name=normalized_name,
+                    quantity=selected_qty,
+                    unit_price=unit_price,
+                    line_total=line_total,
+                )
+            )
+        batch_total += line_total
+        added_summary.append(f"{selected_qty} x {menu.name}")
+
+    order.total_amount = float(order.total_amount or 0) + batch_total
     await db.commit()
     await db.refresh(order)
+    if len(added_summary) == 1:
+        return (
+            f"Added {added_summary[0]} to order #{order.id}. "
+            f"Current total is {float(order.total_amount or 0):.2f}."
+        )
     return (
-        f"Added {quantity} x {menu.name} to order #{order.id}. "
+        f"Added items to order #{order.id}: {', '.join(added_summary)}. "
         f"Current total is {float(order.total_amount or 0):.2f}."
     )
 

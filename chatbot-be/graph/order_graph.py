@@ -187,6 +187,8 @@ async def create_order_graph(
     * Before calling a tool, check if the data already exists; avoid duplicate calls.
     * Confim action from user explicitly for tools that requires user_confirmation.
     * Never call multiple tools in a single turn if confirmation is required between them.
+    * If the user confirms multiple order items together, call add_order_item once using item_name as [{{name, quantity}}, ...].
+    * Avoid retrying add_order_item with the same items after a partial success; first check latest tool results in state.
     * Answer strictly from tool results when using it.
 
     CONVERSATION TONE:

@@ -51,3 +51,16 @@ async def order_openai_stream_ws(
     await order_service.openai_stream(
         websocket=websocket, db=db, tenant_id=tenant.tenant_id, log=log
     )
+
+
+@router.post("/test/graph")
+async def greeting(
+    req: Request,
+    data: TwilioIncoming = Depends(parse_webhook),
+    db: AsyncSession = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context),
+    log: Logger = Depends(get_logger),
+):
+    return await order_service.test_graph(
+        data=data, db=db, tenant_id=tenant.tenant_id, log=log
+    )

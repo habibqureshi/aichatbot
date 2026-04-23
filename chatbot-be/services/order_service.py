@@ -11,7 +11,14 @@ import websockets.exceptions
 from logging import Logger
 from fastapi.websockets import WebSocketState
 from sqlalchemy import event, log
-from twilio.twiml.voice_response import Connect, VoiceResponse, Start, Gather
+from twilio.twiml.voice_response import (
+    Connect,
+    VoiceResponse,
+    Start,
+    Gather,
+    Parameter,
+    Stream,
+)
 from fastapi import (
     HTTPException,
     BackgroundTasks,
@@ -171,7 +178,7 @@ SILENCE_THRESHOLD_MS = 500
 # playing the AI's audio before prompting "Hello are you still there?".
 # The same value is reused after the 2nd unanswered prompt before the call
 # is ended with a goodbye message.
-SILENCE_PROMPT_WAIT_SEC: float = float(os.getenv("SILENCE_PROMPT_WAIT_SEC", "3"))
+SILENCE_PROMPT_WAIT_SEC: float = float(os.getenv("SILENCE_PROMPT_WAIT_SEC", "15"))
 # Maximum number of "still there?" prompts before ending the call.
 SILENCE_MAX_PROMPTS: int = int(os.getenv("SILENCE_MAX_PROMPTS", "2"))
 
@@ -474,8 +481,12 @@ async def ws_greeting(
         channels="mono",
     )
     resp.append(start)
+    stream = Stream(url=action_url)
+    stream.parameter("CallSid", data.CallSid)
+    stream.parameter("From", data.From)
+    stream.parameter("To", data.To)
     connect = Connect()
-    connect.stream(url=action_url)
+    connect.append(stream)
     resp.append(connect)
     return resp
 
@@ -1735,3 +1746,68 @@ class SendVoiceSession:
                 }
             )
         )
+
+
+async def test_graph(
+    data: TwilioIncoming, db: AsyncSession, tenant_id: int, log: Logger
+):
+    # 1. Find or create customer by phone
+    customer = await customer_service.find_or_create_by_phone(
+        data.From, db=db, tenant_id=tenant_id
+    )
+
+    conversation = await conversation_service.find_or_create_for_customer(
+        data=data, customer=customer, db=db, tenant_id=tenant_id
+    )
+
+    # messages = await message_service.load_messages_by_conversation(
+    #     conversation=conversation, db=db, tenant_id=tenant_id
+    # )
+
+    # lc_messages = []
+    # if customer.phone_number:
+    #     lc_messages.append(
+    #         HumanMessage(content=f"[Caller phone: {customer.phone_number}]")
+    #     )
+    # if customer.name:
+    #     lc_messages.append(HumanMessage(content=f"[Caller: {customer.name}]"))
+
+    # 5. Load the order graph
+    graph = await get_order_graph(
+        data.CallSid,
+        customer.phone_number or "",
+        db=db,
+        tenant_id=tenant_id,
+        log=log,
+    )
+
+    # 6. Run the graph with the latest user input (SpeechResult or Digits)
+    user_input = data.SpeechResult or ""
+    ai_response = await graph.ainvoke(
+        OrderState(
+            messages=[HumanMessage(content=user_input)],
+            user_input=user_input,
+            customer_phone=customer.phone_number,
+            customer_name=customer.name,
+        ),
+        config={
+            "callbacks": [langfuse_handler],
+            "configurable": {"thread_id": data.CallSid},
+        },
+    )
+
+    # 7. Extract the final AI message
+    ai_messages = ai_response.get("messages", [])
+    final_message = ai_messages[-1].content if ai_messages else ""
+    # Optionally store the assistant response
+    if final_message:
+        await message_service.create(
+            conversation=conversation,
+            content=final_message,
+            role="assistant",
+            db=db,
+            tenant_id=tenant_id,
+        )
+
+    # 8. Return the AI response (for frontend)
+    return {"response": final_message}

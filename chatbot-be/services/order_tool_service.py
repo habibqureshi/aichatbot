@@ -3,6 +3,7 @@ Local DB service functions for order tools (replaces MCP order_service).
 Mirrors the logic from chatbot-mcp/src/services/order_service.py so the
 LangChain tools in chatbot-be can work without an MCP round-trip.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -50,7 +51,9 @@ async def get_or_create_customer(
             if name and not (customer.name and str(customer.name).strip()):
                 customer.name = name
                 changed = True
-            if address and not (customer.delivery_address and str(customer.delivery_address).strip()):
+            if address and not (
+                customer.delivery_address and str(customer.delivery_address).strip()
+            ):
                 customer.delivery_address = address
                 changed = True
             if changed:
@@ -150,19 +153,26 @@ async def get_customer_profile(
         return "No caller phone number is available for this session."
     result = await db.execute(
         select(Customer)
-        .where(Customer.tenant_id == tenant_id, Customer.phone_number == phone_number.strip())
+        .where(
+            Customer.tenant_id == tenant_id,
+            Customer.phone_number == phone_number.strip(),
+        )
         .limit(1)
     )
     customer = result.scalars().first()
     if not customer:
         return "No customer profile exists for this caller yet."
-    name = customer.name.strip() if customer.name and customer.name.strip() else "missing"
+    name = (
+        customer.name.strip() if customer.name and customer.name.strip() else "missing"
+    )
     address = (
         customer.delivery_address.strip()
         if customer.delivery_address and customer.delivery_address.strip()
         else "missing"
     )
-    return f"Customer profile: id={customer.id}, name={name}, delivery_address={address}."
+    return (
+        f"Customer profile: id={customer.id}, name={name}, delivery_address={address}."
+    )
 
 
 async def update_customer_profile(
@@ -196,7 +206,9 @@ async def update_customer_profile(
     if changed:
         await db.commit()
         await db.refresh(customer)
-    name = customer.name.strip() if customer.name and customer.name.strip() else "missing"
+    name = (
+        customer.name.strip() if customer.name and customer.name.strip() else "missing"
+    )
     address = (
         customer.delivery_address.strip()
         if customer.delivery_address and customer.delivery_address.strip()
@@ -209,7 +221,7 @@ async def add_order_item(
     db: AsyncSession,
     *,
     order_id: int,
-    menu_item_id: int,
+    item_name: str,
     quantity: int,
     caller_phone_number: str | None,
     tenant_id: int,
@@ -238,11 +250,11 @@ async def add_order_item(
     if order.status not in ("draft", "pending"):
         return f"Order #{order_id} cannot be modified in status '{order.status}'."
 
-    menu_query = select(Menu).where(Menu.id == menu_item_id, Menu.tenant_id == tenant_id)
+    menu_query = select(Menu).where(Menu.name == item_name, Menu.tenant_id == tenant_id)
     menu_result = await db.execute(menu_query.limit(1))
     menu = menu_result.scalars().first()
     if not menu:
-        return f"Menu item #{menu_item_id} not found."
+        return f"Menu item {item_name} not found."
     if not menu.available:
         return f"Menu item '{menu.name}' is not available."
 
@@ -375,7 +387,9 @@ async def remove_order_item(
     if not item:
         return f"Line item #{line_item_id} not found in order #{order_id}."
 
-    order.total_amount = max(0.0, float(order.total_amount or 0) - float(item.line_total))
+    order.total_amount = max(
+        0.0, float(order.total_amount or 0) - float(item.line_total)
+    )
     await db.execute(delete(OrderItem).where(OrderItem.id == line_item_id))
     await db.commit()
     return f"Removed line item #{line_item_id} from order #{order_id}."
@@ -433,7 +447,9 @@ async def confirm_order(
         return f"Order #{order_id} was not found for this caller."
     order.status = "confirmed"
     await db.commit()
-    return f"Order #{order_id} confirmed. Total is {float(order.total_amount or 0):.2f}."
+    return (
+        f"Order #{order_id} confirmed. Total is {float(order.total_amount or 0):.2f}."
+    )
 
 
 async def get_latest_order_summary_for_caller(
@@ -559,6 +575,7 @@ async def list_menu(
 
 # ── private helpers ──────────────────────────────────────────────────
 
+
 async def _get_order(db: AsyncSession, order_id: int) -> Order | None:
     result = await db.execute(
         select(Order)
@@ -655,16 +672,24 @@ async def get_menu_context_for_prompt(
 ) -> str:
     rows = await _get_cached_available_menu(db=db, tenant_id=tenant_id)
     if not rows:
-        return "No menu items available."
-    grouped: dict[str, list[str]] = defaultdict(list)
-    for menu in rows:
-        label = (menu.category or "").strip() or "uncategorized"
-        if menu.name:
-            grouped[label].append(menu.name)
-    parts: list[str] = []
-    for label in sorted(grouped.keys(), key=lambda v: v.lower()):
-        names = grouped[label][:max_items_per_category]
-        extra = max(0, len(grouped[label]) - len(names))
-        suffix = f" (+{extra} more)" if extra else ""
-        parts.append(f"{label}: {', '.join(names)}{suffix}")
-    return " | ".join(parts)
+        return "empty"
+
+    grouped = {}
+
+    for m in rows:
+        cat = (m.category or "").strip() or "uncategorized"
+        grouped.setdefault(cat, []).append(f"{m.name}~{float(m.price)}")
+
+    out = []
+
+    for cat in sorted(grouped.keys(), key=str.lower):
+        items = grouped[cat][:max_items_per_category]
+        extra = len(grouped[cat]) - len(items)
+
+        line = f"{cat}:{', '.join(items)}"
+        if extra > 0:
+            line += f" +{extra} more"
+
+        out.append(line)
+
+    return "\n".join(out)

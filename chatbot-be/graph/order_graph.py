@@ -8,6 +8,8 @@ Order tools and knowledge_retriever run directly against the local DB / ChromaDB
 (no MCP round-trip) and emit stream_writer progress events.  Any remaining MCP
 tools that match the tenant tag filter are still loaded from the MCP server.
 """
+
+import re
 from pydantic import BaseModel
 from typing import Annotated, Any, List, Optional
 from langgraph.graph.message import BaseMessage, add_messages
@@ -54,6 +56,10 @@ class OrderState(BaseModel):
     customer_phone: Optional[str] = None
     customer_name: Optional[str] = None
     system_prompt_injected: bool = False
+    current_order_id: Optional[int] = None
+
+
+memory = InMemorySaver()
 
 
 async def create_order_graph(
@@ -72,6 +78,7 @@ async def create_order_graph(
     menu_snapshot = await order_tool_service.get_menu_context_for_prompt(
         db=db, tenant_id=tenant_id
     )
+    print(menu_snapshot)
 
     local_order_tools = build_order_tools(
         db=db,
@@ -119,7 +126,9 @@ async def create_order_graph(
                 e,
             )
     else:
-        log.info("Order graph: MCP not connected; using local order + retriever tools only.")
+        log.info(
+            "Order graph: MCP not connected; using local order + retriever tools only."
+        )
 
     tools = local_tools + mcp_tools
 
@@ -135,13 +144,81 @@ async def create_order_graph(
         )
 
     biz = business_setting or "restaurant"
+    NEW_PROMPT = f"""
+    You are a polite, professional phone assistant for a restaurant ({biz}).
+    Speak like a real human—warm, natural, and conversational. Never sound robotic.
+
+    STYLE:
+    * Keep responses very short (usually 1 line, max 2 short lines).
+    * Use natural phrasing (e.g., “Sure,” “Of course,” “Let me check that for you”).
+    * Be polite, calm, and helpful.
+    * Ask for one missing detail at a time.
+    * Do not over-explain or repeat yourself.
+
+    CORE BEHAVIOR:
+    * Never invent information.
+    * If something is unavailable: briefly apologize and offer an alternative.
+    * If you don’t know something: "I'm sorry, I don't have that information right now."
+    * Use context to understand the conversation flow
+
+    MENU:
+    ----------
+    {menu_snapshot}
+    ----------
+    * Use this for user queries about menu.
+    * DO NOT use knowledge_retriever for menu.
+    * Do not repeat whole menu.
+
+    ORDERS:
+    * Use tools to create and manage orders.
+    * Create the order once, then add item as the user confirms.
+    * Only add items confirmed by customer.
+    * After completion, give a short recap with order ID.
+    * Use tool data (prices, availability) as the source of truth.
+    * only one order at a time.
+
+    RESERVATIONS:
+    * Use tools to create, update, or cancel reservations.
+    * Check availability before confirming when date, time, or party size is involved.
+    * Keep confirmations short and clear.
+    * Include seating preference if mentioned.
+
+    TOOLS:
+    * Before calling a tool, check if the data already exists; avoid duplicate calls.
+    * Confim action from user explicitly for tools that requires user_confirmation.
+    * Never call multiple tools in a single turn if confirmation is required between them.
+    * Answer strictly from tool results when using it.
+
+    CONVERSATION TONE:
+    * Friendly and natural, like trained restaurant staff.
+    * Avoid scripted or repetitive phrasing.
+    * Vary wording slightly to feel human.
+
+    VOICE TAGS (STRICT FORMAT):
+    * Emotion tag MUST be the very first thing in the response.
+    * Tag must be self-closing and used at most once per response.
+    * Allowed values for emotion tag: ["happy","affectionate","apologetic","anxios"]
+    * Default: anxios.
+
+    * Use:
+    * Complaints/issues → <emotion value="affectionate"/>
+    * Good news/confirmations → <emotion value="happy"/>
+    * Not understanding / errors → <emotion value="apologetic"/>
+
+    * Never place emotion tags in the middle or end of a sentence.
+    * Never stack multiple emotion tags.
+
+    ENDING:
+    * If the caller wants a human → end with **NEEDS_HUMAN_INTERVENTION**
+    * If the caller ends the conversation → polite goodbye + **FINISH_CONVERSATION**
+    """
     _system_prompt = (
         f"You are a concise phone assistant for a {biz}. Reply in English only.\n"
         "Keep replies extremely short: default 1 line, max 2 short lines.\n"
         "Collect missing info one thing at a time. Do not invent facts.\n"
         "Before any tool call, check prior ToolMessages in state; reuse if still valid. Do not repeat identical tool calls.\n"
         "Services: order taking and dine-in table reservations. If intent is unclear ask: "
-        "\"Would you like to place an order or reserve a table?\"\n"
+        '"Would you like to place an order or reserve a table?"\n'
         "Use knowledge_retriever only for hours/location/policies; answer only from tool output. "
         "If missing: \"I'm sorry, I don't have that information right now.\"\n"
         "Silence handling is system-managed: if caller is silent for 5+ seconds, a keep-alive prompt is played; "
@@ -171,14 +248,14 @@ async def create_order_graph(
     )
 
     llm = ChatOpenAI(
-        model_name="gpt-5.4",
+        model_name="gpt-4o-mini",
         temperature=0,
         streaming=True,
     ).bind_tools(tools=tools)
 
     async def classify_intent(state: OrderState):
         log.info("User said: %s", state.user_input or "")
-        log.info(f"state messages: {state.messages}")
+        log.warning(f"state messages: {state.messages}")
 
         has_system = state.system_prompt_injected or any(
             isinstance(m, SystemMessage) for m in state.messages
@@ -186,15 +263,32 @@ async def create_order_graph(
 
         msg_in = []
         if not has_system:
-            msg_in.append(SystemMessage(content=_system_prompt))
+            msg_in.append(SystemMessage(content=NEW_PROMPT))
+        if state.customer_phone:
+            msg_in.append(
+                HumanMessage(content=f"[Caller phone: {state.customer_phone}]")
+            )
+        if state.customer_name:
+            msg_in.append(HumanMessage(content=f"[Caller: {state.customer_name}]"))
 
         for message in state.messages:
-            if isinstance(message, (HumanMessage, ToolMessage, AIMessage, SystemMessage)):
+            if isinstance(
+                message, (HumanMessage, ToolMessage, AIMessage, SystemMessage)
+            ):
                 msg_in.append(message)
 
-        now_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        # if state.current_order_id is not None:
+        #     msg_in.append(
+        #         SystemMessage(
+        #             content=f"Active order ID for this call: {state.current_order_id}."
+        #         )
+        #     )
+
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         msg_in.append(
-            HumanMessage(content=f"[Time: {now_str}] User just said: {state.user_input}")
+            HumanMessage(
+                content=f"[Time: {now_str}] User just said: {state.user_input}"
+            )
         )
 
         gathered: AIMessageChunk | None = None
@@ -220,7 +314,11 @@ async def create_order_graph(
                     log.info(
                         "yolo1 | first_llm_chunk | chars=%d | text=%r",
                         len(first_delta),
-                        first_delta if len(first_delta) <= 300 else (first_delta[:300] + "..."),
+                        (
+                            first_delta
+                            if len(first_delta) <= 300
+                            else (first_delta[:300] + "...")
+                        ),
                     )
                     first_chunk_logged = True
             gathered = chunk if gathered is None else gathered + chunk
@@ -261,4 +359,4 @@ async def create_order_graph(
     workflow.add_edge("tools", "classify_intent")
     workflow.add_node("log", lambda s: print(s))
     workflow.add_edge("log", END)
-    return workflow.compile(checkpointer=InMemorySaver())
+    return workflow.compile(checkpointer=memory)

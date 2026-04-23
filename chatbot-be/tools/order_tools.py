@@ -4,6 +4,7 @@ LangChain tools for order management – run directly against the local DB
 meaningful progress messages that ``order_service.stream_llm`` consumes
 via ``astream_events  →  on_custom_event``.
 """
+
 from __future__ import annotations
 
 from typing import Any, Optional
@@ -95,25 +96,26 @@ def build_order_tools(
 
     @tool
     async def add_order_item(
-        order_id: int,
-        menu_item_id: int,
-        quantity: int,
+        order_id: int, item_name: str, quantity: int, user_confirmation: bool = False
     ) -> str:
         """Add a menu item line to an existing order.
 
         Args:
             order_id: Target order id.
-            menu_item_id: Menu row id (from list_menu).
+            item_name: name of item.
             quantity: Number of units (>= 1).
+            user_confirmation: if user confirmed or not
         """
         if quantity < 1:
             return "Quantity must be at least 1."
+        if not user_confirmation:
+            raise Exception("User Confirmation required")
         _emit({"tool": "add_order_item", "phase": "start"}, log)
         try:
             result = await order_tool_service.add_order_item(
                 db,
                 order_id=order_id,
-                menu_item_id=menu_item_id,
+                item_name=item_name,
                 quantity=quantity,
                 caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
@@ -210,12 +212,15 @@ def build_order_tools(
             raise
 
     @tool
-    async def confirm_order(order_id: int) -> str:
-        """Finalize an order (sets status to confirmed).
+    async def confirm_order(order_id: int, user_confirmation: bool = False) -> str:
+        """Confirm and place the order after explicit user approval.
 
         Args:
             order_id: Order id to confirm.
+            user_confirmation: if user confirmed or not
         """
+        if not user_confirmation:
+            raise Exception("User Confirmation required")
         _emit({"tool": "confirm_order", "phase": "start"}, log)
         try:
             result = await order_tool_service.confirm_order(
@@ -260,7 +265,9 @@ def build_order_tools(
                 limit=lim,
             )
             result = f"{order_part}\n\n{res_part}"
-            _emit({"tool": "get_my_latest_order_and_reservations", "phase": "done"}, log)
+            _emit(
+                {"tool": "get_my_latest_order_and_reservations", "phase": "done"}, log
+            )
             return result
         except Exception as e:
             log.exception("get_my_latest_order_and_reservations tool failed: %s", e)
@@ -318,34 +325,34 @@ def build_order_tools(
             _emit({"tool": "price_order", "phase": "error", "error": str(e)}, log)
             raise
 
-    @tool
-    async def list_menu(
-        category: Optional[str] = None,
-        limit: int = 20,
-        include_price: bool = False,
-    ) -> str:
-        """List available menu items (id, name, price).
+    # @tool
+    # async def list_menu(
+    #     category: Optional[str] = None,
+    #     limit: int = 20,
+    #     include_price: bool = False,
+    # ) -> str:
+    #     """List available menu items (id, name, price).
 
-        Args:
-            category: Optional category filter.
-            limit: Max rows to return.
-            include_price: Set True only when caller asks for prices.
-        """
-        _emit({"tool": "list_menu", "phase": "start"}, log)
-        try:
-            result = await order_tool_service.list_menu(
-                db,
-                category=category,
-                limit=int(limit),
-                include_price=include_price,
-                tenant_id=tenant_id,
-            )
-            _emit({"tool": "list_menu", "phase": "done"}, log)
-            return result
-        except Exception as e:
-            log.exception("list_menu tool failed: %s", e)
-            _emit({"tool": "list_menu", "phase": "error", "error": str(e)}, log)
-            raise
+    #     Args:
+    #         category: Optional category filter.
+    #         limit: Max rows to return.
+    #         include_price: Set True only when caller asks for prices.
+    #     """
+    #     _emit({"tool": "list_menu", "phase": "start"}, log)
+    #     try:
+    #         result = await order_tool_service.list_menu(
+    #             db,
+    #             category=category,
+    #             limit=int(limit),
+    #             include_price=include_price,
+    #             tenant_id=tenant_id,
+    #         )
+    #         _emit({"tool": "list_menu", "phase": "done"}, log)
+    #         return result
+    #     except Exception as e:
+    #         log.exception("list_menu tool failed: %s", e)
+    #         _emit({"tool": "list_menu", "phase": "error", "error": str(e)}, log)
+    #         raise
 
     @tool
     async def get_customer_profile() -> str:
@@ -361,7 +368,9 @@ def build_order_tools(
             return result
         except Exception as e:
             log.exception("get_customer_profile tool failed: %s", e)
-            _emit({"tool": "get_customer_profile", "phase": "error", "error": str(e)}, log)
+            _emit(
+                {"tool": "get_customer_profile", "phase": "error", "error": str(e)}, log
+            )
             raise
 
     @tool
@@ -388,7 +397,10 @@ def build_order_tools(
             return result
         except Exception as e:
             log.exception("update_customer_profile tool failed: %s", e)
-            _emit({"tool": "update_customer_profile", "phase": "error", "error": str(e)}, log)
+            _emit(
+                {"tool": "update_customer_profile", "phase": "error", "error": str(e)},
+                log,
+            )
             raise
 
     return [
@@ -403,5 +415,4 @@ def build_order_tools(
         confirm_order,
         get_order,
         price_order,
-        list_menu,
     ]

@@ -103,6 +103,67 @@ def _norm_joined_tts(s: str) -> str:
     return " ".join(s.split())
 
 
+TOOL_RESPONSES = {
+    "list_menu": [
+        "Let me pull up the menu for you.",
+        "Fetching the menu now.",
+        "Just a moment while I get the menu.",
+    ],
+    "create_order": [
+        "I'm setting up your order now. One moment.",
+        "Creating your order now.",
+        "Starting your order for you.",
+    ],
+    "add_order_item": [
+        "Adding that to your order.",
+        "Got it, adding that now.",
+        "Okay, updating your order with that item.",
+    ],
+    "confirm_order": [
+        "Confirming your order now.",
+        "All set, confirming your order.",
+        "One moment while I confirm your order.",
+    ],
+    "cancel_order": [
+        "Updating your order.",
+        "Cancelling that now.",
+        "One moment, updating your order.",
+    ],
+    "update_order_item": [
+        "Updating your order.",
+        "Making those changes now.",
+        "One moment while I update your order.",
+    ],
+    "remove_order_item": [
+        "Updating your order.",
+        "Removing that item now.",
+        "Okay, updating your order.",
+    ],
+    "get_order": [
+        "Let me check your order.",
+        "Looking up your order now.",
+        "One moment while I fetch your order.",
+    ],
+    "price_order": [
+        "Let me check your order.",
+        "Calculating your order total.",
+        "One moment while I get the pricing.",
+    ],
+    "knowledge_retriever": [
+        "Let me look that up for you.",
+        "Checking that for you now.",
+        "One moment while I find that information.",
+    ],
+}
+
+DEFAULT_RESPONSES = [
+    "One moment, please.",
+    "Just a second.",
+    "Let me check that for you.",
+]
+import random
+
+
 def _tool_hold_phrase(tool_calls: list) -> str:
     """Short voice line while MCP tools run (tool-only model turns have no streamed text)."""
     if not tool_calls:
@@ -926,10 +987,10 @@ OPENAI_URL = (
     "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17"
 )
 # Default websockets open handshake is short; Realtime can be slow on constrained networks.
-_OPENAI_REALTIME_OPEN_TIMEOUT = float(
-    os.getenv("OPENAI_REALTIME_OPEN_TIMEOUT", "60")
+_OPENAI_REALTIME_OPEN_TIMEOUT = float(os.getenv("OPENAI_REALTIME_OPEN_TIMEOUT", "60"))
+_OPENAI_REALTIME_CONNECT_RETRIES = int(
+    os.getenv("OPENAI_REALTIME_CONNECT_RETRIES", "3")
 )
-_OPENAI_REALTIME_CONNECT_RETRIES = int(os.getenv("OPENAI_REALTIME_CONNECT_RETRIES", "3"))
 
 
 async def _connect_openai_realtime_stt(log: Logger):
@@ -950,9 +1011,7 @@ async def _connect_openai_realtime_stt(log: Logger):
                 additional_headers=headers,
             )
             if attempt > 1:
-                log.info(
-                    "OpenAI Realtime WebSocket connected on attempt %s", attempt
-                )
+                log.info("OpenAI Realtime WebSocket connected on attempt %s", attempt)
             return ws
         except (TimeoutError, OSError, websockets.exceptions.InvalidHandshake) as e:
             last_exc = e
@@ -970,6 +1029,7 @@ async def _connect_openai_realtime_stt(log: Logger):
         _OPENAI_REALTIME_CONNECT_RETRIES,
     )
     raise last_exc
+
 
 # AAI_WS_URL = (
 #     "wss://streaming.assemblyai.com/v3/ws"
@@ -1135,9 +1195,11 @@ async def openai_stream(
                                         )
 
                                 async def stream_llm():
-                                    nonlocal messages, graph, patient, conversation, interrupt_event , log
+                                    nonlocal messages, graph, patient, conversation, interrupt_event, log
                                     messages.append(HumanMessage(content=user_text))
-                                    print(f"adding user message to messages in db: {user_text}")
+                                    print(
+                                        f"adding user message to messages in db: {user_text}"
+                                    )
                                     await message_service.create(
                                         conversation=conversation,
                                         content=user_text,
@@ -1153,9 +1215,7 @@ async def openai_stream(
                                     stream_buffer = ""
                                     last_classify_spoken: list[str] = []
                                     ctx = connection.context()
-                                    pump_task = asyncio.create_task(
-                                        pump_cartesia(ctx)
-                                    )
+                                    pump_task = asyncio.create_task(pump_cartesia(ctx))
 
                                     async def _rotate_cartesia_after_tools() -> None:
                                         nonlocal ctx, pump_task
@@ -1186,9 +1246,10 @@ async def openai_stream(
                                         )
                                         last_classify_spoken.append(transcript)
                                         log.info(f"{log_label}: {transcript}")
+
                                     log.info(f"starting to stream events from graph")
                                     log.info(f"messages: {messages}")
-                                   
+
                                     async for ev in graph.astream_events(
                                         AppointmentState(
                                             messages=messages,
@@ -1229,14 +1290,10 @@ async def openai_stream(
                                                             )
                                                             human_event.set()
                                                     stream_buffer = (
-                                                        stream_buffer.replace(
-                                                            word, ""
-                                                        )
+                                                        stream_buffer.replace(word, "")
                                                     )
                                             is_partial_match = any(
-                                                word.startswith(
-                                                    stream_buffer.strip()
-                                                )
+                                                word.startswith(stream_buffer.strip())
                                                 for word in FORBIDDEN_WORDS
                                             )
                                             if (
@@ -1274,17 +1331,13 @@ async def openai_stream(
                                                 text = (
                                                     raw.strip()
                                                     if isinstance(raw, str)
-                                                    else _stream_chunk_text(
-                                                        m
-                                                    ).strip()
+                                                    else _stream_chunk_text(m).strip()
                                                 )
                                                 tcs = (
-                                                    getattr(m, "tool_calls", None)
-                                                    or []
+                                                    getattr(m, "tool_calls", None) or []
                                                 )
                                                 if (
-                                                    ev.get("name")
-                                                    == "classify_intent"
+                                                    ev.get("name") == "classify_intent"
                                                     and tcs
                                                     and not interrupt_event.is_set()
                                                     and not text.strip()
@@ -1325,9 +1378,11 @@ async def openai_stream(
                                                                         stop_event.set()
                                                                     case "**NEEDS_HUMAN_INTERVENTION**":
                                                                         human_event.set()
-                                                                to_send = to_send.replace(
-                                                                    word, ""
-                                                                ).strip()
+                                                                to_send = (
+                                                                    to_send.replace(
+                                                                        word, ""
+                                                                    ).strip()
+                                                                )
                                                         if to_send:
                                                             await _cartesia_send(
                                                                 to_send,
@@ -1356,13 +1411,14 @@ async def openai_stream(
                                                     tenant_id=tenant_id,
                                                 )
 
-                                    if stream_buffer.strip() and not interrupt_event.is_set():
+                                    if (
+                                        stream_buffer.strip()
+                                        and not interrupt_event.is_set()
+                                    ):
                                         for word in FORBIDDEN_WORDS:
                                             if word in stream_buffer:
-                                                stream_buffer = (
-                                                    stream_buffer.replace(
-                                                        word, ""
-                                                    )
+                                                stream_buffer = stream_buffer.replace(
+                                                    word, ""
                                                 )
                                         tail = stream_buffer.strip()
                                         if tail:
@@ -1386,9 +1442,7 @@ async def openai_stream(
                                     await pump_task
                                     await tts_queue.put(None)
 
-                                await asyncio.gather(
-                                    stream_llm(), twilio_forwarder()
-                                )
+                                await asyncio.gather(stream_llm(), twilio_forwarder())
 
                             asyncio.create_task(run_full_ai_cycle())
                     case "conversation.item.input_audio_transcription.delta":

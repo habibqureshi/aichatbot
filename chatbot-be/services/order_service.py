@@ -11,7 +11,14 @@ import websockets.exceptions
 from logging import Logger
 from fastapi.websockets import WebSocketState
 from sqlalchemy import event, log
-from twilio.twiml.voice_response import Connect, VoiceResponse, Start, Gather
+from twilio.twiml.voice_response import (
+    Connect,
+    VoiceResponse,
+    Start,
+    Gather,
+    Parameter,
+    Stream,
+)
 from fastapi import (
     HTTPException,
     BackgroundTasks,
@@ -58,6 +65,104 @@ from configs import (
 )
 from langfuse import get_client
 from langfuse.langchain import CallbackHandler
+import random
+
+DEFAULT_PHRASES = [
+    "One moment, please.",
+    "Just a second.",
+    "Let me take care of that.",
+    "Checking that for you now.",
+    "One moment while I handle it.",
+]
+
+TOOL_PHRASES = {
+    "list_menu": [
+        "Let me pull up the menu for you.",
+        "Just checking the menu right now.",
+        "One moment while I get the menu.",
+    ],
+    "create_order": [
+        "I'm setting up your order now. One moment.",
+        "Got it, starting your order now.",
+        "Let me create your order real quick.",
+    ],
+    "add_order_item": [
+        "Adding that to your order.",
+        "Got it, adding it now.",
+        "One moment, I'm updating your order.",
+    ],
+    "confirm_order": [
+        "Confirming your order now.",
+        "Let me finalize your order.",
+        "Almost done, confirming everything now.",
+    ],
+    "cancel_order": [
+        "Updating your order.",
+        "Cancelling that for you now.",
+        "One moment, I’ll handle the cancellation.",
+    ],
+    "update_order_item": [
+        "Updating your order.",
+        "Making that change now.",
+        "One moment, updating it.",
+    ],
+    "remove_order_item": [
+        "Updating your order.",
+        "Removing that for you now.",
+        "One moment, I’m updating it.",
+    ],
+    "get_order": [
+        "Let me check your order and reservations.",
+        "One moment while I pull up your order.",
+        "Checking your current order now.",
+    ],
+    "price_order": [
+        "Getting pricing details for you.",
+        "Let me check the total for you.",
+        "One moment while I calculate that.",
+    ],
+    "get_my_latest_order_and_reservations": [
+        "Let me check your order and reservations.",
+        "Pulling your latest details now.",
+        "Checking your recent activity.",
+    ],
+    "get_customer_profile": [
+        "Let me check your saved details.",
+        "One moment while I pull your profile.",
+        "Checking your information now.",
+    ],
+    "update_customer_profile": [
+        "Got it, updating your details now.",
+        "Saving your changes now.",
+        "Updating your profile.",
+    ],
+    "knowledge_retriever": [
+        "Let me look that up for you.",
+        "Checking that for you now.",
+        "One moment while I find that information.",
+    ],
+    "check_table_availability": [
+        "Let me check table availability for you.",
+        "Checking tables for that time now.",
+        "One moment while I check availability.",
+    ],
+    "reserve_table": [
+        "Great, I'll reserve a table for you now.",
+        "Booking your table now.",
+        "One moment while I make the reservation.",
+    ],
+    "update_reservation": [
+        "Sure, let me update your reservation.",
+        "Updating your booking now.",
+        "One moment, changing your reservation.",
+    ],
+    "cancel_reservation": [
+        "Okay, I'll cancel that reservation now.",
+        "Cancelling your booking now.",
+        "One moment, removing your reservation.",
+    ],
+}
+
 
 from cartesia import AsyncCartesia
 
@@ -73,9 +178,7 @@ SILENCE_THRESHOLD_MS = 500
 # playing the AI's audio before prompting "Hello are you still there?".
 # The same value is reused after the 2nd unanswered prompt before the call
 # is ended with a goodbye message.
-SILENCE_PROMPT_WAIT_SEC: float = float(
-    os.getenv("SILENCE_PROMPT_WAIT_SEC", "3")
-)
+SILENCE_PROMPT_WAIT_SEC: float = float(os.getenv("SILENCE_PROMPT_WAIT_SEC", "15"))
 # Maximum number of "still there?" prompts before ending the call.
 SILENCE_MAX_PROMPTS: int = int(os.getenv("SILENCE_MAX_PROMPTS", "2"))
 
@@ -258,6 +361,7 @@ TOOL_PHRASES = {
     ],
 }
 
+
 def _tool_hold_phrase(tool_calls: list) -> str:
     """Short voice line while MCP tools run (tool-only model turns have no streamed text)."""
     if not tool_calls:
@@ -285,7 +389,6 @@ _VOICE_FORBIDDEN_LEAK_RE = re.compile(
 )
 
 
-
 async def _get_cached_order_greeting(db: AsyncSession, tenant_id: int) -> str:
     cached = _ORDER_GREETING_CACHE.get(tenant_id)
     if cached is not None:
@@ -298,7 +401,9 @@ async def _get_cached_order_greeting(db: AsyncSession, tenant_id: int) -> str:
     )
     greeting = (
         greeting_setting.value.strip()
-        if greeting_setting and greeting_setting.value and greeting_setting.value.strip()
+        if greeting_setting
+        and greeting_setting.value
+        and greeting_setting.value.strip()
         else DEFAULT_ORDER_GREETING
     )
     _ORDER_GREETING_CACHE[tenant_id] = greeting
@@ -323,21 +428,34 @@ async def _iter_cartesia_audio(ctx) -> AsyncIterator[bytes]:
 
 
 # All local LangChain tools that emit stream_writer events.
-_ORDER_STREAM_TOOL_NAMES = frozenset({
-    "list_menu", "create_order", "add_order_item", "update_order_item",
-    "remove_order_item", "cancel_order", "confirm_order", "get_order",
-    "get_my_latest_order_and_reservations",
-    "price_order", "get_customer_profile", "update_customer_profile",
-    "knowledge_retriever", "check_table_availability",
-    "reserve_table", "update_reservation", "cancel_reservation",
-})
-
+_ORDER_STREAM_TOOL_NAMES = frozenset(
+    {
+        "list_menu",
+        "create_order",
+        "add_order_item",
+        "update_order_item",
+        "remove_order_item",
+        "cancel_order",
+        "confirm_order",
+        "get_order",
+        "get_my_latest_order_and_reservations",
+        "price_order",
+        "get_customer_profile",
+        "update_customer_profile",
+        "knowledge_retriever",
+        "check_table_availability",
+        "reserve_table",
+        "update_reservation",
+        "cancel_reservation",
+    }
+)
 
 
 async def ws_greeting(
     data: TwilioIncoming,
     db: AsyncSession,
     action_url: str,
+    recording_status_callback: URL,
     tenant_id: int,
     log: Logger,
 ):
@@ -356,24 +474,37 @@ async def ws_greeting(
         data=data, customer=customer, db=db, tenant_id=tenant_id
     )
     log.info(f"conversation created for {data.CallSid}")
+    start = Start()
+    start.recording(
+        recording_status_callback=recording_status_callback,
+        track="both",
+        channels="mono",
+    )
+    resp.append(start)
+    stream = Stream(url=action_url)
+    stream.parameter("CallSid", data.CallSid)
+    stream.parameter("From", data.From)
+    stream.parameter("To", data.To)
     connect = Connect()
-    connect.stream(url=action_url)
+    connect.append(stream)
     resp.append(connect)
     return resp
+
 
 async def stream_call(
     websocket: WebSocket, db: AsyncSession, tenant_id: int, log: Logger
 ):
     await websocket.accept()
 
+
 OPENAI_URL = (
     "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17"
 )
 # Default websockets open handshake is short; Realtime can be slow on constrained networks.
-_OPENAI_REALTIME_OPEN_TIMEOUT = float(
-    os.getenv("OPENAI_REALTIME_OPEN_TIMEOUT", "60")
+_OPENAI_REALTIME_OPEN_TIMEOUT = float(os.getenv("OPENAI_REALTIME_OPEN_TIMEOUT", "60"))
+_OPENAI_REALTIME_CONNECT_RETRIES = int(
+    os.getenv("OPENAI_REALTIME_CONNECT_RETRIES", "3")
 )
-_OPENAI_REALTIME_CONNECT_RETRIES = int(os.getenv("OPENAI_REALTIME_CONNECT_RETRIES", "3"))
 
 
 async def _connect_openai_realtime_stt(log: Logger):
@@ -394,9 +525,7 @@ async def _connect_openai_realtime_stt(log: Logger):
                 additional_headers=headers,
             )
             if attempt > 1:
-                log.info(
-                    "OpenAI Realtime WebSocket connected on attempt %s", attempt
-                )
+                log.info("OpenAI Realtime WebSocket connected on attempt %s", attempt)
             return ws
         except (TimeoutError, OSError, websockets.exceptions.InvalidHandshake) as e:
             last_exc = e
@@ -444,9 +573,9 @@ async def openai_stream(
                     "input_audio_noise_reduction": {"type": "near_field"},
                     "turn_detection": {
                         "type": "server_vad",
-                        "threshold": 0.4,
+                        "threshold": 0.45,
                         # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
-                        "silence_duration_ms": 300,
+                        "silence_duration_ms": 400,
                         "prefix_padding_ms": 300,
                         "create_response": False,
                         "interrupt_response": False,
@@ -455,9 +584,7 @@ async def openai_stream(
                     "input_audio_transcription": {
                         "model": "gpt-4o-mini-transcribe",
                         "language": "en",
-                        "prompt": (
-                            "Restaurant phone ordering in English."
-                        ),
+                        "prompt": ("Restaurant phone ordering in English."),
                     },
                 },
             }
@@ -534,7 +661,7 @@ async def openai_stream(
             pass
 
 
-class ReceiveVoiceSession: 
+class ReceiveVoiceSession:
 
     def __init__(
         self,
@@ -672,9 +799,7 @@ class ReceiveVoiceSession:
             await asyncio.wait_for(
                 self._playback_done_event.wait(), timeout=fallback_timeout
             )
-            self.log.info(
-                "TWILIO_MARK_WAIT_DONE | label=%s | via_mark=True", label
-            )
+            self.log.info("TWILIO_MARK_WAIT_DONE | label=%s | via_mark=True", label)
         except asyncio.TimeoutError:
             self.log.warning(
                 "TWILIO_MARK_TIMEOUT | label=%s | fallback to estimate "
@@ -873,7 +998,11 @@ class ReceiveVoiceSession:
         try:
             await self.db.commit()
             await self.db.refresh(customer)
-            self.log.info("CUSTOMER_NAME_CAPTURED | customer_id=%s name=%r", customer.id, inferred_name)
+            self.log.info(
+                "CUSTOMER_NAME_CAPTURED | customer_id=%s name=%r",
+                customer.id,
+                inferred_name,
+            )
         except Exception as e:
             await self.db.rollback()
             self.log.warning("CUSTOMER_NAME_CAPTURE_FAILED | %s", e)
@@ -895,10 +1024,9 @@ class ReceiveVoiceSession:
 
         self.state.interrupt_event.set()
 
-        await self.websocket.send_json({
-            "event": "clear",
-            "streamSid": self.state.stream_sid
-        })
+        await self.websocket.send_json(
+            {"event": "clear", "streamSid": self.state.stream_sid}
+        )
 
         if self._voice_cycle_task is not None and not self._voice_cycle_task.done():
             self._voice_cycle_task.cancel()
@@ -943,7 +1071,8 @@ class ReceiveVoiceSession:
             if audio is None:
                 self.log.info(
                     "TWILIO_FWD | sentinel received | total_chunks=%d total_bytes=%d",
-                    _chunks, _bytes,
+                    _chunks,
+                    _bytes,
                 )
                 return
 
@@ -963,13 +1092,13 @@ class ReceiveVoiceSession:
                     len(audio),
                 )
 
-            await self.websocket.send_json({
-                "event": "media",
-                "streamSid": self.state.stream_sid,
-                "media": {
-                    "payload": base64.b64encode(audio).decode("utf-8")
-                },
-            })
+            await self.websocket.send_json(
+                {
+                    "event": "media",
+                    "streamSid": self.state.stream_sid,
+                    "media": {"payload": base64.b64encode(audio).decode("utf-8")},
+                }
+            )
 
     # -------------------------------
     # Receive Audio From Cartesia
@@ -984,19 +1113,20 @@ class ReceiveVoiceSession:
                     if self.state.interrupt_event.is_set():
                         self.log.info(
                             "CARTESIA_PUMP | interrupted after %d chunks (%d bytes)",
-                            _chunks, _bytes,
+                            _chunks,
+                            _bytes,
                         )
                         return
                     _chunks += 1
                     _bytes += len(response.audio)
                     if _chunks == 1:
                         self.log.info(
-                                "CARTESIA_PUMP | first audio chunk received | %d bytes",
-                                len(response.audio),
+                            "CARTESIA_PUMP | first audio chunk received | %d bytes",
+                            len(response.audio),
                         )
                     self.log.info(
-                            "yolo4 | first_audio_received_from_cartesia | bytes=%d",
-                            len(response.audio),
+                        "yolo4 | first_audio_received_from_cartesia | bytes=%d",
+                        len(response.audio),
                     )
                     await self.tts_queue.put(response.audio)
         except Exception as e:
@@ -1004,7 +1134,8 @@ class ReceiveVoiceSession:
         finally:
             self.log.info(
                 "CARTESIA_PUMP | finished | total_chunks=%d total_bytes=%d",
-                _chunks, _bytes,
+                _chunks,
+                _bytes,
             )
 
     # -------------------------------
@@ -1042,6 +1173,7 @@ class ReceiveVoiceSession:
             )
             return
         import time as _time
+
         _t0 = _time.monotonic()
         await ctx.send(
             transcript=transcript,
@@ -1052,7 +1184,9 @@ class ReceiveVoiceSession:
         last_classify_spoken.append(transcript)
         self.log.info(
             "CARTESIA_SEND_OK | %.0fms | continue=%s | label=%s | text=%r",
-            _send_ms, continue_, log_label,
+            _send_ms,
+            continue_,
+            log_label,
             transcript if len(transcript) <= 200 else (transcript[:200] + "..."),
         )
 
@@ -1107,14 +1241,17 @@ class ReceiveVoiceSession:
         try:
             async for ev in st.graph.astream_events(
                 OrderState(
-                    messages=[HumanMessage(content=user_text)],
-                user_input=user_text,
+                    messages=st.messages,
+                    user_input=user_text,
                     customer_name=st.customer.name,
                     customer_phone=st.customer.phone_number,
-            ),
-                config={"callbacks": [langfuse_handler],"configurable": {"thread_id": st.conversation.call_sid}},
-            version="v2",
-        ):
+                ),
+                config={
+                    "callbacks": [langfuse_handler],
+                    "configurable": {"thread_id": st.conversation.call_sid},
+                },
+                version="v2",
+            ):
                 ev_type = ev.get("event")
                 meta = ev.get("metadata") or {}
                 if ev_type == "on_custom_event":
@@ -1122,7 +1259,10 @@ class ReceiveVoiceSession:
                     chunk = raw.get("chunk", raw) if isinstance(raw, dict) else raw
                     if isinstance(raw, dict) and raw.get("type") == "order_mcp_tool":
                         chunk = raw
-                    if isinstance(chunk, dict) and chunk.get("type") == "order_mcp_tool":
+                    if (
+                        isinstance(chunk, dict)
+                        and chunk.get("type") == "order_mcp_tool"
+                    ):
                         self.log.info(
                             "STREAM_WRITER_EVENT | tool=%s phase=%s",
                             chunk.get("tool"),
@@ -1269,9 +1409,11 @@ class ReceiveVoiceSession:
                                 if pending_tail:
                                     self.log.info(
                                         "TTS_BUFFER_FLUSH_PRE_COMPLETION | text=%r",
-                                        pending_tail
-                                        if len(pending_tail) <= 500
-                                        else (pending_tail[:500] + "..."),
+                                        (
+                                            pending_tail
+                                            if len(pending_tail) <= 500
+                                            else (pending_tail[:500] + "...")
+                                        ),
                                     )
                                     await self._cartesia_send_stream(
                                         ctx,
@@ -1297,15 +1439,15 @@ class ReceiveVoiceSession:
                                                 st.stop_event.set()
                                             case "**NEEDS_HUMAN_INTERVENTION**":
                                                 st.human_event.set()
-                                        to_send = (
-                                            to_send.replace(word, "").strip()
-                                        )
+                                        to_send = to_send.replace(word, "").strip()
                                 if to_send:
                                     self.log.info(
                                         "TTS_COMPLETION_FALLBACK | text=%r",
-                                        to_send
-                                        if len(to_send) <= 500
-                                        else (to_send[:500] + "..."),
+                                        (
+                                            to_send
+                                            if len(to_send) <= 500
+                                            else (to_send[:500] + "...")
+                                        ),
                                     )
                                     await self._cartesia_send_stream(
                                         ctx,
@@ -1323,9 +1465,7 @@ class ReceiveVoiceSession:
                         )
                         self.log.info(
                             "ASSISTANT_FINAL_RESPONSE | stored_and_spoken=%r",
-                            clean
-                            if len(clean) <= 2000
-                            else (clean[:2000] + "..."),
+                            clean if len(clean) <= 2000 else (clean[:2000] + "..."),
                         )
                         m.content = clean
                         await self.message_service.create(
@@ -1364,7 +1504,9 @@ class ReceiveVoiceSession:
                         continue_=False,
                         **self.cartesia_kw,
                     )
-                    self.log.info("CARTESIA | end-of-turn flush sent (empty transcript)")
+                    self.log.info(
+                        "CARTESIA | end-of-turn flush sent (empty transcript)"
+                    )
                 except Exception as e:
                     self.log.warning("CARTESIA | end-of-turn flush failed | %s", e)
 
@@ -1456,11 +1598,11 @@ class SendVoiceSession:
 
     async def handle_connected(self, message):
 
-        self.log.info("WebSocket event: %s", message['event'])
+        self.log.info("WebSocket event: %s", message["event"])
 
     async def handle_start(self, message):
 
-        self.log.info("WebSocket event: %s", message['event'])
+        self.log.info("WebSocket event: %s", message["event"])
 
         call_sid = message["start"]["callSid"]
         st = self.state
@@ -1521,9 +1663,7 @@ class SendVoiceSession:
         if st.customer.phone_number:
             st.messages.insert(
                 0,
-                HumanMessage(
-                    content=f"[Caller phone: {st.customer.phone_number}]"
-                ),
+                HumanMessage(content=f"[Caller phone: {st.customer.phone_number}]"),
             )
 
         if st.customer.name:
@@ -1606,3 +1746,68 @@ class SendVoiceSession:
                 }
             )
         )
+
+
+async def test_graph(
+    data: TwilioIncoming, db: AsyncSession, tenant_id: int, log: Logger
+):
+    # 1. Find or create customer by phone
+    customer = await customer_service.find_or_create_by_phone(
+        data.From, db=db, tenant_id=tenant_id
+    )
+
+    conversation = await conversation_service.find_or_create_for_customer(
+        data=data, customer=customer, db=db, tenant_id=tenant_id
+    )
+
+    # messages = await message_service.load_messages_by_conversation(
+    #     conversation=conversation, db=db, tenant_id=tenant_id
+    # )
+
+    # lc_messages = []
+    # if customer.phone_number:
+    #     lc_messages.append(
+    #         HumanMessage(content=f"[Caller phone: {customer.phone_number}]")
+    #     )
+    # if customer.name:
+    #     lc_messages.append(HumanMessage(content=f"[Caller: {customer.name}]"))
+
+    # 5. Load the order graph
+    graph = await get_order_graph(
+        data.CallSid,
+        customer.phone_number or "",
+        db=db,
+        tenant_id=tenant_id,
+        log=log,
+    )
+
+    # 6. Run the graph with the latest user input (SpeechResult or Digits)
+    user_input = data.SpeechResult or ""
+    ai_response = await graph.ainvoke(
+        OrderState(
+            messages=[HumanMessage(content=user_input)],
+            user_input=user_input,
+            customer_phone=customer.phone_number,
+            customer_name=customer.name,
+        ),
+        config={
+            "callbacks": [langfuse_handler],
+            "configurable": {"thread_id": data.CallSid},
+        },
+    )
+
+    # 7. Extract the final AI message
+    ai_messages = ai_response.get("messages", [])
+    final_message = ai_messages[-1].content if ai_messages else ""
+    # Optionally store the assistant response
+    if final_message:
+        await message_service.create(
+            conversation=conversation,
+            content=final_message,
+            role="assistant",
+            db=db,
+            tenant_id=tenant_id,
+        )
+
+    # 8. Return the AI response (for frontend)
+    return {"response": final_message}

@@ -168,6 +168,8 @@ async def create_order_graph(
     * Use this for user queries about menu.
     * DO NOT use knowledge_retriever for menu.
     * Do not repeat whole menu.
+    * The menu items are single serving items.
+    * Give exact item name
 
     ORDERS:
     * Use tools to create and manage orders.

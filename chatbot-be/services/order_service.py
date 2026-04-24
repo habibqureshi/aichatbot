@@ -1252,7 +1252,7 @@ class ReceiveVoiceSession:
         try:
             async for ev in st.graph.astream_events(
                 OrderState(
-                    messages=st.messages,
+                    messages=[HumanMessage(content=user_text)],
                     user_input=user_text,
                     customer_name=st.customer.name,
                     customer_phone=st.customer.phone_number,

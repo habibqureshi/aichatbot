@@ -223,75 +223,37 @@ async def add_order_item(
     order_id: int,
     caller_phone_number: str | None,
     tenant_id: int,
-    item_name: str | list[str] | list[dict[str, str | int]] | None = None,
-    quantity: int | list[int] | None = None,
+    items: dict[str, str | int] | list[dict[str, str | int]] | None = None,
 ) -> str:
     normalized_items: list[tuple[str, int]] = []
-    if isinstance(item_name, list) and item_name and isinstance(item_name[0], dict):
-        for idx, raw in enumerate(item_name):
-            raw_name = str(raw.get("name", "")).strip()
-            raw_quantity = raw.get("quantity", 0)
-            try:
-                parsed_quantity = int(raw_quantity)
-            except (TypeError, ValueError):
-                return (
-                    f"Quantity at index {idx} for item "
-                    f"'{raw_name or 'unknown'}' must be a whole number."
-                )
-            if not raw_name:
-                return f"item_name[{idx}].name must be non-empty."
-            if parsed_quantity < 1:
-                return (
-                    f"Quantity for item '{raw_name}' at index {idx} "
-                    "must be at least 1."
-                )
-            normalized_items.append((raw_name, parsed_quantity))
-
-        if not normalized_items:
-            return "item_name array cannot be empty."
+    compact_payload: list[dict[str, str | int]]
+    if isinstance(items, dict):
+        compact_payload = [items]
+    elif isinstance(items, list):
+        compact_payload = items
     else:
-        is_name_list = isinstance(item_name, list)
-        is_qty_list = isinstance(quantity, list)
-        if is_name_list != is_qty_list:
-            return "item_name and quantity must both be arrays when using batch mode."
+        return "Provide items as {n,q}, [{n,q}] or [{name,quantity}]."
 
-        if is_name_list and is_qty_list:
-            names = item_name if isinstance(item_name, list) else []
-            quantities = quantity if isinstance(quantity, list) else []
-            if not names:
-                return "item_name array cannot be empty."
-            if len(names) != len(quantities):
-                return "item_name and quantity arrays must have the same length."
-            for idx, raw_name in enumerate(names):
-                normalized_name = str(raw_name).strip()
-                raw_qty = quantities[idx]
-                try:
-                    parsed_quantity = int(raw_qty)
-                except (TypeError, ValueError):
-                    return (
-                        f"Quantity at index {idx} for item "
-                        f"'{normalized_name or 'unknown'}' must be a whole number."
-                    )
-                if not normalized_name:
-                    return f"item_name at index {idx} must be non-empty."
-                if parsed_quantity < 1:
-                    return (
-                        f"Quantity for item '{normalized_name}' at index {idx} "
-                        "must be at least 1."
-                    )
-                normalized_items.append((normalized_name, parsed_quantity))
-        elif isinstance(item_name, str) and isinstance(quantity, int):
-            normalized_name = item_name.strip()
-            if not normalized_name:
-                return "item_name must be non-empty."
-            if quantity < 1:
-                return "Quantity must be at least 1."
-            normalized_items.append((normalized_name, quantity))
-        else:
+    if not compact_payload:
+        return "items array cannot be empty."
+    for idx, raw in enumerate(compact_payload):
+        raw_name = str(raw.get("n") or raw.get("name") or "").strip()
+        raw_quantity = raw.get("q", raw.get("quantity", 0))
+        try:
+            parsed_quantity = int(raw_quantity)
+        except (TypeError, ValueError):
             return (
-                "Provide item_name as string, [string], or "
-                "[{name, quantity}] payload."
+                f"Quantity at index {idx} for item "
+                f"'{raw_name or 'unknown'}' must be a whole number."
             )
+        if not raw_name:
+            return f"items[{idx}] name must be non-empty."
+        if parsed_quantity < 1:
+            return (
+                f"Quantity for item '{raw_name}' at index {idx} "
+                "must be at least 1."
+            )
+        normalized_items.append((raw_name, parsed_quantity))
 
     caller_customer_id = await _get_caller_customer_id(
         db=db,
@@ -385,13 +347,20 @@ async def update_order_item(
     db: AsyncSession,
     *,
     order_id: int,
-    line_item_id: int,
-    quantity: int,
+    items: dict[str, int] | list[dict[str, int]] | None,
     caller_phone_number: str | None,
     tenant_id: int,
 ) -> str:
-    if quantity < 1:
-        return "Quantity must be at least 1."
+    payloads: list[dict[str, int]]
+    if isinstance(items, dict):
+        payloads = [items]
+    elif isinstance(items, list):
+        payloads = items
+    else:
+        return "Provide items as {i,q}, [{i,q}] or [{line_item_id,quantity}]."
+    if not payloads:
+        return "items array cannot be empty."
+
     caller_customer_id = await _get_caller_customer_id(
         db=db,
         tenant_id=tenant_id,
@@ -410,25 +379,48 @@ async def update_order_item(
     if order.status not in ("draft", "pending"):
         return f"Order #{order_id} cannot be modified in status '{order.status}'."
 
-    result = await db.execute(
-        select(OrderItem).where(
-            OrderItem.id == line_item_id,
-            OrderItem.order_id == order_id,
-            OrderItem.tenant_id == tenant_id,
-        )
-    )
-    item = result.scalars().first()
-    if not item:
-        return f"Line item #{line_item_id} not found in order #{order_id}."
+    updated_summary: list[str] = []
+    total_delta = 0.0
+    for idx, raw in enumerate(payloads):
+        raw_line_id = raw.get("i", raw.get("id", raw.get("line_item_id")))
+        raw_qty = raw.get("q", raw.get("quantity"))
+        try:
+            line_item_id = int(raw_line_id)
+        except (TypeError, ValueError):
+            return f"Line item id at index {idx} must be a whole number."
+        try:
+            quantity = int(raw_qty)
+        except (TypeError, ValueError):
+            return f"Quantity at index {idx} for line item #{line_item_id} must be a whole number."
+        if quantity < 1:
+            return f"Quantity for line item #{line_item_id} must be at least 1."
 
-    old_total = float(item.line_total)
-    item.quantity = quantity
-    item.line_total = float(item.unit_price) * quantity
-    delta = float(item.line_total) - old_total
-    order.total_amount = max(0.0, float(order.total_amount or 0) + delta)
+        result = await db.execute(
+            select(OrderItem).where(
+                OrderItem.id == line_item_id,
+                OrderItem.order_id == order_id,
+                OrderItem.tenant_id == tenant_id,
+            )
+        )
+        item = result.scalars().first()
+        if not item:
+            return f"Line item #{line_item_id} not found in order #{order_id}."
+
+        old_total = float(item.line_total)
+        item.quantity = quantity
+        item.line_total = float(item.unit_price) * quantity
+        total_delta += float(item.line_total) - old_total
+        updated_summary.append(f"line {line_item_id} -> qty {quantity}")
+
+    order.total_amount = max(0.0, float(order.total_amount or 0) + total_delta)
     await db.commit()
+    if len(updated_summary) == 1:
+        return (
+            f"Updated {updated_summary[0]} in order #{order_id}. "
+            f"Order total is now {float(order.total_amount or 0):.2f}."
+        )
     return (
-        f"Updated line {line_item_id} to quantity {quantity}. "
+        f"Updated items in order #{order_id}: {', '.join(updated_summary)}. "
         f"Order total is now {float(order.total_amount or 0):.2f}."
     )
 
@@ -437,10 +429,20 @@ async def remove_order_item(
     db: AsyncSession,
     *,
     order_id: int,
-    line_item_id: int,
+    items: dict[str, int] | list[dict[str, int]] | None,
     caller_phone_number: str | None,
     tenant_id: int,
 ) -> str:
+    payloads: list[dict[str, int]]
+    if isinstance(items, dict):
+        payloads = [items]
+    elif isinstance(items, list):
+        payloads = items
+    else:
+        return "Provide items as {i}, [{i}] or [{line_item_id}]."
+    if not payloads:
+        return "items array cannot be empty."
+
     caller_customer_id = await _get_caller_customer_id(
         db=db,
         tenant_id=tenant_id,
@@ -459,23 +461,35 @@ async def remove_order_item(
     if order.status not in ("draft", "pending"):
         return f"Order #{order_id} cannot be modified in status '{order.status}'."
 
-    result = await db.execute(
-        select(OrderItem).where(
-            OrderItem.id == line_item_id,
-            OrderItem.order_id == order_id,
-            OrderItem.tenant_id == tenant_id,
-        )
-    )
-    item = result.scalars().first()
-    if not item:
-        return f"Line item #{line_item_id} not found in order #{order_id}."
+    removed_ids: list[int] = []
+    removed_total = 0.0
+    for idx, raw in enumerate(payloads):
+        raw_line_id = raw.get("i", raw.get("id", raw.get("line_item_id")))
+        try:
+            line_item_id = int(raw_line_id)
+        except (TypeError, ValueError):
+            return f"Line item id at index {idx} must be a whole number."
 
-    order.total_amount = max(
-        0.0, float(order.total_amount or 0) - float(item.line_total)
-    )
-    await db.execute(delete(OrderItem).where(OrderItem.id == line_item_id))
+        result = await db.execute(
+            select(OrderItem).where(
+                OrderItem.id == line_item_id,
+                OrderItem.order_id == order_id,
+                OrderItem.tenant_id == tenant_id,
+            )
+        )
+        item = result.scalars().first()
+        if not item:
+            return f"Line item #{line_item_id} not found in order #{order_id}."
+
+        removed_total += float(item.line_total)
+        removed_ids.append(line_item_id)
+        await db.execute(delete(OrderItem).where(OrderItem.id == line_item_id))
+
+    order.total_amount = max(0.0, float(order.total_amount or 0) - removed_total)
     await db.commit()
-    return f"Removed line item #{line_item_id} from order #{order_id}."
+    if len(removed_ids) == 1:
+        return f"Removed line item #{removed_ids[0]} from order #{order_id}."
+    return f"Removed line items {', '.join(str(v) for v in removed_ids)} from order #{order_id}."
 
 
 async def cancel_order(

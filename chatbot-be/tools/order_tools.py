@@ -97,24 +97,23 @@ def build_order_tools(
     @tool
     async def add_order_item(
         order_id: int,
-        item_name: str | list[str] | list[dict[str, Any]] = "",
-        quantity: int | list[int] = 1,
+        items: dict[str, Any] | list[dict[str, Any]] | None = None,
         user_confirmation: bool = False,
     ) -> str:
         """Add one or multiple menu item lines to an existing order.
 
         Args:
             order_id: Target order id.
-            item_name: Single name, or array payload.
-                Preferred batch payload:
-                [{"name": "...", "quantity": 2}, ...]
-                Legacy batch payload:
-                item_name=["..."], quantity=[...]
-            quantity: Single quantity or legacy quantity array.
+            items: Compact batch payload:
+                {"n": "...", "q": 2}
+                [{"n": "...", "q": 2}, ...]
+                Also accepts {"name": "...", "quantity": 2}
+                or [{"name": "...", "quantity": 2}, ...]
+                n is exact name of the item and q is quantity
             user_confirmation: if user confirmed or not
         """
-        if isinstance(quantity, int) and quantity < 1:
-            return "Quantity must be at least 1."
+        if items is None:
+            return "items is required. Use {n,q} or [{n,q}, ...]."
         if not user_confirmation:
             raise Exception("Ask user explicit if he want to add items to the order")
         _emit({"tool": "add_order_item", "phase": "start"}, log)
@@ -122,8 +121,7 @@ def build_order_tools(
             result = await order_tool_service.add_order_item(
                 db,
                 order_id=order_id,
-                item_name=item_name,
-                quantity=quantity,
+                items=items,
                 caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
@@ -135,21 +133,27 @@ def build_order_tools(
             raise
 
     @tool
-    async def update_order_item(order_id: int, line_item_id: int, quantity: int) -> str:
-        """Change the quantity on an existing order line.
+    async def update_order_item(
+        order_id: int,
+        items: dict[str, Any] | list[dict[str, Any]] | None = None,
+    ) -> str:
+        """Change quantity for one or multiple order lines.
 
         Args:
             order_id: Order id.
-            line_item_id: Line item id.
-            quantity: New quantity (>= 1).
+            items: Compact payload:
+                {"i": 12, "q": 3}
+                [{"i": 12, "q": 3}, ...]
+                Also accepts {"line_item_id": 12, "quantity": 3}.
         """
+        if items is None:
+            return "items is required. Use {i,q} or [{i,q}, ...]."
         _emit({"tool": "update_order_item", "phase": "start"}, log)
         try:
             result = await order_tool_service.update_order_item(
                 db,
                 order_id=order_id,
-                line_item_id=line_item_id,
-                quantity=quantity,
+                items=items,
                 caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
@@ -163,20 +167,25 @@ def build_order_tools(
     @tool
     async def remove_order_item(
         order_id: int,
-        line_item_id: int,
+        items: dict[str, Any] | list[dict[str, Any]] | None = None,
     ) -> str:
-        """Remove one line item from an order.
+        """Remove one or multiple line items from an order.
 
         Args:
             order_id: Order id.
-            line_item_id: Order line id (see get_order).
+            items: Compact payload:
+                {"i": 12}
+                [{"i": 12}, {"i": 15}]
+                Also accepts {"line_item_id": 12}.
         """
+        if items is None:
+            return "items is required. Use {i} or [{i}, ...]."
         _emit({"tool": "remove_order_item", "phase": "start"}, log)
         try:
             result = await order_tool_service.remove_order_item(
                 db,
                 order_id=order_id,
-                line_item_id=line_item_id,
+                items=items,
                 caller_phone_number=customer_phone,
                 tenant_id=tenant_id,
             )
@@ -388,7 +397,7 @@ def build_order_tools(
 
         Args:
             customer_name: Caller name to save.
-            delivery_address: Delivery address to save.
+            delivery_address: Delivery address to save. It must contain house/flat number, street/area name and city name.
         """
         _emit({"tool": "update_customer_profile", "phase": "start"}, log)
         try:

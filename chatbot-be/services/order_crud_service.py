@@ -7,6 +7,8 @@ from db.models import Order as OrderModel
 from schemas.common import PaginatedResponse
 from schemas.order import Order as OrderSchema
 
+ALLOWED_ORDER_STATUSES = {"draft", "confirmed", "preparing", "delivered"}
+
 
 async def list_orders(
     db: AsyncSession,
@@ -88,3 +90,49 @@ async def get_order_by_id(
     if not order:
         return None
     return OrderSchema.model_validate(order, context={"timezone": user_timezone})
+
+
+async def update_order_status(
+    db: AsyncSession,
+    *,
+    order_id: int,
+    tenant_id: int,
+    status: str,
+    user_timezone: str,
+) -> OrderSchema | None:
+    normalized_status = (status or "").strip().lower()
+    if normalized_status not in ALLOWED_ORDER_STATUSES:
+        raise ValueError(
+            "Invalid status. Allowed: draft, confirmed, preparing, delivered."
+        )
+
+    result = await db.execute(
+        select(OrderModel).where(
+            OrderModel.id == order_id,
+            OrderModel.tenant_id == tenant_id,
+        )
+    )
+    order = result.scalars().first()
+    if not order:
+        return None
+
+    order.status = normalized_status
+    await db.commit()
+    await db.refresh(order)
+
+    result = await db.execute(
+        select(OrderModel)
+        .options(
+            joinedload(OrderModel.customer),
+            selectinload(OrderModel.items),
+        )
+        .where(
+            OrderModel.id == order_id,
+            OrderModel.tenant_id == tenant_id,
+        )
+        .limit(1)
+    )
+    refreshed = result.scalars().unique().first()
+    if not refreshed:
+        return None
+    return OrderSchema.model_validate(refreshed, context={"timezone": user_timezone})

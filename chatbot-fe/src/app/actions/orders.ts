@@ -1,6 +1,9 @@
 import { API } from "@/app/http/axio";
 import { ENDPOINTS } from "@/app/http/endpoints";
 
+export const ORDER_STATUS_OPTIONS = ["draft", "confirmed", "preparing", "delivered"] as const;
+export type OrderStatus = (typeof ORDER_STATUS_OPTIONS)[number];
+
 export interface OrderItem {
   id: number;
   item_name: string;
@@ -62,5 +65,21 @@ export async function getOrderById(
   } catch (error) {
     console.error("Error fetching order details:", error);
     throw new Error("Failed to fetch order details");
+  }
+}
+
+export async function updateOrderStatus(
+  orderId: number,
+  status: OrderStatus,
+  user_timezone: string = "UTC",
+): Promise<Order> {
+  try {
+    const response = await API.patch(ENDPOINTS.ORDERS.UPDATE_STATUS(orderId, user_timezone), {
+      status,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    throw new Error("Failed to update order status");
   }
 }

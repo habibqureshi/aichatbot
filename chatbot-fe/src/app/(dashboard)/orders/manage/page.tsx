@@ -3,7 +3,13 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { getOrderById, Order } from "@/app/actions/orders";
+import {
+  getOrderById,
+  Order,
+  ORDER_STATUS_OPTIONS,
+  OrderStatus,
+  updateOrderStatus,
+} from "@/app/actions/orders";
 import { formatDate, formatTime } from "@/lib/utils";
 import { StatusBadge } from "@/lib/statusUtils";
 
@@ -13,6 +19,8 @@ function OrderDetailsContent() {
   const orderId = searchParams.get("id");
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [statusDraft, setStatusDraft] = useState<OrderStatus>("draft");
+  const [savingStatus, setSavingStatus] = useState(false);
 
   useEffect(() => {
     if (!orderId) {
@@ -25,6 +33,7 @@ function OrderDetailsContent() {
         const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const data = await getOrderById(Number(orderId), user_timezone);
         setOrder(data);
+        setStatusDraft((data.status || "draft") as OrderStatus);
       } catch (error: unknown) {
         console.error("Error loading order details:", error);
         toast.error(error instanceof Error ? error.message : "Failed to load order details");
@@ -40,6 +49,23 @@ function OrderDetailsContent() {
     () => (order?.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0),
     [order?.items],
   );
+
+  const handleStatusSave = async () => {
+    if (!order) return;
+    try {
+      setSavingStatus(true);
+      const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const updated = await updateOrderStatus(order.id, statusDraft, user_timezone);
+      setOrder(updated);
+      setStatusDraft((updated.status || "draft") as OrderStatus);
+      toast.success("Order status updated");
+    } catch (error: unknown) {
+      console.error("Error updating status:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to update order status");
+    } finally {
+      setSavingStatus(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -78,7 +104,28 @@ function OrderDetailsContent() {
           </h1>
           <p className="text-sm text-[#787878] mt-1">View order metadata and item lines.</p>
         </div>
-        <StatusBadge status={order.status || "N/A"} />
+        <div className="flex items-center gap-3">
+          <StatusBadge status={order.status || "N/A"} />
+          <select
+            value={statusDraft}
+            onChange={(e) => setStatusDraft(e.target.value as OrderStatus)}
+            className="h-10 rounded-md border border-[#E8E3FF] px-3 text-sm bg-white"
+          >
+            {ORDER_STATUS_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handleStatusSave}
+            disabled={savingStatus || statusDraft === (order.status as OrderStatus)}
+            className="h-10 px-4 rounded-md bg-[#6325A9] text-white text-sm disabled:opacity-50"
+          >
+            {savingStatus ? "Saving..." : "Save Status"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

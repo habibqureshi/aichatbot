@@ -98,6 +98,8 @@ export const ENDPOINTS = {
     },
     GET: (orderId: number, user_timezone: string = "UTC") =>
       `/api/v1/orders/${orderId}?user_timezone=${encodeURIComponent(user_timezone)}`,
+    UPDATE_STATUS: (orderId: number, user_timezone: string = "UTC") =>
+      `/api/v1/orders/${orderId}/status?user_timezone=${encodeURIComponent(user_timezone)}`,
   },
   CONVERSATIONS: {
     LIST: (

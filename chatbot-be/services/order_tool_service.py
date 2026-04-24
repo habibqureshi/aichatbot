@@ -501,9 +501,11 @@ async def cancel_order(
     )
     if not order:
         return f"Order #{order_id} was not found for this caller."
-    order.status = "cancelled"
-    await db.commit()
-    return f"Order #{order_id} has been cancelled."
+    if order.status == "confirmed":
+        order.status = "cancelled"
+        await db.commit()
+        return f"Order #{order_id} has been cancelled."
+    return f"Order #{order_id} not in confirmed state, hence cannot be cancelled!"
 
 
 async def confirm_order(
@@ -530,9 +532,7 @@ async def confirm_order(
         return f"Order #{order_id} was not found for this caller."
     order.status = "confirmed"
     await db.commit()
-    return (
-        f"Order #{order_id} confirmed. Total is {float(order.total_amount or 0):.2f}."
-    )
+    return f"Order #{order_id} confirmed. Total is {float(order.total_amount or 0):.2f}. Tell the order # to user"
 
 
 async def get_latest_order_summary_for_caller(

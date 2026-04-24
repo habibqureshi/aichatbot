@@ -116,7 +116,7 @@ def build_order_tools(
         if isinstance(quantity, int) and quantity < 1:
             return "Quantity must be at least 1."
         if not user_confirmation:
-            raise Exception("User Confirmation required")
+            raise Exception("Ask user explicit if he want to add items to the order")
         _emit({"tool": "add_order_item", "phase": "start"}, log)
         try:
             result = await order_tool_service.add_order_item(
@@ -135,11 +135,7 @@ def build_order_tools(
             raise
 
     @tool
-    async def update_order_item(
-        order_id: int,
-        line_item_id: int,
-        quantity: int,
-    ) -> str:
+    async def update_order_item(order_id: int, line_item_id: int, quantity: int) -> str:
         """Change the quantity on an existing order line.
 
         Args:
@@ -193,8 +189,7 @@ def build_order_tools(
 
     @tool
     async def cancel_order(
-        order_id: int,
-        reason: Optional[str] = None,
+        order_id: int, reason: Optional[str] = None, user_confirmation: bool = False
     ) -> str:
         """Cancel an order.
 
@@ -202,6 +197,10 @@ def build_order_tools(
             order_id: Order id to cancel.
             reason: Optional cancellation reason.
         """
+        if not user_confirmation:
+            raise Exception(
+                f"Ask user explicitly if he wants to cancel order #{order_id}"
+            )
         _emit({"tool": "cancel_order", "phase": "start"}, log)
         try:
             result = await order_tool_service.cancel_order(
@@ -220,14 +219,14 @@ def build_order_tools(
 
     @tool
     async def confirm_order(order_id: int, user_confirmation: bool = False) -> str:
-        """Confirm and place the order after explicit user approval.
+        """Confirm and place the order after user explicitly said order is completed
 
         Args:
             order_id: Order id to confirm.
             user_confirmation: if user confirmed or not
         """
         if not user_confirmation:
-            raise Exception("User Confirmation required")
+            raise Exception("Ask user explicit if he wants to confirm place the order")
         _emit({"tool": "confirm_order", "phase": "start"}, log)
         try:
             result = await order_tool_service.confirm_order(

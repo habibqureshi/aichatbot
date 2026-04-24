@@ -113,16 +113,48 @@ async def create_order(
     call_sid: str | None,
     tenant_id: int,
 ) -> str:
+    normalized_delivery_address = (
+        delivery_address.strip()
+        if delivery_address and str(delivery_address).strip()
+        else None
+    )
     customer = await get_or_create_customer(
         db,
         tenant_id=tenant_id,
         phone_number=phone_number,
         display_name=customer_name,
-        delivery_address=delivery_address,
+        delivery_address=normalized_delivery_address,
     )
+    existing_delivery_address = (
+        customer.delivery_address.strip()
+        if customer.delivery_address and customer.delivery_address.strip()
+        else None
+    )
+
+    if existing_delivery_address and not normalized_delivery_address:
+        return (
+            f"Saved address: {existing_delivery_address}. "
+            "Ask: use this address or change it? "
+            "If user says use it, call create_order again with this value in delivery_address."
+        )
+
+    if not existing_delivery_address and not normalized_delivery_address:
+        return (
+            "Ask user for delivery address first "
+            "(house/flat, street/area, city), then call create_order."
+        )
+
+    if (
+        normalized_delivery_address
+        and existing_delivery_address != normalized_delivery_address
+    ):
+        customer.delivery_address = normalized_delivery_address
+        await db.flush()
+
     order = Order(
         tenant_id=tenant_id,
         customer_id=customer.id,
+        delivery_address=normalized_delivery_address or existing_delivery_address,
         status="draft",
         total_amount=0,
     )
@@ -726,9 +758,15 @@ async def _get_caller_customer_id(
 
 def _format_order_summary(order: Order) -> str:
     customer_name = order.customer.name if order.customer else "Unknown customer"
+    address = (
+        order.delivery_address.strip()
+        if order.delivery_address and order.delivery_address.strip()
+        else "missing"
+    )
     lines = [
         f"Order #{order.id} customer={customer_name} "
-        f"status={order.status} total={float(order.total_amount or 0):.2f}.",
+        f"status={order.status} total={float(order.total_amount or 0):.2f} "
+        f"delivery_address={address}.",
     ]
     for it in order.items:
         lines.append(

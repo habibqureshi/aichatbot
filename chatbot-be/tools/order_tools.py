@@ -63,8 +63,8 @@ def build_order_tools(
         """Create a new draft order for the caller.
 
         Args:
-            customer_name: Optional display name for the customer (not the phone number).
-            delivery_address: Optional delivery address to save for this caller.
+            customer_name: display name for the customer (not the phone number).
+            delivery_address: required to create order. First ask: use saved address or change it. If changed, pass new full address (house/flat, street/area, city) so customer profile is updated.
             notes: Optional free-text notes for the order.
         """
         _emit({"tool": "create_order", "phase": "start"}, log)

@@ -296,6 +296,7 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), index=True, nullable=False)
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False, index=True)
+    delivery_address = Column(String(255), nullable=True)
     status = Column(String(50), nullable=False, default="pending")
     total_amount = Column(Float, nullable=False, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

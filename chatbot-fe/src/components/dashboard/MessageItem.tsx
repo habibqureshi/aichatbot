@@ -19,7 +19,8 @@ const getInitials = (name: string) => {
 };
 
 const MessageItem: React.FC<Props> = ({ message, patientName, formattedTime }) => {
-  const isUser = message.role === "user";
+  const normalizedRole = (message.role || "").toLowerCase();
+  const isUser = ["user", "human", "caller", "patient"].includes(normalizedRole);
   const displayName = isUser ? patientName || "User" : "AI Agent";
   const avatarSrc = isUser ? "/assets/calls/avatar.svg" : "/assets/calls/aiAgent.svg";
 

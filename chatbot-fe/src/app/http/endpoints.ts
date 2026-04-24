@@ -75,6 +75,30 @@ export const ENDPOINTS = {
       return `/api/v1/appointments/?${params.toString()}`;
     },
   },
+  ORDERS: {
+    LIST: (
+      page: number = 1,
+      limit: number = 10,
+      user_timezone: string = "UTC",
+      status?: string,
+      name?: string,
+    ) => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        user_timezone,
+      });
+      if (status && status.trim()) {
+        params.append("status", status.trim());
+      }
+      if (name && name.trim()) {
+        params.append("name", name.trim());
+      }
+      return `/api/v1/orders/?${params.toString()}`;
+    },
+    GET: (orderId: number, user_timezone: string = "UTC") =>
+      `/api/v1/orders/${orderId}?user_timezone=${encodeURIComponent(user_timezone)}`,
+  },
   CONVERSATIONS: {
     LIST: (
       page: number = 1,

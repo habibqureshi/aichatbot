@@ -30,6 +30,12 @@ const navigation = [
     showOnlyFor: "restaurant",
   },
   {
+    name: "Orders",
+    href: "/orders",
+    icon: "/assets/sideBarIcons/booking_inactive.svg",
+    showOnlyFor: ["restaurant"],
+  },
+  {
     name: "Appointments",
     href: "/appointments",
     icon: "/assets/sideBarIcons/CalendarDots.svg",
@@ -72,6 +78,7 @@ const navigation = [
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { installationType, isLoading, clearInstallation } = useInstallation();
+  const normalizedInstallationType = (installationType || "").trim().toLowerCase();
 
   const handleLinkClick = () => {
     // Close sidebar on mobile when clicking a link
@@ -92,12 +99,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const filteredNavigation = navigation.filter((item) => {
     if (isLoading) return true; // Show all items while loading
     if (!item.showOnlyFor) return true; // Always show if no restriction
+    // If installation type is unknown, keep feature tabs visible.
+    if (!normalizedInstallationType) return true;
 
     if (Array.isArray(item.showOnlyFor)) {
-      return item.showOnlyFor.includes(installationType);
+      return item.showOnlyFor.includes(normalizedInstallationType);
     }
 
-    return item.showOnlyFor === installationType;
+    return item.showOnlyFor === normalizedInstallationType;
   });
 
   return (

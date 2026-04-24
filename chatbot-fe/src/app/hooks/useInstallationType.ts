@@ -11,9 +11,17 @@ export function useInstallationType() {
     const fetchInstallationType = async () => {
       try {
         const data = await getAppSettingByKey("INSTALLED_FOR");
-        console.log("data11", data?.value);
-        
-        setInstallationType(data.value.toLowerCase());
+        const rawValue = String(data?.value || "")
+          .trim()
+          .toLowerCase();
+        // Normalize common aliases so sidebar gating stays predictable.
+        if (["clinic", "medical", "healthcare", "hospital"].includes(rawValue)) {
+          setInstallationType("clinic");
+        } else if (["restaurant", "food", "dining", "hotel"].includes(rawValue)) {
+          setInstallationType("restaurant");
+        } else {
+          setInstallationType(rawValue);
+        }
       } catch (error) {
         console.error("Error fetching installation type:", error);
         setInstallationType("");

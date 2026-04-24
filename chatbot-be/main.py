@@ -19,6 +19,7 @@ from router import (
     speciality_router,
     restaurant_router,
     auth_router,
+    order_crud_router,
 )
 from graph import bot_graph
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,6 +58,7 @@ app.include_router(speciality_router.router)
 app.include_router(call_stats_router.router)
 app.include_router(restaurant_router.router)
 app.include_router(auth_router.router)
+app.include_router(order_crud_router.router)
 
 
 @app.exception_handler(RequestValidationError)

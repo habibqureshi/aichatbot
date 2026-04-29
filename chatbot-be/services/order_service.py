@@ -68,6 +68,7 @@ from langfuse.langchain import CallbackHandler
 import random
 
 import audioop
+
 # from pyspeex_noise import AudioProcessor
 
 # audio_processor = AudioProcessor(auto_gain=4000, noise_suppression=-30)
@@ -568,6 +569,14 @@ async def _connect_openai_realtime_stt(log: Logger):
     raise last_exc
 
 
+_CARTESIA_VOICE_IDS = [
+    "47c38ca4-5f35-497b-b1a3-415245fb35e1",
+    "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+    "e8e5fffb-252c-436d-b842-8879b84445b6",
+    "f039066f-cdb7-45ed-b51d-1034ae2f04a0",
+]
+
+
 class OrderVoiceSessionState:
     """Mutable call-scoped state shared by ReceiveVoiceSession and SendVoiceSession."""
 
@@ -580,6 +589,8 @@ class OrderVoiceSessionState:
         self.interrupt_event = asyncio.Event()
         self.stop_event = asyncio.Event()
         self.human_event = asyncio.Event()
+        # Picked once per call so greeting and all responses use the same voice.
+        self.voice_id: str = random.choice(_CARTESIA_VOICE_IDS)
 
 
 async def openai_stream(
@@ -720,14 +731,7 @@ class ReceiveVoiceSession:
         self.cartesia_kw = {
             "model_id": "sonic-3",
             "voice": {
-                "id": random.choice(
-                    [
-                        "47c38ca4-5f35-497b-b1a3-415245fb35e1",
-                        "f786b574-daa5-4673-aa0c-cbe3e8534c02",
-                        "e8e5fffb-252c-436d-b842-8879b84445b6",
-                        "f039066f-cdb7-45ed-b51d-1034ae2f04a0",
-                    ]
-                ),
+                "id": state.voice_id,
                 "mode": "id",
             },
             "output_format": {
@@ -1655,14 +1659,7 @@ class SendVoiceSession:
         self.cartesia_kw = {
             "model_id": "sonic-3",
             "voice": {
-                "id": random.choice(
-                    [
-                        "47c38ca4-5f35-497b-b1a3-415245fb35e1",
-                        "f786b574-daa5-4673-aa0c-cbe3e8534c02",
-                        "e8e5fffb-252c-436d-b842-8879b84445b6",
-                        "f039066f-cdb7-45ed-b51d-1034ae2f04a0",
-                    ]
-                ),
+                "id": state.voice_id,
                 "mode": "id",
             },
             "output_format": {
@@ -1858,7 +1855,6 @@ class SendVoiceSession:
         # payload = base64.b64decode(payload)
         # payload = process_ulaw_frame(payload)
         # payload = base64.b64encode(payload).decode("utf-8")
-        self.log.info("Sending media to openai stt: %d bytes", len(payload))
         await self.openai_stt.send(
             json.dumps(
                 {

@@ -78,7 +78,6 @@ async def create_order_graph(
     menu_snapshot = await order_tool_service.get_menu_context_for_prompt(
         db=db, tenant_id=tenant_id
     )
-    print(menu_snapshot)
 
     local_order_tools = build_order_tools(
         db=db,

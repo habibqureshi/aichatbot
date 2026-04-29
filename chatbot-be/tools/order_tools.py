@@ -21,6 +21,21 @@ except ImportError:  # pragma: no cover
 from services import order_tool_service, reservation_tool_service
 
 
+def _validate_delivery_address(address: str | None) -> str | None:
+    """Return None if valid, or an error string if the address is incomplete.
+    Expects at least 3 comma-separated parts (e.g. house, street, city).
+    """
+    value = (address or "").strip()
+    if not value:
+        return "delivery address is required."
+    if value.count(",") < 2:
+        return (
+            "delivery address must have at least 3 parts separated by commas "
+            "(house/flat, street, city) — e.g. '12, Elm Street, Springfield'."
+        )
+    return None
+
+
 def _emit(payload: dict[str, Any], log: Logger) -> None:
     """Write a custom stream chunk and log it unconditionally."""
     sw_status = "skipped"
@@ -64,9 +79,12 @@ def build_order_tools(
 
         Args:
             customer_name: display name for the customer (not the phone number).
-            delivery_address: required to create order. First ask: use saved address or change it. If changed, pass new full address (house/flat, street/area, city) so customer profile is updated.
+            delivery_address: required to create order. if you have user address First ask: use saved address or change it. If changed, pass new full address (house or flat #, street or area name, city) so customer profile is updated. It must be comma separated.
             notes: Optional free-text notes for the order.
         """
+        addr_err = _validate_delivery_address(delivery_address)
+        if addr_err:
+            return f"Cannot create order: {addr_err}"
         _emit({"tool": "create_order", "phase": "start"}, log)
         try:
             phone = customer_phone
@@ -397,8 +415,12 @@ def build_order_tools(
 
         Args:
             customer_name: Caller name to save.
-            delivery_address: Delivery address to save. It must contain house/flat number, street/area name and city name.
+            delivery_address: Delivery address to save. It must contain house or flat number, street or area name and city name.It must be comma separated
         """
+        if delivery_address is not None:
+            addr_err = _validate_delivery_address(delivery_address)
+            if addr_err:
+                return f"Cannot update profile: {addr_err}"
         _emit({"tool": "update_customer_profile", "phase": "start"}, log)
         try:
             result = await order_tool_service.update_customer_profile(

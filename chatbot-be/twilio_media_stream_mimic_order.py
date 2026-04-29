@@ -224,6 +224,21 @@ async def run_media_stream(
                 chunk += 1
                 timestamp += FRAME_MS
 
+        async def _echo_mark_after_drain(mark_name: str, drain_sec: float) -> None:
+            """Echo a Twilio mark back after queued audio has had time to play out."""
+            if drain_sec > 0:
+                await asyncio.sleep(drain_sec)
+            echo = {
+                "event": "mark",
+                "streamSid": stream_sid,
+                "mark": {"name": mark_name},
+            }
+            try:
+                await ws.send(json.dumps(echo))
+                print(f"-> echoed mark: {mark_name!r}")
+            except Exception as exc:
+                print(f"-> mark echo failed: {exc}")
+
         async def receiver():
             while not stop_event.is_set():
                 try:
@@ -235,16 +250,35 @@ async def run_media_stream(
                     data = json.loads(msg)
                 except json.JSONDecodeError:
                     continue
-                if data.get("event") == "clear":
+
+                ev = data.get("event")
+
+                if ev == "clear":
                     print("<- received clear: purging inbound audio queue")
-                    # Empty the queue by repeatedly getting until empty
                     while not inbound_audio_q.empty():
                         try:
                             inbound_audio_q.get_nowait()
                         except asyncio.QueueEmpty:
                             break
                     continue
-                if data.get("event") != "media":
+
+                if ev == "mark":
+                    mark_name = (data.get("mark") or {}).get("name") or ""
+                    if mark_name:
+                        # Estimate drain time from frames still queued for the speaker.
+                        # Each frame = FRAME_MS (20 ms); echo after they've played out.
+                        queued_frames = inbound_audio_q.qsize()
+                        drain_sec = (queued_frames * FRAME_MS / 1000.0) + 200
+                        print(
+                            f"<- received mark: {mark_name!r} | "
+                            f"queued_frames={queued_frames} drain_sec={drain_sec:.2f}"
+                        )
+                        asyncio.create_task(
+                            _echo_mark_after_drain(mark_name, drain_sec)
+                        )
+                    continue
+
+                if ev != "media":
                     continue
                 payload = data.get("media", {}).get("payload")
                 if not payload:
@@ -290,13 +324,16 @@ async def run_media_stream(
                 for t in tasks:
                     t.cancel()
 
-        stop_event = {
+        stop_msg = {
             "event": "stop",
             "streamSid": stream_sid,
             "stop": {"accountSid": account_sid, "callSid": call_sid},
         }
-        await ws.send(json.dumps(stop_event))
-        print("-> sent stop")
+        try:
+            await ws.send(json.dumps(stop_msg))
+            print("-> sent stop")
+        except Exception:
+            print("-> stop not sent (WebSocket already closed)")
 
 
 def parse_args() -> argparse.Namespace:

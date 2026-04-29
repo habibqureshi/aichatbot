@@ -67,6 +67,29 @@ from langfuse import get_client
 from langfuse.langchain import CallbackHandler
 import random
 
+import audioop
+from pyspeex_noise import AudioProcessor
+
+audio_processor = AudioProcessor(auto_gain=4000, noise_suppression=-30)
+
+
+def process_ulaw_frame(ulaw_frame: bytes):
+    # 1. decode μ-law → PCM16
+    pcm16 = audioop.ulaw2lin(ulaw_frame, 2)
+
+    # 2. optional: resample 8k → 16k (IMPORTANT for best quality)
+    pcm16_16k, _ = audioop.ratecv(pcm16, 2, 1, 8000, 16000, None)
+
+    # 3. process noise suppression
+    clean = audio_processor.process_10ms(pcm16_16k)
+
+    # 4. resample back 16k → 8k
+    clean_8k, _ = audioop.ratecv(clean, 2, 1, 16000, 8000, None)
+
+    # 5. encode back μ-law
+    return audioop.lin2ulaw(clean_8k, 2)
+
+
 DEFAULT_PHRASES = [
     "One moment, please.",
     "Just a second.",
@@ -570,12 +593,12 @@ async def openai_stream(
                 "type": "session.update",
                 "session": {
                     "modalities": ["text"],
-                    "input_audio_noise_reduction": {"type": "near_field"},
+                    "input_audio_noise_reduction": {"type": "far_field"},
                     "turn_detection": {
                         "type": "server_vad",
-                        "threshold": 0.45,
+                        "threshold": 0.8,
                         # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
-                        "silence_duration_ms": 450,
+                        "silence_duration_ms": 550,
                         "prefix_padding_ms": 300,
                         "create_response": False,
                         "interrupt_response": False,
@@ -584,7 +607,6 @@ async def openai_stream(
                     "input_audio_transcription": {
                         "model": "gpt-4o-mini-transcribe",
                         "language": "en",
-                        "prompt": ("Restaurant phone ordering in English."),
                     },
                 },
             }
@@ -698,7 +720,14 @@ class ReceiveVoiceSession:
         self.cartesia_kw = {
             "model_id": "sonic-3",
             "voice": {
-                "id": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+                "id": random.choice(
+                    [
+                        "47c38ca4-5f35-497b-b1a3-415245fb35e1",
+                        "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+                        "e8e5fffb-252c-436d-b842-8879b84445b6",
+                        "f039066f-cdb7-45ed-b51d-1034ae2f04a0",
+                    ]
+                ),
                 "mode": "id",
             },
             "output_format": {
@@ -858,6 +887,40 @@ class ReceiveVoiceSession:
         self._silence_prompts_sent = 0
         self.log.info("SILENCE_TIMER_DISABLED | skipping silence watchdog start")
 
+    async def _graceful_shutdown(self) -> None:
+        """Wait for all queued audio to play out, then close the Twilio WebSocket.
+
+        Closing the media-stream WebSocket causes Twilio to finish the <Connect>
+        verb and hang up the call because there is no TwiML following it.
+        """
+        st = self.state
+        if st.stop_event.is_set():
+            reason = "finish_conversation"
+        elif st.human_event.is_set():
+            reason = "human_intervention"
+        else:
+            reason = "connection_closed"
+        self.log.info("GRACEFUL_SHUTDOWN | reason=%s | begin", reason)
+
+        # Let the current TTS/LLM cycle drain so all audio reaches Twilio.
+        if self._voice_cycle_task and not self._voice_cycle_task.done():
+            self.log.info("GRACEFUL_SHUTDOWN | waiting for voice cycle task")
+            try:
+                await asyncio.wait_for(self._voice_cycle_task, timeout=30.0)
+            except (asyncio.TimeoutError, asyncio.CancelledError, Exception) as exc:
+                self.log.warning("GRACEFUL_SHUTDOWN | voice cycle ended early: %s", exc)
+
+        # Wait for Twilio to finish playing the last audio chunk.
+        if st.stream_sid:
+            await self._wait_until_twilio_finished_playing("graceful_shutdown")
+
+        # Closing the WebSocket ends the <Stream>; Twilio hangs up the call.
+        self.log.info("GRACEFUL_SHUTDOWN | closing Twilio WebSocket to hang up call")
+        try:
+            await self.websocket.close()
+        except Exception as exc:
+            self.log.warning("GRACEFUL_SHUTDOWN | WebSocket close error: %s", exc)
+
     async def _silence_deadline(self) -> None:
         st = self.state
         try:
@@ -898,6 +961,11 @@ class ReceiveVoiceSession:
             )
             await self._wait_until_twilio_finished_playing("after_goodbye")
             st.stop_event.set()
+            # Unblock receive_from_openai which is parked on openai_stt.recv().
+            try:
+                await self.openai_stt.close()
+            except Exception:
+                pass
         except asyncio.CancelledError:
             return
 
@@ -949,6 +1017,8 @@ class ReceiveVoiceSession:
 
             elif msg_type == "conversation.item.input_audio_transcription.delta":
                 await self.handle_user_interrupt(msg)
+
+        await self._graceful_shutdown()
 
     # -------------------------------
     # Final Transcript
@@ -1052,6 +1122,18 @@ class ReceiveVoiceSession:
             self._estimate_remaining_playback_seconds(),
         )
         self._start_silence_timer()
+
+        # If the graph signaled end-of-call during this cycle, close the OpenAI
+        # STT WebSocket so receive_from_openai unblocks from recv() and proceeds
+        # to _graceful_shutdown instead of waiting forever for the next utterance.
+        if self.state.stop_event.is_set() or self.state.human_event.is_set():
+            self.log.info(
+                "RUN_FULL_AI_CYCLE | end-of-call signal detected; closing OpenAI STT"
+            )
+            try:
+                await self.openai_stt.close()
+            except Exception:
+                pass
 
     # -------------------------------
     # Send Audio To Twilio
@@ -1573,7 +1655,14 @@ class SendVoiceSession:
         self.cartesia_kw = {
             "model_id": "sonic-3",
             "voice": {
-                "id": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+                "id": random.choice(
+                    [
+                        "47c38ca4-5f35-497b-b1a3-415245fb35e1",
+                        "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+                        "e8e5fffb-252c-436d-b842-8879b84445b6",
+                        "f039066f-cdb7-45ed-b51d-1034ae2f04a0",
+                    ]
+                ),
                 "mode": "id",
             },
             "output_format": {
@@ -1591,11 +1680,23 @@ class SendVoiceSession:
 
         while True:
 
-            message = await self.websocket.receive_json()
+            try:
+                message = await self.websocket.receive_json()
+            except (WebSocketDisconnect, WebSocketException):
+                self.log.info("TWILIO_WS | WebSocket closed; exiting send loop")
+                break
 
             event_type = message.get("event")
 
             if event_type == "stop":
+                self.log.info(
+                    "TWILIO_STOP | received stop event; shutting down session"
+                )
+                self.state.stop_event.set()
+                try:
+                    await self.openai_stt.close()
+                except Exception:
+                    pass
                 break
 
             if event_type == "connected":
@@ -1619,6 +1720,7 @@ class SendVoiceSession:
     async def handle_start(self, message):
 
         self.log.info("WebSocket event: %s", message["event"])
+        self.log.info("CAETESIA %s", self.cartesia_kw)
 
         call_sid = message["start"]["callSid"]
         st = self.state
@@ -1753,7 +1855,10 @@ class SendVoiceSession:
     async def handle_media(self, message):
 
         payload = message["media"]["payload"]
-
+        # payload = base64.b64decode(payload)
+        # payload = process_ulaw_frame(payload)
+        # payload = base64.b64encode(payload).decode("utf-8")
+        self.log.info("Sending media to openai stt: %d bytes", len(payload))
         await self.openai_stt.send(
             json.dumps(
                 {

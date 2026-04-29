@@ -41,8 +41,6 @@ dependencies = [
     "deepgram-sdk>=6.1.1",
     "cartesia>=3.0.2",
     "certifi>=2026.2.25",
-    "pyspeex-noise>=2.0.0",
-    "pyaudio>=0.2.14",
 ]
 
 # Flat layout: many top-level dirs — setuptools needs explicit discovery for editable installs.

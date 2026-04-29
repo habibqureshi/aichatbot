@@ -68,9 +68,9 @@ from langfuse.langchain import CallbackHandler
 import random
 
 import audioop
-from pyspeex_noise import AudioProcessor
+# from pyspeex_noise import AudioProcessor
 
-audio_processor = AudioProcessor(auto_gain=4000, noise_suppression=-30)
+# audio_processor = AudioProcessor(auto_gain=4000, noise_suppression=-30)
 
 
 def process_ulaw_frame(ulaw_frame: bytes):
@@ -81,13 +81,13 @@ def process_ulaw_frame(ulaw_frame: bytes):
     pcm16_16k, _ = audioop.ratecv(pcm16, 2, 1, 8000, 16000, None)
 
     # 3. process noise suppression
-    clean = audio_processor.process_10ms(pcm16_16k)
+    # clean = audio_processor.process_10ms(pcm16_16k)
 
     # 4. resample back 16k → 8k
-    clean_8k, _ = audioop.ratecv(clean, 2, 1, 16000, 8000, None)
+    # clean_8k, _ = audioop.ratecv(clean, 2, 1, 16000, 8000, None)
 
     # 5. encode back μ-law
-    return audioop.lin2ulaw(clean_8k, 2)
+    # return audioop.lin2ulaw(clean_8k, 2)
 
 
 DEFAULT_PHRASES = [

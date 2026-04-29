@@ -45,7 +45,7 @@ def build_retriever_tools(tenant_id: int, log: Logger) -> list:
 
     @tool
     def knowledge_retriever(query: str, k: int = 3) -> list[str]:
-        """Retrieve information from the knowledge base using a RAG approach.
+        """Retrieve information from the knowledge base using a RAG approach DONT USE THIS FOR MENU RELATED QUERIES.
 
         Performs a semantic search to find the most relevant documents and
         returns their content to help answer user queries.

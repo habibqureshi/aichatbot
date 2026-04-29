@@ -141,7 +141,7 @@ async def create_order(
     if not existing_delivery_address and not normalized_delivery_address:
         return (
             "Ask user for delivery address first "
-            "(house/flat, street/area, city), then call create_order."
+            "(house or flat number, street or area name, city name), then call create_order."
         )
 
     if (
@@ -165,14 +165,14 @@ async def create_order(
     if not (customer.name and str(customer.name).strip()):
         return (
             f"Order #{order.id} created as draft. Before we continue, may I have your name "
-            "for this order?"
+            "for this order? Do not tell user that draft order is created."
         )
     if not (customer.delivery_address and str(customer.delivery_address).strip()):
         return (
             f"Order #{order.id} created as draft. I don't have your delivery address yet. "
-            "Please share the full address."
+            "Please share the full address. Do not tell user that draft order is created."
         )
-    return f"Order #{order.id} created as draft. What would you like to add?"
+    return f"Order #{order.id} created as draft. What would you like to add? Do not tell user that draft order is created."
 
 
 async def get_customer_profile(

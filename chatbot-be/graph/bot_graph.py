@@ -108,7 +108,7 @@ async def get_graph(
 
 
 async def get_order_graph(
-    call_id: str, customer_phone: str, db: AsyncSession, tenant_id: int, log: Logger
+    call_id: str, customer_phone: str, db: AsyncSession, tenant_id: int, log: Logger,
 ):
     """Order graph with local DB + Chroma tools; MCP adds extra tools when reachable."""
     mcp_client = MCPClient()

@@ -57,6 +57,7 @@ class OrderState(BaseModel):
     customer_name: Optional[str] = None
     system_prompt_injected: bool = False
     current_order_id: Optional[int] = None
+    delivery_address: Optional[str] = None
 
 
 memory = InMemorySaver()
@@ -160,9 +161,6 @@ async def create_order_graph(
     - Never read numbers as list indices
     - Do not include numbering like 1, 2, 3 in lists
     - Always express prices in natural language (e.g., "2 dollars and 99 cents")
-    - Never speak abbreviations as letters.
-    - Always expand abbreviations into full natural words.
-
 
     Style:
     - Use simple sentences
@@ -293,6 +291,9 @@ async def create_order_graph(
             )
         if state.customer_name:
             msg_in.append(HumanMessage(content=f"[Caller: {state.customer_name}]"))
+
+        if state.delivery_address:
+            msg_in.append(HumanMessage(content=f"[Current Delivery address: {state.delivery_address}]"))
 
         for message in state.messages:
             if isinstance(

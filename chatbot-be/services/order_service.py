@@ -1342,6 +1342,7 @@ class ReceiveVoiceSession:
                     user_input=user_text,
                     customer_name=st.customer.name,
                     customer_phone=st.customer.phone_number,
+                    delivery_address=st.customer.delivery_address,
                 ),
                 config={
                     "callbacks": [langfuse_handler],

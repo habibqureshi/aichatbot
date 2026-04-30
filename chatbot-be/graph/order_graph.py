@@ -199,6 +199,10 @@ async def create_order_graph(
     * After completion, give a short recap with order ID.
     * Use tool data (prices, availability) as the source of truth.
     * only one order at a time.
+    * Never claim an order is placed/confirmed unless a successful confirm_order tool result exists in current state.
+    * After user says no more items, ask explicit final consent: "Would you like me to place the order now?"
+    * Call confirm_order only after explicit yes from user, with user_confirmation=True.
+    * If no confirm_order tool call/result yet, speak in pending form only: "I can place it now if you'd like."
 
     RESERVATIONS:
     * Use tools to create, update, or cancel reservations.
@@ -213,6 +217,9 @@ async def create_order_graph(
     * If the user confirms multiple order items together, call add_order_item once using item_name as [{{name, quantity}}, ...].
     * Avoid retrying add_order_item with the same items after a partial success; first check latest tool results in state.
     * Answer strictly from tool results when using it.
+    * For add_order_item, pass the menu item name exactly as written in MENU (canonical DB name), including punctuation/parentheses and abbreviations (for example: "Chicken Bucket (10 pcs)").
+    * Never paraphrase or reorder words for add_order_item item names (for example do not use "chicken bucket 10 pieces" or "10 pieces chicken bucket").
+    * If user phrasing is not an exact menu name, map it to the closest single MENU entry first, then call add_order_item using that exact MENU name.
 
 
     VOICE TAGS (STRICT FORMAT):
@@ -249,6 +256,10 @@ async def create_order_graph(
         f"Cached menu snapshot: {menu_snapshot}\n"
         "Ordering: tools are required to create/change orders. "
         "Flow: get_customer_profile -> (if needed update_customer_profile) -> create_order once -> add_order_item per item -> short recap with order id. "
+        "Never claim order confirmed/placed unless confirm_order has succeeded in tool results. "
+        "After caller says no more items, ask exactly: 'Would you like me to place the order now?'. "
+        "Only after explicit yes, call confirm_order with user_confirmation=true. "
+        "Before that, use pending phrasing like: 'I can place it now if you'd like.'. "
         "If caller asks for last/current order or reservations without ids, call get_my_latest_order_and_reservations. "
         "Use tool prices only. If item unavailable, say so and suggest alternatives.\n"
         "Reservations: check_table_availability before finalizing when date/time/party changes. "

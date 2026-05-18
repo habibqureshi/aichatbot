@@ -30,7 +30,6 @@ import numpy as np
 from langchain_openai import ChatOpenAI
 import random
 
-
 # import webrtcvad
 # import whisper
 # from piper import PiperVoice, SynthesisConfig
@@ -44,7 +43,7 @@ from services import (
     message_service,
     app_setting_service,
 )
-from graph.bot_graph import get_order_graph
+from graph.bot_graph import get_order_graph, get_clinic_graph
 from graph.intent_graph import voice_ai_graph
 from langgraph.graph.state import CompiledStateGraph, RunnableConfig
 from langchain_core.messages import (
@@ -521,9 +520,7 @@ async def stream_call(
     await websocket.accept()
 
 
-OPENAI_URL = (
-    "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17"
-)
+OPENAI_URL = "wss://api.openai.com/v1/realtime?intent=transcription"
 # Default websockets open handshake is short; Realtime can be slow on constrained networks.
 _OPENAI_REALTIME_OPEN_TIMEOUT = float(os.getenv("OPENAI_REALTIME_OPEN_TIMEOUT", "60"))
 _OPENAI_REALTIME_CONNECT_RETRIES = int(
@@ -535,7 +532,6 @@ async def _connect_openai_realtime_stt(log: Logger):
     """Connect to OpenAI Realtime with a generous handshake timeout and retries."""
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "OpenAI-Beta": "realtime=v1",
     }
     last_exc: Exception | None = None
     for attempt in range(1, _OPENAI_REALTIME_CONNECT_RETRIES + 1):
@@ -596,6 +592,9 @@ class OrderVoiceSessionState:
 async def openai_stream(
     websocket: WebSocket, db: AsyncSession, tenant_id: int, log: Logger
 ):
+    installed_for = await app_setting_service.get_app_setting_by_key_value(
+        db=db, key="INSTALLED_FOR", tenant_id=tenant_id
+    )
     state = OrderVoiceSessionState()
     openai_stt = await _connect_openai_realtime_stt(log)
     await openai_stt.send(
@@ -603,21 +602,38 @@ async def openai_stream(
             {
                 "type": "session.update",
                 "session": {
-                    "modalities": ["text"],
-                    "input_audio_noise_reduction": {"type": "far_field"},
-                    "turn_detection": {
-                        "type": "server_vad",
-                        "threshold": 0.8,
-                        # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
-                        "silence_duration_ms": 550,
-                        "prefix_padding_ms": 300,
-                        "create_response": False,
-                        "interrupt_response": False,
-                    },
-                    "input_audio_format": "g711_ulaw",
-                    "input_audio_transcription": {
-                        "model": "gpt-4o-mini-transcribe",
-                        "language": "en",
+                    "type": "transcription",
+                    # "modalities": ["text"],
+                    # "noise_reduction": {"type": "far_field"},
+                    # "turn_detection": {
+                    #     "type": "server_vad",
+                    #     "threshold": 0.5,
+                    #     # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
+                    #     "silence_duration_ms": 550,
+                    #     "prefix_padding_ms": 300,
+                    #     "create_response": False,
+                    #     "interrupt_response": False,
+                    # },
+                    # "input_audio_format": "g711_ulaw",
+                    # "input_audio_transcription": {
+                    #     "model": "gpt-4o-mini-transcribe",
+                    #     "language": "en",
+                    # },
+                    "audio": {
+                        "input": {
+                            "format": {"type": "audio/pcmu"},
+                            "transcription": {
+                                "model": "gpt-4o-mini-transcribe",
+                                "language": "en",
+                            },
+                            "turn_detection": {
+                                "type": "semantic_vad",
+                                "eagerness": "auto",
+                                # "threshold": 0.5,
+                                # "prefix_padding_ms": 300,
+                                # "silence_duration_ms": 500,
+                            },
+                        }
                     },
                 },
             }
@@ -656,6 +672,7 @@ async def openai_stream(
                 tenant_id,
                 log,
                 receive_session=receive_session,
+                installed_for=installed_for,
             )
             await asyncio.gather(
                 receive_session.receive_from_openai(),
@@ -1205,10 +1222,10 @@ class ReceiveVoiceSession:
                             "CARTESIA_PUMP | first audio chunk received | %d bytes",
                             len(response.audio),
                         )
-                    self.log.info(
-                        "yolo4 | first_audio_received_from_cartesia | bytes=%d",
-                        len(response.audio),
-                    )
+                    # self.log.info(
+                    #     "yolo4 | first_audio_received_from_cartesia | bytes=%d",
+                    #     len(response.audio),
+                    # )
                     await self.tts_queue.put(response.audio)
         except Exception as e:
             self.log.exception("Cartesia receive pump ended: %s", e)
@@ -1383,11 +1400,11 @@ class ReceiveVoiceSession:
                     delta = _stream_chunk_text(ch)
                     if not delta:
                         continue
-                    self.log.info(
-                        "LLM_STREAM_CHUNK | node=classify_intent | delta_chars=%d | text=%r",
-                        len(delta),
-                        delta if len(delta) <= 400 else (delta[:400] + "..."),
-                    )
+                    # self.log.info(
+                    #     "LLM_STREAM_CHUNK | node=classify_intent | delta_chars=%d | text=%r",
+                    #     len(delta),
+                    #     delta if len(delta) <= 400 else (delta[:400] + "..."),
+                    # )
                     stream_buffer += delta
                     for word in FORBIDDEN_WORDS:
                         if word in stream_buffer:
@@ -1436,6 +1453,10 @@ class ReceiveVoiceSession:
                                     len(seg),
                                     seg if len(seg) <= 300 else (seg[:300] + "..."),
                                 )
+                            self.log.info("Before replace %s", stream_buffer)
+                            stream_buffer = stream_buffer.replace("*", "")
+                            self.log.info("After replace %s", stream_buffer)
+
                             await _ensure_cartesia_pump_alive()
                             await self._cartesia_send_stream(
                                 ctx,
@@ -1629,6 +1650,9 @@ class ReceiveVoiceSession:
             )
 
 
+GRAPH_FUNC = {"clinic": get_clinic_graph, "restaurant": get_order_graph}
+
+
 class SendVoiceSession:
 
     def __init__(
@@ -1644,6 +1668,7 @@ class SendVoiceSession:
         tenant_id,
         log,
         receive_session: "ReceiveVoiceSession | None" = None,
+        installed_for: str | None = None,
     ):
         self.websocket = websocket
         self.openai_stt = openai_stt
@@ -1653,6 +1678,7 @@ class SendVoiceSession:
         self.customer_service = customer_service
         self.message_service = message_service
         self.db = db
+        self.installed_for = installed_for
         self.tenant_id = tenant_id
         self.log = log
         self.receive_session = receive_session
@@ -1750,13 +1776,20 @@ class SendVoiceSession:
                 st.conversation.customer_id,
             )
             return
-
-        st.graph = await get_order_graph(
+        _graph_func = GRAPH_FUNC.get(self.installed_for or "")
+        if not _graph_func:
+            self.log.error(
+                "No graph function found for installed_for=%s",
+                self.installed_for,
+            )
+            return
+        st.graph = await _graph_func(
             call_sid,
             st.customer.phone_number or "",
             db=self.db,
             tenant_id=self.tenant_id,
             log=self.log,
+            customer_name=st.customer.name or None,
         )
 
         st.stream_sid = message["start"]["streamSid"]

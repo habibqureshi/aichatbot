@@ -29,7 +29,7 @@ from schemas.twilio import TwilioIncoming
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.datastructures import URL
 from services import (
-    patient_service,
+    customer_service,
     conversation_service,
     message_service,
     app_setting_service,
@@ -203,13 +203,13 @@ async def greeting(
     log: Logger,
 ) -> VoiceResponse:
     resp = VoiceResponse()
-    patient = await patient_service.find_or_create(
+    patient = await customer_service.find_or_create_by_phone(
         data.From, db=db, tenant_id=tenant_id
     )
     log.info(
-        f"Patient found {patient.name} {patient.id}"
+        f"Customer found {patient.name} {patient.id}"
         if patient
-        else f"Patient not found"
+        else f"Customer not found"
     )
     log.info(f"finding conversation")
     conversation = await conversation_service.find_or_create(
@@ -306,7 +306,7 @@ async def process_speech(
         )
         resp.hangup()
         return resp
-    patient = await patient_service.find_by_id(
+    patient = await customer_service.find_by_id(
         conversation.patient_id, db, tenant_id=tenant_id
     )
     lc_messages = [
@@ -477,13 +477,13 @@ async def ws_greeting(
 ):
     resp = VoiceResponse()
     log.info(f"Websocket greeting for {data.From}")
-    patient = await patient_service.find_or_create(
+    patient = await customer_service.find_or_create_by_phone(
         data.From, db=db, tenant_id=tenant_id
     )
     log.info(
-        f"patient found {patient.name} {patient.id}"
+        f"customer found {patient.name} {patient.id}"
         if patient
-        else f"patient not found"
+        else f"customer not found"
     )
 
     await conversation_service.find_or_create(
@@ -1472,7 +1472,7 @@ async def openai_stream(
                     if not conversation or conversation.status != "active":
                         log.info("Conversation already ended")
                         break
-                    patient = await patient_service.find_by_id(
+                    patient = await customer_service.find_by_id(
                         conversation.patient_id, db, tenant_id=tenant_id
                     )
                     graph = await get_graph(

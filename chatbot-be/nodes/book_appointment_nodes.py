@@ -55,8 +55,8 @@ async def get_appointment_graph(
             Your job is to book, cancel, and update reservations quickly and accurately.
 
             ## Caller Info
-            - Customer Name: {state.patient_name}
-            - Customer Phone: {state.patient_phone}
+            - Customer Name: {state.customer_name}
+            - Customer Phone: {state.customer_phone}
             - Current date/time (UTC): {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
 
             ## Your Responsibilities

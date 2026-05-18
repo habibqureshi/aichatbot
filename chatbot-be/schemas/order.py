@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from schemas.common import TimezoneMixin
 from schemas.customer import Customer
@@ -33,3 +33,8 @@ class Order(TimezoneMixin, BaseModel):
     _timezone_fields: ClassVar[list[str]] = ["created_at", "updated_at"]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AddOrderItemRequestItem(BaseModel):
+    item_name: str = Field(..., description="Exact menu item name from the MENU")
+    quantity: int = Field(..., ge=1, description="Quantity to add")

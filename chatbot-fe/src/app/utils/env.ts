@@ -1,4 +1,6 @@
 // env.ts
+console.log(process.env);
+
 export const ENV = {
   NEXT_PUBLIC_API_URL:
     process.env.NEXT_PUBLIC_API_URL ||

@@ -116,7 +116,7 @@ async def create_clinic_graph(
         "- Never stack multiple emotion tags. Each tag is self-closing.\n"
         "- Never place emotion tags in the middle or end of a sentence.\n"
         "\n"
-        "Caller wants a human: warm apologetic message ending with **NEEDS_HUMAN_INTERVENTION**.\n"
+        "Caller wants a human: warm call forwarding message ending with **NEEDS_HUMAN_INTERVENTION**.\n"
         "Caller wants to end: polite goodbye ending with **FINISH_CONVERSATION**."
     )
 

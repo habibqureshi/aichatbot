@@ -31,7 +31,6 @@ from utils.tenant_context import (
 from logger import get_logger, get_ws_logger
 from langfuse import observe, propagate_attributes
 
-
 router = APIRouter(prefix="/api/v1/appointment", tags=["appointment_workflow"])
 
 

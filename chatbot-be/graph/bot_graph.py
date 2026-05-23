@@ -18,6 +18,9 @@ from graph.order_graph import create_order_graph
 from rag.indexing.store import init_ChromaDB
 from logging import Logger
 from graph.clinic_graph import create_clinic_graph
+from configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
+from twilio.rest import Client
+from twilio.http.async_http_client import AsyncTwilioHttpClient
 
 # Load environment variables as early as possible
 load_dotenv()
@@ -80,6 +83,10 @@ async def lifespan(app: FastAPI):
 
         # my_checkpointer = AsyncMySaver(conn=checkpointer_conn)
         # await my_checkpointer.setup()
+        http_client = AsyncTwilioHttpClient()
+        app.state.twilio_client = Client(
+            TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, http_client=http_client
+        )
         await init_db()
         init_ChromaDB()
         print("LangGraph and MySQL Checkpointer initialized successfully.")

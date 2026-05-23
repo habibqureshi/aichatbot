@@ -61,10 +61,12 @@ from configs import (
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
     MCP_URL,
+    TWILIO_FORWARDING_NUMBER,
 )
 from langfuse import get_client
 from langfuse.langchain import CallbackHandler
 import random
+from twilio.twiml.voice_response import VoiceResponse
 
 import audioop
 
@@ -587,10 +589,15 @@ class OrderVoiceSessionState:
         self.human_event = asyncio.Event()
         # Picked once per call so greeting and all responses use the same voice.
         self.voice_id: str = random.choice(_CARTESIA_VOICE_IDS)
+        self.call_sid: str | None = None
 
 
 async def openai_stream(
-    websocket: WebSocket, db: AsyncSession, tenant_id: int, log: Logger
+    websocket: WebSocket,
+    db: AsyncSession,
+    tenant_id: int,
+    log: Logger,
+    twilio_client: Client,
 ):
     installed_for = await app_setting_service.get_app_setting_by_key_value(
         db=db, key="INSTALLED_FOR", tenant_id=tenant_id
@@ -678,6 +685,17 @@ async def openai_stream(
                 receive_session.receive_from_openai(),
                 send_session.send_to_openai(),
             )
+            if state.human_event.is_set() and state.call_sid:
+                vr = VoiceResponse()
+                vr.dial(TWILIO_FORWARDING_NUMBER)
+
+                try:
+                    log.info(f"updating {state.call_sid}")
+                    await twilio_client.calls.get(state.call_sid).update_async(
+                        twiml=str(vr)
+                    )
+                except Exception as e:
+                    log.error(f"Error updating call: {e}")
     except websockets.exceptions.InvalidStatus as exc:
         # Cartesia returns HTTP 402 when billing/credits are insufficient or key is invalid.
         resp = getattr(exc, "response", None)
@@ -704,7 +722,10 @@ async def openai_stream(
         except Exception:
             pass
         try:
-            if websocket.client_state == WebSocketState.CONNECTING:
+            if (
+                websocket.client_state == WebSocketState.CONNECTING
+                and state.stop_event.is_set()
+            ):
                 await websocket.accept()
             await websocket.close(code=1011)
         except Exception:
@@ -1038,8 +1059,8 @@ class ReceiveVoiceSession:
 
             elif msg_type == "conversation.item.input_audio_transcription.delta":
                 await self.handle_user_interrupt(msg)
-
-        await self._graceful_shutdown()
+        if self.state.stop_event.is_set():
+            await self._graceful_shutdown()
 
     # -------------------------------
     # Final Transcript
@@ -1703,7 +1724,8 @@ class SendVoiceSession:
     async def send_to_openai(self):
 
         while True:
-
+            if self.state.human_event.is_set():
+                break
             try:
                 message = await self.websocket.receive_json()
             except (WebSocketDisconnect, WebSocketException):
@@ -1747,6 +1769,7 @@ class SendVoiceSession:
         self.log.info("CAETESIA %s", self.cartesia_kw)
 
         call_sid = message["start"]["callSid"]
+        self.state.call_sid = call_sid
         st = self.state
 
         st.conversation = await self.conversation_service.find_by_call_sid(
@@ -1889,6 +1912,8 @@ class SendVoiceSession:
         # payload = base64.b64decode(payload)
         # payload = process_ulaw_frame(payload)
         # payload = base64.b64encode(payload).decode("utf-8")
+        if self.state.human_event.is_set() or self.state.stop_event.is_set():
+            return
         await self.openai_stt.send(
             json.dumps(
                 {

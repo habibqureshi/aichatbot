@@ -15,7 +15,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 
 class AppointmentBase(BaseModel):
-    patient_id: int
+    customer_id: int
     doctor_id: int
     appointment_date: date
     start_time: time
@@ -33,7 +33,7 @@ class Appointment(TimezoneMixin, AppointmentBase):
     customer: Customer | None = None
     doctor: DoctorBase | None = None
 
-    _timezone_fields: ClassVar[list[str]] = ["created_at"]
+    _timezone_fields: ClassVar[list[str]] = []
 
     model_config = ConfigDict(from_attributes=True)
 

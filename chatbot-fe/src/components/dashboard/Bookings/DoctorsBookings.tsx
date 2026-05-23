@@ -32,18 +32,21 @@ const columns: ExtendedColumnDef<Appointment>[] = [
     header: "ID",
     width: "100px",
     cell: ({ row }) => (
-      <div className="font-medium text-gray-900">APT-{String(row.original.id).padStart(3, "0")}</div>
+      <div className="font-medium text-gray-900">
+        APT-{String(row.original.id).padStart(3, "0")}
+      </div>
     ),
   },
   {
-    accessorKey: "patient_id",
+    accessorKey: "customer_id",
     header: "PATIENT",
     width: "220px",
     cell: ({ row }) => {
-      const patientName = row.original.patient?.name || `Patient ${row.original.patient_id}`;
-      const phoneNumber = row.original.patient?.phone_number || "N/A";
+      const patientName =
+        row.original.customer?.name || `Patient ${row.original.customer_id}`;
+      const phoneNumber = row.original.customer?.phone_number || "N/A";
       const initials = getInitials(patientName);
-      const avatarColors = getAvatarColors(row.original.patient_id);
+      const avatarColors = getAvatarColors(row.original.customer_id);
 
       return (
         <div className="flex items-start gap-3">
@@ -51,7 +54,10 @@ const columns: ExtendedColumnDef<Appointment>[] = [
             className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
             style={{ backgroundColor: avatarColors.bg }}
           >
-            <span className="text-sm font-semibold" style={{ color: avatarColors.text }}>
+            <span
+              className="text-sm font-semibold"
+              style={{ color: avatarColors.text }}
+            >
               {initials}
             </span>
           </div>
@@ -68,8 +74,12 @@ const columns: ExtendedColumnDef<Appointment>[] = [
     header: "DOCTOR",
     width: "220px",
     cell: ({ row }) => {
-      const doctorName = row.original.doctor?.name || `Doctor ${row.original.doctor_id}`;
-      const specialty = row.original.doctor?.specialty?.name || row.original.doctor?.specialty || "N/A";
+      const doctorName =
+        row.original.doctor?.name || `Doctor ${row.original.doctor_id}`;
+      const specialty =
+        row.original.doctor?.specialty?.name ||
+        row.original.doctor?.specialty ||
+        "N/A";
       const initials = getInitials(doctorName);
       const avatarColors = getAvatarColors(row.original.doctor_id);
 
@@ -79,13 +89,18 @@ const columns: ExtendedColumnDef<Appointment>[] = [
             className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
             style={{ backgroundColor: avatarColors.bg }}
           >
-            <span className="text-sm font-semibold" style={{ color: avatarColors.text }}>
+            <span
+              className="text-sm font-semibold"
+              style={{ color: avatarColors.text }}
+            >
               {initials}
             </span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-gray-900 truncate">{doctorName}</p>
-            <p className="text-sm text-gray-600 truncate">{String(specialty)}</p>
+            <p className="text-sm text-gray-600 truncate">
+              {String(specialty)}
+            </p>
           </div>
         </div>
       );
@@ -106,13 +121,23 @@ const columns: ExtendedColumnDef<Appointment>[] = [
             <>
               {/* Appointment Date */}
               <p className="flex items-center gap-1 text-sm font-medium text-gray-900">
-                <Image src="/assets/CalendarBlank.svg" alt="calendar" width={16} height={16} />
+                <Image
+                  src="/assets/CalendarBlank.svg"
+                  alt="calendar"
+                  width={16}
+                  height={16}
+                />
                 {formatDate(appointmentDateString)}
               </p>
 
               {/* Appointment Time */}
               <p className="flex items-center gap-1 text-sm font-medium text-gray-900">
-                <Image src="/assets/Clock2.svg" alt="clock" width={16} height={16} />
+                <Image
+                  src="/assets/Clock2.svg"
+                  alt="clock"
+                  width={16}
+                  height={16}
+                />
                 {formatTime(startTimeString)}
               </p>
 
@@ -169,7 +194,7 @@ export default function DoctorBookings() {
           undefined,
           undefined,
           undefined,
-          name
+          name,
         );
         setAppointments(response.data);
         setTotalPages(response.metadata.total_pages);
@@ -187,7 +212,7 @@ export default function DoctorBookings() {
         setLoading(false);
       }
     },
-    [user_timezone]
+    [user_timezone],
   );
 
   useEffect(() => {
@@ -211,7 +236,9 @@ export default function DoctorBookings() {
     <div className="p-2 sm:p-4 lg:p-6">
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl  sm:text-2xl font-semibold text-[#000000]">Appoinments</h1>
+          <h1 className="text-2xl  sm:text-2xl font-semibold text-[#000000]">
+            Appoinments
+          </h1>
           <p className="text-md font-inter font-normal sm:text-base text-[#787878] mt-1">
             Manage all patient bookings handled by the AI system.
           </p>

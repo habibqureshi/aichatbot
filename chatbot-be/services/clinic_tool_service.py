@@ -212,10 +212,14 @@ def _slot_list(
             random_slot = True
             # If no specific date, just use the next occurrence of the availability's day
             current_target = _get_date_from_day_name(av.day_of_week)
-        if not current_target.strftime("%A").lower() == av.day_of_week.lower():
+        if current_target.strftime("%A").lower() != av.day_of_week.lower():
+            continue
+        if from_time and from_time >= av.end_time:
             continue
 
-        current = datetime.combine(current_target, from_time or av.start_time)
+        slot_start = max(from_time, av.start_time) if from_time else av.start_time
+
+        current = datetime.combine(current_target, slot_start)
         end = datetime.combine(current_target, av.end_time)
         while current + duration <= end:
             s, e = current.time(), (current + duration).time()
@@ -268,6 +272,28 @@ async def get_doctors_by_specialty(
 
     instructions = ""
 
+    if specialty and not doctors:
+        specialties = await db.execute(
+            select(Doctor.specialty).where(Doctor.tenant_id == tenant_id).distinct()
+        )
+        specialties = specialties.scalars().all()
+        instructions = (
+            f"The requested specialty '{specialty}' was not found in our system. "
+            f"Available specialties are: {', '.join([s for s in specialties])}. "
+            "Follow these rules strictly: "
+            "1. If the user's specialty appears to be a spelling mistake or very close match "
+            "to one of the available specialties (for example 'ANT' instead of 'ENT'), "
+            "ask a clarification question such as 'Did you mean ENT?'. "
+            "2. If the specialty name is spelled correctly or understandable, but that specialty "
+            "does not exist in our database, politely apologize and say that this specialty "
+            "is currently not available. Do NOT suggest unrelated specialties or doctors. "
+            "3. Do not guess unrelated specialties. "
+            "Only suggest a correction when the similarity is clearly obvious. "
+            "4. If uncertain whether it is a typo or a different specialty, ask for clarification "
+            "instead of assuming."
+        )
+        return json.dumps({"instructions": instructions})
+
     # fallback if no exact match
     if not doctors:
         fallback_query = (
@@ -282,17 +308,17 @@ async def get_doctors_by_specialty(
         if doctor_name:
             missing_parts.append(f'doctor name "{doctor_name}"')
 
-        if specialty:
-            missing_parts.append(f'specialty "{specialty}"')
+        # if specialty:
+        #     missing_parts.append(f'specialty "{specialty}"')
         if experience:
             missing_parts.append(f"experience of {experience}+ years")
 
         missing_text = " and ".join(missing_parts)
 
         instructions = (
-            f"No exact match found for {missing_text}. "
-            "Politely suggest the closest available doctors conversationally. Do not auto suggests any other  specialty if user have clearly mentioned specialty"
-            "Do not use numbered lists, bullets, or markdown."
+            f"No exact match found for {missing_text}. ",
+            "Politely suggest the closest available doctors conversationally.",
+            "Do not use numbered lists, bullets, or markdown.",
         )
 
     else:
@@ -379,6 +405,9 @@ async def get_doctor_weekly_schedule(
             "specialty": doctor.specialty,
             "slot_duration_minutes": doctor.duration or 30,
             "weekly_schedule": schedule,
+            "instructions": (
+                "Do not use numbers, list, bullets. mention weekly schedules conversationally"
+            ),
         }
     )
 

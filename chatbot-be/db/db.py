@@ -25,10 +25,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     if engine is None:
         await init_db()
     async with async_session() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+        yield session
 
 
 async def init_db():

@@ -3,7 +3,7 @@ import { ENDPOINTS } from "@/app/http/endpoints";
 
 export interface Appointment {
   id: number;
-  patient_id: number;
+  customer_id: number;
   doctor_id: number;
   appointment_date: string;
   start_time: string;
@@ -12,7 +12,7 @@ export interface Appointment {
   notes: string;
   call_sid: string;
   created_at: string;
-  patient: {
+  customer: {
     id: number;
     phone_number: string;
     name: string;
@@ -48,11 +48,19 @@ export async function getAppointmentsList(
   doctor_id?: number,
   patient_id?: number,
   status?: string,
-  name?: string
+  name?: string,
 ): Promise<AppointmentsResponse> {
   try {
     const response = await API.get(
-      ENDPOINTS.APPOINTMENTS.LIST(page, limit, user_timezone, doctor_id, patient_id, status, name)
+      ENDPOINTS.APPOINTMENTS.LIST(
+        page,
+        limit,
+        user_timezone,
+        doctor_id,
+        patient_id,
+        status,
+        name,
+      ),
     );
     // console.log("api response", response?.data);
     return response.data;

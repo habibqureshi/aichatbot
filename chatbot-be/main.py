@@ -61,6 +61,10 @@ app.include_router(auth_router.router)
 app.include_router(order_crud_router.router)
 
 
+def get_twilio_client():
+    return app.state.twilio_client
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(
@@ -86,7 +90,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8001,
+        port=8000,
         forwarded_allow_ips="*",
         proxy_headers=True,
     )

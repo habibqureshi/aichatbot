@@ -21,7 +21,7 @@ async def list_appointments(
     query = (
         select(AppointmentModel)
         .options(
-            joinedload(AppointmentModel.patient),
+            joinedload(AppointmentModel.customer),
             joinedload(AppointmentModel.doctor),
         )
         .where(AppointmentModel.tenant_id == tenant_id)
@@ -36,8 +36,8 @@ async def list_appointments(
         count_query = count_query.where(AppointmentModel.doctor_id == doctor_id)
 
     if patient_id is not None:
-        query = query.where(AppointmentModel.patient_id == patient_id)
-        count_query = count_query.where(AppointmentModel.patient_id == patient_id)
+        query = query.where(AppointmentModel.customer_id == patient_id)
+        count_query = count_query.where(AppointmentModel.customer_id == patient_id)
 
     if status is not None:
         query = query.where(AppointmentModel.status == status)

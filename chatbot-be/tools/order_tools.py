@@ -12,6 +12,7 @@ from logging import Logger
 
 from langchain_core.tools import tool
 from sqlalchemy.ext.asyncio import AsyncSession
+from schemas.order import AddOrderItemRequestItem
 
 try:
     from langgraph.config import get_stream_writer as _get_stream_writer
@@ -115,23 +116,16 @@ def build_order_tools(
     @tool
     async def add_order_item(
         order_id: int,
-        items: dict[str, Any] | list[dict[str, Any]] | None = None,
+        items: list[AddOrderItemRequestItem],
         user_confirmation: bool = False,
     ) -> str:
-        """Add one or multiple menu item lines to an existing order.
+        """Add one or multiple menu items to an existing order.
 
         Args:
             order_id: Target order id.
-            items: Compact batch payload:
-                {"n": "...", "q": 2}
-                [{"n": "...", "q": 2}, ...]
-                Also accepts {"name": "...", "quantity": 2}
-                or [{"name": "...", "quantity": 2}, ...]
-                n is exact name of the item and q is quantity
-            user_confirmation: if user confirmed or not
+            items: List of items to add.
+            user_confirmation: Must be True — caller explicitly confirmed adding items.
         """
-        if items is None:
-            return "items is required. Use {n,q} or [{n,q}, ...]."
         if not user_confirmation:
             raise Exception("Ask user explicit if he want to add items to the order")
         _emit({"tool": "add_order_item", "phase": "start"}, log)
@@ -247,6 +241,7 @@ def build_order_tools(
     @tool
     async def confirm_order(order_id: int, user_confirmation: bool = False) -> str:
         """Confirm and place the order after user explicitly said order is completed
+        And all the items must be added in the order
 
         Args:
             order_id: Order id to confirm.

@@ -17,6 +17,11 @@ from graph.appointmnet_graph import create_appointment_graph
 from graph.order_graph import create_order_graph
 from rag.indexing.store import init_ChromaDB
 from logging import Logger
+from graph.clinic_graph import create_clinic_graph
+from configs import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
+from twilio.rest import Client
+from twilio.http.async_http_client import AsyncTwilioHttpClient
+
 # Load environment variables as early as possible
 load_dotenv()
 
@@ -78,6 +83,10 @@ async def lifespan(app: FastAPI):
 
         # my_checkpointer = AsyncMySaver(conn=checkpointer_conn)
         # await my_checkpointer.setup()
+        http_client = AsyncTwilioHttpClient()
+        app.state.twilio_client = Client(
+            TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, http_client=http_client
+        )
         await init_db()
         init_ChromaDB()
         print("LangGraph and MySQL Checkpointer initialized successfully.")
@@ -88,7 +97,7 @@ async def lifespan(app: FastAPI):
 
 
 async def get_graph(
-    call_id: str, patient_number: str, db: AsyncSession, tenant_id: int, log:Logger
+    call_id: str, patient_number: str, db: AsyncSession, tenant_id: int, log: Logger
 ) -> StateGraph:
     global my_checkpointer
     mcp_client = MCPClient()
@@ -108,7 +117,12 @@ async def get_graph(
 
 
 async def get_order_graph(
-    call_id: str, customer_phone: str, db: AsyncSession, tenant_id: int, log: Logger,
+    call_id: str,
+    customer_phone: str,
+    db: AsyncSession,
+    tenant_id: int,
+    log: Logger,
+    customer_name: str,
 ):
     """Order graph with local DB + Chroma tools; MCP adds extra tools when reachable."""
     mcp_client = MCPClient()
@@ -133,6 +147,64 @@ async def get_order_graph(
         tenant_id,
         log,
         customer_phone=customer_phone,
+        call_sid=call_id,
+        customer_name=customer_name,
+    )
+
+
+async def get_appointment_graph(
+    call_id: str, patient_number: str, db: AsyncSession, tenant_id: int, log: Logger
+):
+    """Appointment graph with local DB tools; MCP adds extra tools when reachable."""
+    mcp_client = MCPClient()
+    success = await mcp_client.connect(
+        url=MCP_URL,
+        headers={
+            "x-call-id": call_id,
+            "x-patient-no": patient_number,
+            "x-tenant-id": str(tenant_id),
+        },
+    )
+    if not success:
+        log.warning(
+            "Appointment graph: MCP unreachable at %s; continuing with local tools only.",
+            MCP_URL,
+        )
+        mcp_client = None
+    return await create_appointment_graph(mcp_client, db, tenant_id, log)
+
+
+async def get_clinic_graph(
+    call_id: str,
+    customer_phone: str,
+    db: AsyncSession,
+    tenant_id: int,
+    log: Logger,
+    customer_name: str,
+):
+    """Clinic graph with local DB tools; MCP adds extra tools when reachable."""
+    mcp_client = MCPClient()
+    success = await mcp_client.connect(
+        url=MCP_URL,
+        headers={
+            "x-call-id": call_id,
+            "x-patient-no": customer_phone,
+            "x-tenant-id": str(tenant_id),
+        },
+    )
+    if not success:
+        log.warning(
+            "Clinic graph: MCP unreachable at %s; continuing with local tools only.",
+            MCP_URL,
+        )
+        mcp_client = None
+    return await create_clinic_graph(
+        mcp_client,
+        db,
+        tenant_id,
+        log,
+        customer_phone=customer_phone,
+        customer_name=customer_name,
         call_sid=call_id,
     )
 

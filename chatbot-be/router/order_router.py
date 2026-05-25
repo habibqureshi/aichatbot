@@ -10,6 +10,8 @@ from utils.tenant_context import (
     get_tenant_context_ws,
 )
 from logger import get_logger, get_ws_logger
+from twilio.rest import Client
+from utils.twilio_client import get_twilio_client
 
 router = APIRouter(prefix="/api/v1/order", tags=["order_voice"])
 
@@ -46,10 +48,15 @@ async def order_openai_stream_ws(
     db: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context_ws),
     log: Logger = Depends(get_ws_logger),
+    twilio_client: Client = Depends(get_twilio_client),
 ):
     log.info("Order Twilio stream websocket started")
     await order_service.openai_stream(
-        websocket=websocket, db=db, tenant_id=tenant.tenant_id, log=log
+        websocket=websocket,
+        db=db,
+        tenant_id=tenant.tenant_id,
+        log=log,
+        twilio_client=twilio_client,
     )
 
 

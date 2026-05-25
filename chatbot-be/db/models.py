@@ -38,7 +38,6 @@ class Patient(Base):
     name = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     conversations = relationship("Conversation", back_populates="patient")
-    appointments = relationship("Appointment", back_populates="patient")
 
 
 class Conversation(Base):
@@ -50,7 +49,9 @@ class Conversation(Base):
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True, index=True)
     call_sid = Column(String(50), index=True)
     __table_args__ = (
-        UniqueConstraint("tenant_id", "call_sid", name="uix_conversation_call_sid_tenant"),
+        UniqueConstraint(
+            "tenant_id", "call_sid", name="uix_conversation_call_sid_tenant"
+        ),
     )
     started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     ended_at = Column(DateTime, nullable=True)
@@ -92,7 +93,7 @@ class Appointment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), index=True, nullable=False)
-    patient_id = Column(Integer, ForeignKey("patients.id"))
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
     doctor_id = Column(Integer, ForeignKey("doctors.id"))
     appointment_date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=False)
@@ -102,7 +103,7 @@ class Appointment(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     notes = Column(Text, nullable=True)
 
-    patient = relationship("Patient", back_populates="appointments")
+    customer = relationship("Customer", back_populates="appointments")
     doctor = relationship("Doctor", back_populates="appointments")
 
 
@@ -166,6 +167,7 @@ class Doctor(Base):
     name = Column(String(100), nullable=False)
     # store specialty as a string (name/code) instead of a foreign key
     specialty = Column(String(100), nullable=True)
+    experience = Column(Integer, nullable=True)
     phone_number = Column(String(100), index=True)
     __table_args__ = (
         UniqueConstraint("tenant_id", "phone_number", name="uix_doctor_phone_tenant"),
@@ -270,6 +272,7 @@ class Customer(Base):
 
     orders = relationship("Order", back_populates="customer")
     conversations = relationship("Conversation", back_populates="customer")
+    appointments = relationship("Appointment", back_populates="customer")
 
 
 class Menu(Base):
@@ -295,7 +298,9 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), index=True, nullable=False)
-    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False, index=True)
+    customer_id = Column(
+        Integer, ForeignKey("customers.id"), nullable=False, index=True
+    )
     delivery_address = Column(String(255), nullable=True)
     status = Column(String(50), nullable=False, default="pending")
     total_amount = Column(Float, nullable=False, default=0)
@@ -307,7 +312,9 @@ class Order(Base):
     )
 
     customer = relationship("Customer", back_populates="orders")
-    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    items = relationship(
+        "OrderItem", back_populates="order", cascade="all, delete-orphan"
+    )
 
 
 class OrderItem(Base):

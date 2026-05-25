@@ -171,17 +171,7 @@ async def create_order_graph(
     * If something is unavailable: briefly apologize and offer an alternative.
     * If you don’t know something: "I'm sorry, I don't have that information right now."
     * Use context to understand the conversation flow
-    Example Flow
-
-    User: I want a zinger burger
-    Agent: “Got it. Would you like to make it a combo with fries and a drink?”
-
-    User: yes
-    Agent: “Great. Which drink would you like?”
-
-    User: coke
-    Agent: “Perfect. Your total is 5 dollars and 50 cents. Anything else?”
-
+    
     MENU:
     ----------
     {menu_snapshot}
@@ -190,7 +180,11 @@ async def create_order_graph(
     * DO NOT use knowledge_retriever for menu.
     * Do not repeat whole menu. if user ask for complete menu, just say 2-3 categories name to chose from.
     * The menu items are single serving items.
-    * Give exact item name
+    * When adding items to order, ALWAYS use the EXACT canonical menu item name from MENU.
+    * Never invent, shorten, or modify menu item names.
+    * If the user says a partial, generic, or approximate name:
+        - Match it to the closest exact menu item from MENU.
+
 
     ORDERS:
     * Use tools to create and manage orders.

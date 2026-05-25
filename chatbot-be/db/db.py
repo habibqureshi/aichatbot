@@ -1,4 +1,12 @@
-from configs import DB_HOST, DB_PASS, DB_PORT, DB_USER, DB, INSTANCE_CONNECTION_NAME, USE_CLOUD_SQL
+from configs import (
+    DB_HOST,
+    DB_PASS,
+    DB_PORT,
+    DB_USER,
+    DB,
+    INSTANCE_CONNECTION_NAME,
+    USE_CLOUD_SQL,
+)
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -17,10 +25,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     if engine is None:
         await init_db()
     async with async_session() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+        yield session
 
 
 async def init_db():
@@ -58,17 +63,15 @@ async def init_db():
             print("Initializing database with local database...")
 
             local_url = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB}"
-            local_async_url = f"mysql+asyncmy://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB}"
+            local_async_url = (
+                f"mysql+asyncmy://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB}"
+            )
 
             sync_engine = create_engine(local_url)
             Base.metadata.create_all(sync_engine)
             sync_engine.dispose()
 
-            engine = create_async_engine(
-                local_async_url,
-                pool_size=10,
-                max_overflow=2,
-            )
+            engine = create_async_engine(local_async_url, pool_size=10, max_overflow=2)
         async_session = sessionmaker(
             bind=engine, class_=AsyncSession, expire_on_commit=False
         )

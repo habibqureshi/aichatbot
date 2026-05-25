@@ -9,9 +9,10 @@ from __future__ import annotations
 from datetime import datetime
 from collections import defaultdict
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from schemas.order import AddOrderItemRequestItem
 
 from db.models import Customer, Menu, Order, OrderItem
 
@@ -255,45 +256,16 @@ async def add_order_item(
     order_id: int,
     caller_phone_number: str | None,
     tenant_id: int,
-    items: dict[str, str | int] | list[dict[str, str | int]] | None = None,
+    items: list[AddOrderItemRequestItem],
 ) -> str:
-    normalized_items: list[tuple[str, int]] = []
-    compact_payload: list[dict[str, str | int]]
-    if isinstance(items, dict):
-        compact_payload = [items]
-    elif isinstance(items, list):
-        compact_payload = items
-    else:
-        return "Provide items as {n,q}, [{n,q}] or [{name,quantity}]."
-
-    if not compact_payload:
-        return "items array cannot be empty."
-    for idx, raw in enumerate(compact_payload):
-        raw_name = str(raw.get("n") or raw.get("name") or "").strip()
-        raw_quantity = raw.get("q", raw.get("quantity", 0))
-        try:
-            parsed_quantity = int(raw_quantity)
-        except (TypeError, ValueError):
-            return (
-                f"Quantity at index {idx} for item "
-                f"'{raw_name or 'unknown'}' must be a whole number."
-            )
-        if not raw_name:
-            return f"items[{idx}] name must be non-empty."
-        if parsed_quantity < 1:
-            return (
-                f"Quantity for item '{raw_name}' at index {idx} "
-                "must be at least 1."
-            )
-        normalized_items.append((raw_name, parsed_quantity))
+    if not items:
+        raise Exception("items list cannot be empty.")
 
     caller_customer_id = await _get_caller_customer_id(
-        db=db,
-        tenant_id=tenant_id,
-        caller_phone_number=caller_phone_number,
+        db=db, tenant_id=tenant_id, caller_phone_number=caller_phone_number
     )
     if caller_customer_id is None:
-        return "Unable to verify caller identity for this order session."
+        raise Exception("Unable to verify caller identity for this order session.")
 
     lock_result = await db.execute(
         select(Order)
@@ -307,72 +279,105 @@ async def add_order_item(
     )
     order = lock_result.scalars().first()
     if not order:
-        return f"Order #{order_id} was not found for this caller."
+        raise Exception(f"Order #{order_id} was not found for this caller.")
     if order.status not in ("draft", "pending"):
-        return f"Order #{order_id} cannot be modified in status '{order.status}'."
+        raise Exception(
+            f"Order #{order_id} cannot be modified in status '{order.status}'."
+        )
 
-    resolved_items: list[tuple[Menu, int]] = []
-    for selected_name, selected_qty in normalized_items:
-        menu_query = select(Menu).where(
-            Menu.name == selected_name,
+    # Fetch all requested menu items in a single query
+    requested_names = [item.item_name.lower() for item in items]
+    menu_result = await db.execute(
+        select(Menu).where(
             Menu.tenant_id == tenant_id,
+            func.lower(Menu.name).in_(requested_names),
         )
-        menu_result = await db.execute(menu_query.limit(1))
-        menu = menu_result.scalars().first()
-        if not menu:
-            return f"Menu item {selected_name} not found."
-        if not menu.available:
-            return f"Menu item '{menu.name}' is not available."
-        resolved_items.append((menu, selected_qty))
+    )
+    menu_by_name: dict[str, Menu] = {
+        m.name.lower(): m for m in menu_result.scalars().all()
+    }
 
-    added_summary: list[str] = []
+    added: list[str] = []
+    not_found: list[str] = []
+    unavailable: list[str] = []
     batch_total = 0.0
-    for menu, selected_qty in resolved_items:
-        unit_price = float(menu.price)
-        normalized_name = (menu.name or "")[:100]
-        line_total = unit_price * selected_qty
-        existing_result = await db.execute(
-            select(OrderItem).where(
-                OrderItem.order_id == order.id,
-                OrderItem.tenant_id == tenant_id,
-                OrderItem.item_name == normalized_name,
-            )
+    existing_result = await db.execute(
+        select(OrderItem).where(
+            OrderItem.order_id == order.id,
+            OrderItem.tenant_id == tenant_id,
         )
-        existing = None
-        for row in existing_result.scalars().all():
-            if abs(float(row.unit_price) - unit_price) < 1e-6:
-                existing = row
-                break
+    )
 
+    existing_items = {
+        (i.item_name, float(i.unit_price)): i for i in existing_result.scalars().all()
+    }
+
+    for item in items:
+        menu = menu_by_name.get(item.item_name.lower())
+        if not menu:
+            not_found.append(item.item_name)
+            continue
+        if not menu.available:
+            unavailable.append(item.item_name)
+            continue
+
+        unit_price = float(menu.price)
+        line_total = unit_price * item.quantity
+        normalized_name = (menu.name or "")[:100]
+
+        # existing_result = await db.execute(
+        #     select(OrderItem).where(
+        #         OrderItem.order_id == order.id,
+        #         OrderItem.tenant_id == tenant_id,
+        #         OrderItem.item_name == normalized_name,
+        #     )
+        # )
+        # existing = next(
+        #     (
+        #         r
+        #         for r in existing_result.scalars().all()
+        #         if abs(float(r.unit_price) - unit_price) < 1e-6
+        #     ),
+        #     None,
+        # )
+        key = (normalized_name, unit_price)
+        existing = existing_items.get(key)
         if existing:
-            existing.quantity = int(existing.quantity) + selected_qty
+            existing.quantity = int(existing.quantity) + item.quantity
             existing.line_total = float(existing.unit_price) * int(existing.quantity)
         else:
-            db.add(
-                OrderItem(
-                    tenant_id=order.tenant_id,
-                    order_id=order.id,
-                    item_name=normalized_name,
-                    quantity=selected_qty,
-                    unit_price=unit_price,
-                    line_total=line_total,
-                )
+            new_item = OrderItem(
+                tenant_id=order.tenant_id,
+                order_id=order.id,
+                item_name=normalized_name,
+                quantity=item.quantity,
+                unit_price=unit_price,
+                line_total=line_total,
             )
+            db.add(new_item)
+            existing_items[key] = new_item
         batch_total += line_total
-        added_summary.append(f"{selected_qty} x {menu.name}")
+        added.append(f"{item.quantity} x {menu.name}")
 
-    order.total_amount = float(order.total_amount or 0) + batch_total
-    await db.commit()
-    await db.refresh(order)
-    if len(added_summary) == 1:
-        return (
-            f"Added {added_summary[0]} to order #{order.id}. "
-            f"Current total is {float(order.total_amount or 0):.2f}."
+    if added:
+        order.total_amount = float(order.total_amount or 0) + batch_total
+        await db.commit()
+        await db.refresh(order)
+
+    parts: list[str] = []
+    if added:
+        parts.append(f"Added: {', '.join(added)}")
+    if not_found:
+        parts.append(f"Not found on menu: {', '.join(not_found)}")
+    if unavailable:
+        parts.append(f"Currently unavailable: {', '.join(unavailable)}")
+
+    summary = ". ".join(parts)
+    if added:
+        summary += (
+            f". Order #{order.id} total is now {float(order.total_amount or 0):.2f}."
         )
-    return (
-        f"Added items to order #{order.id}: {', '.join(added_summary)}. "
-        f"Current total is {float(order.total_amount or 0):.2f}."
-    )
+    return summary
 
 
 async def update_order_item(
@@ -809,7 +814,7 @@ async def get_menu_context_for_prompt(
     if not rows:
         return "empty"
 
-    lines = ["category,name,price,description"]
+    lines = ["category,item_name,price,description"]
     for m in rows:
         category = (m.category or "").strip() or "uncategorized"
         name = m.name or ""

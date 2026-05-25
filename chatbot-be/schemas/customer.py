@@ -9,6 +9,6 @@ class Customer(TimezoneMixin, BaseModel):
     phone_number: str | None
     name: str | None
     created_at: datetime
-    _timezone_fields: ClassVar[list[str]] = ["created_at"]
+    _timezone_fields: ClassVar[list[str]] = []
 
     model_config = ConfigDict(from_attributes=True)

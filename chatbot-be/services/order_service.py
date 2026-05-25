@@ -30,7 +30,6 @@ import numpy as np
 from langchain_openai import ChatOpenAI
 import random
 
-
 # import webrtcvad
 # import whisper
 # from piper import PiperVoice, SynthesisConfig
@@ -44,7 +43,7 @@ from services import (
     message_service,
     app_setting_service,
 )
-from graph.bot_graph import get_order_graph
+from graph.bot_graph import get_order_graph, get_clinic_graph
 from graph.intent_graph import voice_ai_graph
 from langgraph.graph.state import CompiledStateGraph, RunnableConfig
 from langchain_core.messages import (
@@ -62,10 +61,12 @@ from configs import (
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
     MCP_URL,
+    TWILIO_FORWARDING_NUMBER,
 )
 from langfuse import get_client
 from langfuse.langchain import CallbackHandler
 import random
+from twilio.twiml.voice_response import VoiceResponse
 
 import audioop
 
@@ -521,9 +522,7 @@ async def stream_call(
     await websocket.accept()
 
 
-OPENAI_URL = (
-    "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17"
-)
+OPENAI_URL = "wss://api.openai.com/v1/realtime?intent=transcription"
 # Default websockets open handshake is short; Realtime can be slow on constrained networks.
 _OPENAI_REALTIME_OPEN_TIMEOUT = float(os.getenv("OPENAI_REALTIME_OPEN_TIMEOUT", "60"))
 _OPENAI_REALTIME_CONNECT_RETRIES = int(
@@ -535,7 +534,6 @@ async def _connect_openai_realtime_stt(log: Logger):
     """Connect to OpenAI Realtime with a generous handshake timeout and retries."""
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "OpenAI-Beta": "realtime=v1",
     }
     last_exc: Exception | None = None
     for attempt in range(1, _OPENAI_REALTIME_CONNECT_RETRIES + 1):
@@ -591,11 +589,19 @@ class OrderVoiceSessionState:
         self.human_event = asyncio.Event()
         # Picked once per call so greeting and all responses use the same voice.
         self.voice_id: str = random.choice(_CARTESIA_VOICE_IDS)
+        self.call_sid: str | None = None
 
 
 async def openai_stream(
-    websocket: WebSocket, db: AsyncSession, tenant_id: int, log: Logger
+    websocket: WebSocket,
+    db: AsyncSession,
+    tenant_id: int,
+    log: Logger,
+    twilio_client: Client,
 ):
+    installed_for = await app_setting_service.get_app_setting_by_key_value(
+        db=db, key="INSTALLED_FOR", tenant_id=tenant_id
+    )
     state = OrderVoiceSessionState()
     openai_stt = await _connect_openai_realtime_stt(log)
     await openai_stt.send(
@@ -603,21 +609,38 @@ async def openai_stream(
             {
                 "type": "session.update",
                 "session": {
-                    "modalities": ["text"],
-                    "input_audio_noise_reduction": {"type": "far_field"},
-                    "turn_detection": {
-                        "type": "server_vad",
-                        "threshold": 0.8,
-                        # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
-                        "silence_duration_ms": 550,
-                        "prefix_padding_ms": 300,
-                        "create_response": False,
-                        "interrupt_response": False,
-                    },
-                    "input_audio_format": "g711_ulaw",
-                    "input_audio_transcription": {
-                        "model": "gpt-4o-mini-transcribe",
-                        "language": "en",
+                    "type": "transcription",
+                    # "modalities": ["text"],
+                    # "noise_reduction": {"type": "far_field"},
+                    # "turn_detection": {
+                    #     "type": "server_vad",
+                    #     "threshold": 0.5,
+                    #     # Too low (e.g. 200) ends turns mid-sentence; speech looks "unheard" / wrong intent.
+                    #     "silence_duration_ms": 550,
+                    #     "prefix_padding_ms": 300,
+                    #     "create_response": False,
+                    #     "interrupt_response": False,
+                    # },
+                    # "input_audio_format": "g711_ulaw",
+                    # "input_audio_transcription": {
+                    #     "model": "gpt-4o-mini-transcribe",
+                    #     "language": "en",
+                    # },
+                    "audio": {
+                        "input": {
+                            "format": {"type": "audio/pcmu"},
+                            "transcription": {
+                                "model": "gpt-4o-mini-transcribe",
+                                "language": "en",
+                            },
+                            "turn_detection": {
+                                "type": "semantic_vad",
+                                "eagerness": "auto",
+                                # "threshold": 0.5,
+                                # "prefix_padding_ms": 300,
+                                # "silence_duration_ms": 500,
+                            },
+                        }
                     },
                 },
             }
@@ -656,11 +679,23 @@ async def openai_stream(
                 tenant_id,
                 log,
                 receive_session=receive_session,
+                installed_for=installed_for,
             )
             await asyncio.gather(
                 receive_session.receive_from_openai(),
                 send_session.send_to_openai(),
             )
+            if state.human_event.is_set() and state.call_sid:
+                vr = VoiceResponse()
+                vr.dial(TWILIO_FORWARDING_NUMBER)
+
+                try:
+                    log.info(f"updating {state.call_sid}")
+                    await twilio_client.calls.get(state.call_sid).update_async(
+                        twiml=str(vr)
+                    )
+                except Exception as e:
+                    log.error(f"Error updating call: {e}")
     except websockets.exceptions.InvalidStatus as exc:
         # Cartesia returns HTTP 402 when billing/credits are insufficient or key is invalid.
         resp = getattr(exc, "response", None)
@@ -687,7 +722,10 @@ async def openai_stream(
         except Exception:
             pass
         try:
-            if websocket.client_state == WebSocketState.CONNECTING:
+            if (
+                websocket.client_state == WebSocketState.CONNECTING
+                and state.stop_event.is_set()
+            ):
                 await websocket.accept()
             await websocket.close(code=1011)
         except Exception:
@@ -1021,8 +1059,8 @@ class ReceiveVoiceSession:
 
             elif msg_type == "conversation.item.input_audio_transcription.delta":
                 await self.handle_user_interrupt(msg)
-
-        await self._graceful_shutdown()
+        if self.state.stop_event.is_set():
+            await self._graceful_shutdown()
 
     # -------------------------------
     # Final Transcript
@@ -1205,10 +1243,10 @@ class ReceiveVoiceSession:
                             "CARTESIA_PUMP | first audio chunk received | %d bytes",
                             len(response.audio),
                         )
-                    self.log.info(
-                        "yolo4 | first_audio_received_from_cartesia | bytes=%d",
-                        len(response.audio),
-                    )
+                    # self.log.info(
+                    #     "yolo4 | first_audio_received_from_cartesia | bytes=%d",
+                    #     len(response.audio),
+                    # )
                     await self.tts_queue.put(response.audio)
         except Exception as e:
             self.log.exception("Cartesia receive pump ended: %s", e)
@@ -1384,11 +1422,11 @@ class ReceiveVoiceSession:
                     delta = _stream_chunk_text(ch)
                     if not delta:
                         continue
-                    self.log.info(
-                        "LLM_STREAM_CHUNK | node=classify_intent | delta_chars=%d | text=%r",
-                        len(delta),
-                        delta if len(delta) <= 400 else (delta[:400] + "..."),
-                    )
+                    # self.log.info(
+                    #     "LLM_STREAM_CHUNK | node=classify_intent | delta_chars=%d | text=%r",
+                    #     len(delta),
+                    #     delta if len(delta) <= 400 else (delta[:400] + "..."),
+                    # )
                     stream_buffer += delta
                     for word in FORBIDDEN_WORDS:
                         if word in stream_buffer:
@@ -1437,6 +1475,10 @@ class ReceiveVoiceSession:
                                     len(seg),
                                     seg if len(seg) <= 300 else (seg[:300] + "..."),
                                 )
+                            self.log.info("Before replace %s", stream_buffer)
+                            stream_buffer = stream_buffer.replace("*", "")
+                            self.log.info("After replace %s", stream_buffer)
+
                             await _ensure_cartesia_pump_alive()
                             await self._cartesia_send_stream(
                                 ctx,
@@ -1630,6 +1672,9 @@ class ReceiveVoiceSession:
             )
 
 
+GRAPH_FUNC = {"clinic": get_clinic_graph, "restaurant": get_order_graph}
+
+
 class SendVoiceSession:
 
     def __init__(
@@ -1645,6 +1690,7 @@ class SendVoiceSession:
         tenant_id,
         log,
         receive_session: "ReceiveVoiceSession | None" = None,
+        installed_for: str | None = None,
     ):
         self.websocket = websocket
         self.openai_stt = openai_stt
@@ -1654,6 +1700,7 @@ class SendVoiceSession:
         self.customer_service = customer_service
         self.message_service = message_service
         self.db = db
+        self.installed_for = installed_for
         self.tenant_id = tenant_id
         self.log = log
         self.receive_session = receive_session
@@ -1677,7 +1724,8 @@ class SendVoiceSession:
     async def send_to_openai(self):
 
         while True:
-
+            if self.state.human_event.is_set():
+                break
             try:
                 message = await self.websocket.receive_json()
             except (WebSocketDisconnect, WebSocketException):
@@ -1721,6 +1769,7 @@ class SendVoiceSession:
         self.log.info("CAETESIA %s", self.cartesia_kw)
 
         call_sid = message["start"]["callSid"]
+        self.state.call_sid = call_sid
         st = self.state
 
         st.conversation = await self.conversation_service.find_by_call_sid(
@@ -1751,13 +1800,20 @@ class SendVoiceSession:
                 st.conversation.customer_id,
             )
             return
-
-        st.graph = await get_order_graph(
+        _graph_func = GRAPH_FUNC.get(self.installed_for or "")
+        if not _graph_func:
+            self.log.error(
+                "No graph function found for installed_for=%s",
+                self.installed_for,
+            )
+            return
+        st.graph = await _graph_func(
             call_sid,
             st.customer.phone_number or "",
             db=self.db,
             tenant_id=self.tenant_id,
             log=self.log,
+            customer_name=st.customer.name or None,
         )
 
         st.stream_sid = message["start"]["streamSid"]
@@ -1856,6 +1912,8 @@ class SendVoiceSession:
         # payload = base64.b64decode(payload)
         # payload = process_ulaw_frame(payload)
         # payload = base64.b64encode(payload).decode("utf-8")
+        if self.state.human_event.is_set() or self.state.stop_event.is_set():
+            return
         await self.openai_stt.send(
             json.dumps(
                 {

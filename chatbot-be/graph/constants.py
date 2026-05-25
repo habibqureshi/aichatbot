@@ -20,8 +20,8 @@ class GraphNode(StrEnum):
 class IntentGraphState(BaseModel):
     messages: Annotated[List[BaseMessage], add_messages]
     user_input: Optional[str] = None
-    patient_phone: Optional[str] = None
-    patient_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    customer_name: Optional[str] = None
     next_agent: Optional[str] = None
     booking_status: Optional[BookingStatus] = BookingStatus.NOT_CONFIRMED
 

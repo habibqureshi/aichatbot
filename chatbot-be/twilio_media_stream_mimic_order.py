@@ -158,9 +158,9 @@ async def run_media_stream(
             """
             if len(chunk) != frame_bytes:
                 return
-            print(
-                f"-> enqueueing outbound audio chunk (size={outbound_audio_q.qsize()}) bytes)"
-            )
+            # print(
+            #     f"-> enqueueing outbound audio chunk (size={outbound_audio_q.qsize()}) bytes)"
+            # )
             try:
                 outbound_audio_q.put_nowait(chunk)
             except asyncio.QueueFull:
@@ -268,7 +268,7 @@ async def run_media_stream(
                         # Estimate drain time from frames still queued for the speaker.
                         # Each frame = FRAME_MS (20 ms); echo after they've played out.
                         queued_frames = inbound_audio_q.qsize()
-                        drain_sec = (queued_frames * FRAME_MS / 1000.0) + 200
+                        drain_sec = queued_frames * FRAME_MS / 1000.0
                         print(
                             f"<- received mark: {mark_name!r} | "
                             f"queued_frames={queued_frames} drain_sec={drain_sec:.2f}"

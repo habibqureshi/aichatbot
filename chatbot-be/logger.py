@@ -1,53 +1,36 @@
 import logging
 import uuid
-from fastapi import Depends, Form, WebSocket
-from schemas.twilio import TwilioIncoming
+from fastapi import Form, WebSocket
 
-# from services.current_user_service import get_current_user
+_LOG_FORMAT = (
+    "%(asctime)s %(levelname)s %(filename)s:%(lineno)d "
+    "%(requestId)s callSID:%(callId)s %(message)s"
+)
 
+_logger = logging.getLogger("app")
 
-def get_logger(CallSid: str = Form(...)):
-    print(f"CallSid: {CallSid}")
-    logger = logging.getLogger(__name__)
-    # ip = getattr(currentUser, 'ip', "NO_IP"),
-    extra = {
-        "callId": CallSid,
-        "requestId": uuid.uuid4(),
-        # "ip": ip
-    }
-    if not logger.hasHandlers():
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        # create formatter
-        formatter = logging.Formatter(
-            f"%(asctime)s %(levelname)s %(filename)s:%(lineno)d %(requestId)s callSID:%(callId)s %(message)s"
-        )
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
-    logger = logging.LoggerAdapter(logger, extra)
-    return logger
+if not _logger.handlers:
+    _logger.setLevel(logging.DEBUG)
+
+    _stream_handler = logging.StreamHandler()
+    _stream_handler.setLevel(logging.DEBUG)
+    _stream_handler.setFormatter(logging.Formatter(_LOG_FORMAT))
+    _logger.addHandler(_stream_handler)
+
+    _logger.propagate = False
 
 
-def get_ws_logger(websocket: WebSocket):
-    logger = logging.getLogger(__name__)
-    extra = {
-        "callId": websocket.query_params.get("CallSid", "WS_CALL"),
-        "requestId": uuid.uuid4(),
-    }
-    logging.basicConfig(
-        filename="app.log",
-        format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
+def _make_adapter(call_sid: str) -> logging.LoggerAdapter:
+    return logging.LoggerAdapter(
+        _logger,
+        {"callId": call_sid, "requestId": uuid.uuid4()},
     )
-    if not logger.hasHandlers():
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s %(filename)s:%(lineno)d %(requestId)s callSID:%(callId)s %(message)s"
-        )
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
-    return logging.LoggerAdapter(logger, extra)
+
+
+def get_logger(CallSid: str = Form(...)) -> logging.LoggerAdapter:
+    return _make_adapter(CallSid)
+
+
+def get_ws_logger(websocket: WebSocket) -> logging.LoggerAdapter:
+    call_sid = websocket.query_params.get("CallSid", "WS_CALL")
+    return _make_adapter(call_sid)

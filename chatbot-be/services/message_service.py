@@ -5,6 +5,7 @@ from typing import List
 from sqlalchemy.future import select
 from schemas.common import PaginatedResponse
 from schemas.message import Message as MessageSchema
+from datetime import datetime, timezone
 
 
 async def create(
@@ -21,6 +22,16 @@ async def create(
     await db.commit()
     await db.refresh(message)
     return message
+
+
+def create_object(conversation: Conversation, content: str, role: str, tenant_id: int):
+    return Message(
+        conversation_id=conversation.id,
+        role=role,
+        content=content,
+        tenant_id=tenant_id,
+        timestamp=datetime.now(timezone.utc),
+    )
 
 
 async def load_messages_by_conversation(

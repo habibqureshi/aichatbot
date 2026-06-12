@@ -40,3 +40,17 @@ LANGFUSE_PUBLIC_KEY = os.getenv(
 LANGFUSE_BASE_URL = os.getenv("LANGFUSE_BASE_URL", "http://localhost:3000")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 CARTESIA_API_KEY = os.getenv("CARTESIA_API_KEY", "")
+
+# Voice pipeline — silence watchdog
+SILENCE_PROMPT_WAIT_SEC: float = float(os.getenv("SILENCE_PROMPT_WAIT_SEC", "15"))
+SILENCE_MAX_PROMPTS: int = int(os.getenv("SILENCE_MAX_PROMPTS", "2"))
+
+# OpenAI Realtime STT connection
+OPENAI_REALTIME_OPEN_TIMEOUT: float = float(
+    os.getenv("OPENAI_REALTIME_OPEN_TIMEOUT", "60")
+)
+OPENAI_REALTIME_CONNECT_RETRIES: int = int(
+    os.getenv("OPENAI_REALTIME_CONNECT_RETRIES", "3")
+)
+
+DEEPGRAM_API_KEY: str = os.getenv("DEEPGRAM_API_KEY", "")

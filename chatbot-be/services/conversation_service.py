@@ -84,9 +84,11 @@ async def find_by_call_sid(
     call_sid: str, db: AsyncSession, tenant_id: int
 ) -> Conversation:
     result = await db.execute(
-        select(Conversation).where(
-            Conversation.call_sid == call_sid, Conversation.tenant_id == tenant_id
+        select(Conversation)
+        .options(
+            joinedload(Conversation.customer),
         )
+        .where(Conversation.call_sid == call_sid, Conversation.tenant_id == tenant_id)
     )
     return result.scalar_one_or_none()
 

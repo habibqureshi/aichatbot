@@ -123,7 +123,6 @@ async def create_clinic_graph(
     llm = ChatOpenAI(
         model_name="gpt-4o-mini",
         temperature=0,
-        streaming=True,
     ).bind_tools(tools=tools)
 
     async def classify_intent(state: ClinicState):
@@ -154,57 +153,59 @@ async def create_clinic_graph(
         msg_in.append(SystemMessage(content=f"""[Current Time: {now_str}] 
                 [Current Day: {current_day}]"""))
 
-        gathered: AIMessageChunk | None = None
-        first_chunk_logged = False
-        async for chunk in llm.astream(msg_in):
-            if not first_chunk_logged:
-                c = getattr(chunk, "content", None)
-                if isinstance(c, str):
-                    first_delta = c
-                elif isinstance(c, list):
-                    parts: list[str] = []
-                    for part in c:
-                        if isinstance(part, dict) and part.get("type") == "text":
-                            parts.append(str(part.get("text", "")))
-                        elif isinstance(part, str):
-                            parts.append(part)
-                    first_delta = "".join(parts)
-                elif c is None:
-                    first_delta = ""
-                else:
-                    first_delta = str(c)
-                if first_delta.strip():
-                    log.info(
-                        "clinic | first_llm_chunk | chars=%d | text=%r",
-                        len(first_delta),
-                        (
-                            first_delta
-                            if len(first_delta) <= 300
-                            else (first_delta[:300] + "...")
-                        ),
-                    )
-                    first_chunk_logged = True
-            gathered = chunk if gathered is None else gathered + chunk
+        # gathered: AIMessageChunk | None = None
+        # first_chunk_logged = False
+        # async for chunk in llm.astream(msg_in):
+        #     if not first_chunk_logged:
+        #         c = getattr(chunk, "content", None)
+        #         if isinstance(c, str):
+        #             first_delta = c
+        #         elif isinstance(c, list):
+        #             parts: list[str] = []
+        #             for part in c:
+        #                 if isinstance(part, dict) and part.get("type") == "text":
+        #                     parts.append(str(part.get("text", "")))
+        #                 elif isinstance(part, str):
+        #                     parts.append(part)
+        #             first_delta = "".join(parts)
+        #         elif c is None:
+        #             first_delta = ""
+        #         else:
+        #             first_delta = str(c)
+        #         if first_delta.strip():
+        #             log.info(
+        #                 "clinic | first_llm_chunk | chars=%d | text=%r",
+        #                 len(first_delta),
+        #                 (
+        #                     first_delta
+        #                     if len(first_delta) <= 300
+        #                     else (first_delta[:300] + "...")
+        #                 ),
+        #             )
+        #             first_chunk_logged = True
+        #     gathered = chunk if gathered is None else gathered + chunk
 
-        if gathered is None:
-            response = AIMessage(content="")
-        else:
-            tc = getattr(gathered, "tool_calls", None) or []
-            response = AIMessage(
-                content=gathered.content,
-                tool_calls=list(tc),
-                id=gathered.id,
-                usage_metadata=getattr(gathered, "usage_metadata", None),
-                response_metadata=getattr(gathered, "response_metadata", None),
-            )
+        # if gathered is None:
+        #     response = AIMessage(content="")
+        # else:
+        #     tc = getattr(gathered, "tool_calls", None) or []
+        #     response = AIMessage(
+        #         content=gathered.content,
+        #         tool_calls=list(tc),
+        #         id=gathered.id,
+        #         usage_metadata=getattr(gathered, "usage_metadata", None),
+        #         response_metadata=getattr(gathered, "response_metadata", None),
+        #     )
 
-        content = getattr(response, "content", None) or ""
-        tool_calls = getattr(response, "tool_calls", None) or []
-        if tool_calls:
-            log.info("Clinic assistant tool_calls: %s | text: %s", tool_calls, content)
-        else:
-            log.info("Clinic assistant: %s", content)
-
+        # content = getattr(response, "content", None) or ""
+        # tool_calls = getattr(response, "tool_calls", None) or []
+        # if tool_calls:
+        #     log.info("Clinic assistant tool_calls: %s | text: %s", tool_calls, content)
+        # else:
+        #     log.info("Clinic assistant: %s", content)
+        log.info("Calling LLM with %d messages", len(msg_in))
+        response = await llm.ainvoke(msg_in)
+        log.info("LLM Response: %s", response)
         result: dict[str, Any] = {"messages": [response]}
         if not has_system:
             result["system_prompt_injected"] = True
@@ -223,4 +224,4 @@ async def create_clinic_graph(
     workflow.add_edge("tools", "classify_intent")
     workflow.add_node("log", lambda s: log.info(s))
     workflow.add_edge("log", END)
-    return workflow.compile(checkpointer=memory)
+    return workflow.compile()

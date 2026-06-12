@@ -281,7 +281,6 @@ async def create_order_graph(
 
     async def classify_intent(state: OrderState):
         log.info("User said: %s", state.user_input or "")
-        log.warning(f"state messages: {state.messages}")
 
         has_system = state.system_prompt_injected or any(
             isinstance(m, SystemMessage) for m in state.messages
@@ -298,7 +297,11 @@ async def create_order_graph(
             msg_in.append(HumanMessage(content=f"[Caller: {state.customer_name}]"))
 
         if state.delivery_address:
-            msg_in.append(HumanMessage(content=f"[Current Delivery address: {state.delivery_address}]"))
+            msg_in.append(
+                HumanMessage(
+                    content=f"[Current Delivery address: {state.delivery_address}]"
+                )
+            )
 
         for message in state.messages:
             if isinstance(
